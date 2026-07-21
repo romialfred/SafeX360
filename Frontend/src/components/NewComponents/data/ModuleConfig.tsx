@@ -261,6 +261,13 @@ export const moduleConfigurations: any[] = [
         description: 'Manage emergency assembly points and evacuation routes'
     },
     {
+        id: 'emergency-personnel',
+        name: 'Personnel & Evacuation',
+        isEnabled: true,
+        category: 'Emergency Management',
+        description: 'Per-employee evacuation parameters: priority, assembly point, emergency contacts (SIRH)'
+    },
+    {
         id: 'emergency-settings',
         name: 'Emergency Settings',
         isEnabled: true,

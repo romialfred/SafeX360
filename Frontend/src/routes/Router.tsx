@@ -20,6 +20,7 @@ const AlertsHistoryPage = lazy(() => import('../components/EmergencyManagement/A
 // LOT 64 — Écran géant d'évacuation (salle de crise) : plein écran, sans chrome.
 const EvacuationWallboard = lazy(() => import('../components/EmergencyManagement/GeneralAlert/EvacuationWallboard'));
 const EmergencyDashboardPage = lazy(() => import('../components/EmergencyManagement/Dashboard/EmergencyDashboardPage'));
+const PersonnelEvacuationPage = lazy(() => import('../components/EmergencyManagement/PersonnelEvacuation/PersonnelEvacuationPage'));
 
 const ProfilePage = lazy(() => import('../pages/dashboard/ProfilePage'));
 const NotFound = lazy(() => import('../pages/NotFoundPage'));
@@ -561,6 +562,8 @@ const router = createBrowserRouter([
             { path: 'emergency/alerts/general/:id', element: <GeneralAlertDetailPage /> },
             // LOT 48 Phase 5 — Tableau de bord temps réel + KPI
             { path: 'emergency/dashboard', element: <EmergencyDashboardPage /> },
+            // Personnel & Évacuation (SIRH) — priorité, point de rassemblement, contacts d'urgence
+            { path: 'emergency/personnel-evacuation', element: <PersonnelEvacuationPage /> },
 
 
             { path: 'hs-Meetings', element: <ModuleGuard moduleId='meetings'><HealthMeetingPage /></ModuleGuard>, },

@@ -324,6 +324,7 @@ const menuItems: MenuItem[] = [
             { id: 'emergency-alerts', label: 'Historique des alertes', icon: IconHistory },
             { id: 'emergency-sos', label: 'Suivi SOS', icon: IconUrgent },
             { id: 'emergency-assembly-points', label: 'Points de rassemblement', icon: IconMapPin },
+            { id: 'emergency-personnel', label: 'Personnel & Évacuation', icon: IconUsers },
             { id: 'emergency-settings', label: 'Paramètres Urgences', icon: IconSettings }
         ]
     },
@@ -516,6 +517,7 @@ export const menuIdToUrl: Record<string, string> = {
     "emergency-sos": "/emergency/sos",
     "emergency-settings": "/emergency/settings",
     "emergency-assembly-points": "/emergency/assembly-points",
+    "emergency-personnel": "/emergency/personnel-evacuation",
 
     // Planning
     "hs-activities-planning": "/hs-activities-planning",

@@ -11,6 +11,7 @@ import com.hrms.DataInterface.CategoryCount;
 import com.hrms.DataInterface.EmpEmailPosResponse;
 import com.hrms.DataInterface.EmployeeDetailsDTO;
 import com.hrms.DataInterface.EmployeeDirection;
+import com.hrms.DataInterface.EmployeeEvacRow;
 import com.hrms.DataInterface.EmployeeEmailDTO;
 import com.hrms.DataInterface.EmployeeLeaveBalance;
 import com.hrms.DataInterface.EmployeeNameDTO;
@@ -201,6 +202,12 @@ public interface EmployeeRepository extends CrudRepository<Employee, Long> {
 
     @Query("Select count(*) from Employee e")
     Long getCount();
+
+    /** Employes actifs d'une mine avec intitule de poste (parametres d'evacuation / detection Directeur). */
+    @Query("SELECT e.id AS id, CONCAT(e.firstName, ' ', e.familyName) AS name, e.department.name AS department, e.position.name AS position "
+            + "FROM Employee e "
+            + "WHERE e.company.id = :companyId AND (e.effectiveEndDate IS NULL OR e.effectiveEndDate > CURRENT_DATE)")
+    List<EmployeeEvacRow> findEmployeesForEvacuation(@org.springframework.data.repository.query.Param("companyId") Long companyId);
 
     @Query("SELECT e.contractCategory AS category, COUNT(e) AS count FROM Employee e GROUP BY e.contractCategory")
     List<CategoryCount> countEmployeesByContract();

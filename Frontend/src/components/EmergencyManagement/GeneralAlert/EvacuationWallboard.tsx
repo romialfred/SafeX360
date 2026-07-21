@@ -7,7 +7,7 @@ import {
 import {
     IconShieldCheck, IconStethoscope, IconShieldX, IconUsers,
     IconAlertTriangle, IconMaximize, IconWifi, IconRefresh, IconMapPin, IconBuildingCommunity, IconActivity,
-    IconLayoutDashboard, IconStar, IconMessage, IconSend, IconPlus, IconTrash, IconSearch, IconUserStar, IconX,
+    IconLayoutDashboard, IconStar, IconMessage, IconSend, IconX,
 } from '@tabler/icons-react';
 import {
     getAlert, getAlertCheckIns,
@@ -16,9 +16,9 @@ import {
 } from '../../../services/GeneralAlertService';
 import { listAssemblyPoints, listRescueTeams, type AssemblyPointDTO, type RescueTeamDTO } from '../../../services/EmergencyService';
 import {
-    listEvacuationPriorities, upsertEvacuationPriority, deleteEvacuationPriority,
-    type EvacuationPriorityDTO, type EvacPriorityLevel,
-} from '../../../services/EmergencyPriorityService';
+    listEmployeeEvacuation,
+    type EmployeeEvacuationDTO, type EvacPriorityLevel,
+} from '../../../services/EmployeeEvacuationService';
 import { getEmployeesWithDepartment } from '../../../services/EmployeeService';
 import { useAppSelector } from '../../../slices/hooks';
 import { formatReasonCode } from './alertHelpers';
@@ -196,18 +196,26 @@ function VipMetric({ label, value, sub, color, big }: {
     );
 }
 
-function VipRow({ r, manage, onRemove }: {
-    r: { level: EvacPriorityLevel; name: string; department: string; roleLabel?: string | null;
-         status: EvacStatus | 'PENDING'; at?: string; assemblyPointName?: string | null; id?: number };
-    manage: boolean; onRemove: () => void;
-}) {
+interface VipRowData {
+    employeeId: number;
+    level: EvacPriorityLevel;
+    name: string;
+    department: string;
+    positionName?: string | null;
+    director: boolean;
+    status: EvacStatus | 'PENDING';
+    at?: string;
+    assignedPoint?: string | null;
+}
+
+function VipRow({ r }: { r: VipRowData }) {
     const color = STATUS_COLOR[r.status];
     return (
         <div className="rounded-xl border p-3 flex flex-col gap-2" style={{ borderColor: `${color}55`, background: `${color}12` }}>
             <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                     <div className="text-white font-bold text-[14.5px] truncate">{r.name}</div>
-                    <div className="text-slate-300 text-[11.5px] truncate">{r.roleLabel || r.department}</div>
+                    <div className="text-slate-300 text-[11.5px] truncate">{r.positionName || r.department}</div>
                 </div>
                 <span className="text-[10px] font-black px-1.5 py-0.5 rounded shrink-0"
                     style={{ background: `${LEVEL_META[r.level].c}33`, color: LEVEL_META[r.level].c }}>{r.level}</span>
@@ -217,74 +225,67 @@ function VipRow({ r, manage, onRemove }: {
                     {STATUS_LABEL[r.status]}
                 </span>
                 {r.at && <span className="text-[10.5px] text-slate-400">{new Date(r.at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>}
-                {r.assemblyPointName && <span className="text-[10.5px] text-slate-400 truncate max-w-[45%]">· {r.assemblyPointName}</span>}
-                {manage && (
-                    <button type="button" onClick={onRemove} className="ml-auto inline-flex items-center gap-1 text-[10.5px] text-red-300 hover:text-red-200">
-                        <IconTrash size={12} stroke={1.8} /> Retirer
-                    </button>
+                {r.assignedPoint && (
+                    <span className="inline-flex items-center gap-1 text-[10.5px] text-slate-400 truncate max-w-[55%]">
+                        <IconMapPin size={11} stroke={1.8} /> {r.assignedPoint}
+                    </span>
                 )}
             </div>
         </div>
     );
 }
 
-function VipView({ companyId, employees, checkIns, currentUserId }: {
-    companyId?: number; employees: EvacEmployee[]; checkIns: EvacuationCheckInDTO[];
-    isActive: boolean; currentUserId?: number;
+/**
+ * Onglet VIP — LECTURE SEULE. La priorité vient du SIRH (fiche employé →
+ * Personnel & Évacuation) : tout Directeur est P1 automatiquement. La salle de
+ * crise ne désigne pas les VIP, elle surveille leur mise en sécurité en croisant
+ * la priorité effective (HRMS) avec les pointages temps réel.
+ */
+function VipView({ companyId, checkIns, assemblyPoints }: {
+    companyId?: number; checkIns: EvacuationCheckInDTO[]; assemblyPoints: AssemblyPointDTO[];
 }) {
-    const [priorities, setPriorities] = useState<EvacuationPriorityDTO[]>([]);
-    const [manage, setManage] = useState(false);
-    const [search, setSearch] = useState('');
-    const [level, setLevel] = useState<EvacPriorityLevel>('P1');
-    const [roleLabel, setRoleLabel] = useState('');
-    const [picked, setPicked] = useState<EvacEmployee | null>(null);
-    const [saving, setSaving] = useState(false);
+    const [profiles, setProfiles] = useState<EmployeeEvacuationDTO[]>([]);
 
     const refetch = useCallback(() => {
         if (!companyId) return;
-        listEvacuationPriorities(companyId).then(setPriorities).catch(() => setPriorities([]));
+        listEmployeeEvacuation(companyId).then(setProfiles).catch(() => setProfiles([]));
     }, [companyId]);
-    useEffect(() => { refetch(); const iv = setInterval(refetch, 8000); return () => clearInterval(iv); }, [refetch]);
+    useEffect(() => { refetch(); const iv = setInterval(refetch, 10000); return () => clearInterval(iv); }, [refetch]);
 
-    const empMap = useMemo(() => new Map(employees.map((e) => [e.id, e])), [employees]);
     const ciMap = useMemo(() => {
         const m = new Map<number, EvacuationCheckInDTO>();
         checkIns.forEach((c) => m.set(c.employeeId, c));
         return m;
     }, [checkIns]);
+    const apMap = useMemo(() => {
+        const m = new Map<number, string>();
+        assemblyPoints.forEach((a) => { if (a.id != null) m.set(a.id, a.name); });
+        return m;
+    }, [assemblyPoints]);
 
-    const rows = useMemo(() => priorities.map((p) => {
-        const emp = empMap.get(p.employeeId);
-        const ci = ciMap.get(p.employeeId);
-        const status = (ci?.status ?? 'PENDING') as EvacStatus | 'PENDING';
-        return {
-            ...p, name: emp?.name ?? `Employé #${p.employeeId}`, department: emp?.department?.trim() || 'Sans département',
-            status, at: ci?.checkedAt, assemblyPointName: ci?.assemblyPointName,
-        };
-    }), [priorities, empMap, ciMap]);
+    const rows = useMemo<VipRowData[]>(() => profiles
+        .filter((p) => !!p.effectivePriority)
+        .map((p) => {
+            const ci = ciMap.get(p.employeeId);
+            return {
+                employeeId: p.employeeId,
+                level: p.effectivePriority as EvacPriorityLevel,
+                name: p.employeeName || `Employé #${p.employeeId}`,
+                department: p.department?.trim() || 'Sans département',
+                positionName: p.positionName,
+                director: p.director,
+                status: (ci?.status ?? 'PENDING') as EvacStatus | 'PENDING',
+                at: ci?.checkedAt,
+                assignedPoint: p.assemblyPointId != null ? (apMap.get(p.assemblyPointId) ?? null) : null,
+            };
+        }), [profiles, ciMap, apMap]);
 
     const byLevel = (lv: EvacPriorityLevel) => rows.filter((r) => r.level === lv);
     const p1 = byLevel('P1'), p2 = byLevel('P2'), p3 = byLevel('P3');
-    const cnt = (list: typeof rows, st: string) => list.filter((r) => r.status === st).length;
+    const cnt = (list: VipRowData[], st: string) => list.filter((r) => r.status === st).length;
     const p1safe = cnt(p1, 'SAFE'), p1inj = cnt(p1, 'INJURED'), p1miss = cnt(p1, 'MISSING'), p1pend = cnt(p1, 'PENDING');
     const p1concerned = p1.filter((r) => r.status !== 'NOT_APPLICABLE').length;
     const p1pct = p1concerned ? Math.round((p1safe / p1concerned) * 100) : 0;
-
-    const candidates = useMemo(() => {
-        const q = search.trim().toLowerCase();
-        if (!q) return [] as EvacEmployee[];
-        return employees.filter((e) =>
-            e.name?.toLowerCase().includes(q) || (e.department ?? '').toLowerCase().includes(q)).slice(0, 8);
-    }, [search, employees]);
-
-    const add = () => {
-        if (!companyId || !picked) return;
-        setSaving(true);
-        upsertEvacuationPriority({ companyId, employeeId: picked.id, level, roleLabel: roleLabel || null }, currentUserId)
-            .then(() => { setPicked(null); setSearch(''); setRoleLabel(''); refetch(); })
-            .finally(() => setSaving(false));
-    };
-    const remove = (id?: number) => { if (id) deleteEvacuationPriority(id).then(refetch).catch(() => {}); };
 
     return (
         <div className="flex-1 min-h-0 overflow-y-auto px-8 py-6 space-y-6">
@@ -295,110 +296,54 @@ function VipView({ companyId, employees, checkIns, currentUserId }: {
                     </div>
                     <p className="text-[13px] text-slate-300 mt-0.5">Suivi rapproché des personnalités (P1) et du personnel sensible pendant l'évacuation.</p>
                 </div>
-                <button type="button" onClick={() => setManage((v) => !v)}
-                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold border ${
-                        manage ? 'bg-sky-500/20 text-sky-100 border-sky-400/50' : 'bg-white/10 text-white border-white/20 hover:bg-white/15'}`}>
-                    <IconUserStar size={16} stroke={1.8} /> {manage ? 'Terminer' : 'Gérer le personnel prioritaire'}
-                </button>
+                <span className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-semibold bg-white/8 text-slate-300 border border-white/15">
+                    <IconStar size={14} stroke={1.8} className="text-amber-300" /> Défini dans le SIRH · Directeurs = P1 automatique
+                </span>
             </div>
 
             {!companyId ? (
                 <p className="text-slate-400 py-10 text-center">Mine indéterminée.</p>
+            ) : rows.length === 0 ? (
+                <div className="rounded-2xl bg-slate-800/60 border border-white/15 p-10 text-center">
+                    <IconStar size={34} className="text-slate-500 mx-auto mb-2" stroke={1.5} />
+                    <p className="text-[15px] text-white font-semibold">Aucune personne prioritaire définie</p>
+                    <p className="text-[12.5px] text-slate-400 mt-1">La priorité d'évacuation se définit dans le SIRH : fiche employé → « Personnel &amp; Évacuation ». Tout Directeur est automatiquement P1.</p>
+                </div>
             ) : (
                 <>
-                    {/* Panneau de gestion */}
-                    {manage && (
-                        <div className="rounded-2xl bg-slate-800/70 border border-white/15 p-4 space-y-3">
-                            <div className="text-[13px] font-extrabold text-white uppercase tracking-[0.1em]">Désigner une personne prioritaire</div>
-                            <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-                                <div className="md:col-span-5 relative">
-                                    <label className="text-[11px] text-slate-300 font-semibold">Personne</label>
-                                    <div className="relative">
-                                        <IconSearch size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                                        <input value={picked ? picked.name : search}
-                                            onChange={(e) => { setPicked(null); setSearch(e.target.value); }}
-                                            placeholder="Rechercher un employé…"
-                                            className="w-full mt-1 pl-8 pr-3 py-2 rounded-lg bg-slate-900/70 border border-white/15 text-white text-[13px] placeholder:text-slate-500 focus:outline-none focus:border-sky-400" />
-                                    </div>
-                                    {!picked && candidates.length > 0 && (
-                                        <div className="absolute z-20 left-0 right-0 mt-1 rounded-lg bg-slate-900 border border-white/20 shadow-2xl max-h-56 overflow-y-auto">
-                                            {candidates.map((e) => (
-                                                <button key={e.id} type="button" onClick={() => { setPicked(e); setSearch(''); }}
-                                                    className="w-full text-left px-3 py-2 hover:bg-white/10 flex items-center justify-between gap-2">
-                                                    <span className="text-[13px] text-white truncate">{e.name}</span>
-                                                    <span className="text-[11px] text-slate-400 truncate">{e.department}</span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label className="text-[11px] text-slate-300 font-semibold">Niveau</label>
-                                    <select value={level} onChange={(e) => setLevel(e.target.value as EvacPriorityLevel)}
-                                        className="w-full mt-1 px-2 py-2 rounded-lg bg-slate-900/70 border border-white/15 text-white text-[13px] focus:outline-none focus:border-sky-400">
-                                        <option value="P1">P1 — Priorité 1</option>
-                                        <option value="P2">P2 — Priorité 2</option>
-                                        <option value="P3">P3 — Priorité 3</option>
-                                    </select>
-                                </div>
-                                <div className="md:col-span-3">
-                                    <label className="text-[11px] text-slate-300 font-semibold">Rôle / fonction (option.)</label>
-                                    <input value={roleLabel} onChange={(e) => setRoleLabel(e.target.value)} placeholder="Directeur Général…"
-                                        className="w-full mt-1 px-3 py-2 rounded-lg bg-slate-900/70 border border-white/15 text-white text-[13px] placeholder:text-slate-500 focus:outline-none focus:border-sky-400" />
-                                </div>
-                                <div className="md:col-span-2 flex items-end">
-                                    <button type="button" onClick={add} disabled={!picked || saving}
-                                        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500 text-white text-[13px] font-bold hover:bg-emerald-400 disabled:opacity-40">
-                                        <IconPlus size={15} stroke={2} /> Ajouter
-                                    </button>
-                                </div>
+                    {/* Tableau de bord P1 */}
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        <VipMetric big label="P1 sécurisés" value={`${p1pct}%`} sub={`${p1safe}/${p1concerned} concernés`} color={p1miss > 0 ? '#f87171' : p1pct >= 100 ? '#34d399' : '#fbbf24'} />
+                        <VipMetric label="Sécurisés" value={p1safe} color="#34d399" />
+                        <VipMetric label="Blessés" value={p1inj} color="#fbbf24" />
+                        <VipMetric label="Absents" value={p1miss} color="#f87171" />
+                        <VipMetric label="Reste à pointer" value={p1pend} color="#cbd5e1" />
+                    </div>
+
+                    {/* Roster P1 */}
+                    {p1.length > 0 && (
+                        <div>
+                            <div className="text-[13px] font-extrabold text-white uppercase tracking-[0.1em] mb-2 pl-2.5 border-l-4 border-red-400 flex items-center gap-2">
+                                <IconStar size={15} className="text-red-300" /> Priorité 1 — VIP ({p1.length})
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {p1.map((r) => <VipRow key={r.employeeId} r={r} />)}
                             </div>
                         </div>
                     )}
 
-                    {rows.length === 0 ? (
-                        <div className="rounded-2xl bg-slate-800/60 border border-white/15 p-10 text-center">
-                            <IconStar size={34} className="text-slate-500 mx-auto mb-2" stroke={1.5} />
-                            <p className="text-[15px] text-white font-semibold">Aucune personne prioritaire désignée</p>
-                            <p className="text-[12.5px] text-slate-400 mt-1">Cliquez « Gérer le personnel prioritaire » pour désigner les personnalités (P1) à évacuer en premier.</p>
-                        </div>
-                    ) : (
-                        <>
-                            {/* Tableau de bord P1 */}
-                            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                                <VipMetric big label="P1 sécurisés" value={`${p1pct}%`} sub={`${p1safe}/${p1concerned} concernés`} color={p1miss > 0 ? '#f87171' : p1pct >= 100 ? '#34d399' : '#fbbf24'} />
-                                <VipMetric label="Sécurisés" value={p1safe} color="#34d399" />
-                                <VipMetric label="Blessés" value={p1inj} color="#fbbf24" />
-                                <VipMetric label="Absents" value={p1miss} color="#f87171" />
-                                <VipMetric label="Reste à pointer" value={p1pend} color="#cbd5e1" />
+                    {/* P2 / P3 */}
+                    {[{ lv: 'P2' as const, list: p2 }, { lv: 'P3' as const, list: p3 }].filter((g) => g.list.length > 0).map((g) => (
+                        <div key={g.lv}>
+                            <div className="text-[13px] font-extrabold text-white uppercase tracking-[0.1em] mb-2 pl-2.5 border-l-4 flex items-center gap-2"
+                                style={{ borderColor: LEVEL_META[g.lv].c }}>
+                                {LEVEL_META[g.lv].label} ({g.list.length})
                             </div>
-
-                            {/* Roster P1 */}
-                            {p1.length > 0 && (
-                                <div>
-                                    <div className="text-[13px] font-extrabold text-white uppercase tracking-[0.1em] mb-2 pl-2.5 border-l-4 border-red-400 flex items-center gap-2">
-                                        <IconStar size={15} className="text-red-300" /> Priorité 1 — VIP ({p1.length})
-                                    </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                        {p1.map((r) => <VipRow key={r.id} r={r} manage={manage} onRemove={() => remove(r.id)} />)}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* P2 / P3 */}
-                            {[{ lv: 'P2' as const, list: p2 }, { lv: 'P3' as const, list: p3 }].filter((g) => g.list.length > 0).map((g) => (
-                                <div key={g.lv}>
-                                    <div className="text-[13px] font-extrabold text-white uppercase tracking-[0.1em] mb-2 pl-2.5 border-l-4 mb-2 flex items-center gap-2"
-                                        style={{ borderColor: LEVEL_META[g.lv].c }}>
-                                        {LEVEL_META[g.lv].label} ({g.list.length})
-                                    </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                                        {g.list.map((r) => <VipRow key={r.id} r={r} manage={manage} onRemove={() => remove(r.id)} />)}
-                                    </div>
-                                </div>
-                            ))}
-                        </>
-                    )}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                {g.list.map((r) => <VipRow key={r.employeeId} r={r} />)}
+                            </div>
+                        </div>
+                    ))}
                 </>
             )}
         </div>
@@ -925,8 +870,7 @@ export default function EvacuationWallboard() {
             )}
 
             {tab === 'vip' && (
-                <VipView companyId={alert?.companyId} employees={employees} checkIns={checkIns}
-                    isActive={isActive} currentUserId={currentUserId} />
+                <VipView companyId={alert?.companyId} checkIns={checkIns} assemblyPoints={assemblyPoints} />
             )}
 
             {tab === 'liaison' && (
