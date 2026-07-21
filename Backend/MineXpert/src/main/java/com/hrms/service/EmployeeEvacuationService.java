@@ -38,11 +38,16 @@ public class EmployeeEvacuationService {
     private final EmployeeEmergencyContactRepository contactRepo;
     private final EmployeeRepository employeeRepo;
 
-    /** Un directeur est reconnu a son intitule de poste. */
+    /**
+     * Leadership du site reconnu a l'intitule de poste -> P1 automatique.
+     * Couvre les directeurs et, en l'absence de poste "Directeur" (donnees a
+     * intitules anglais), les tetes de site : Manager et Superintendent.
+     */
     public static boolean isDirector(String positionName) {
         if (positionName == null) return false;
         String n = positionName.toLowerCase();
-        return n.contains("directeur") || n.contains("directrice") || n.contains("director");
+        return n.contains("directeur") || n.contains("directrice") || n.contains("director")
+                || n.contains("manager") || n.contains("superintendent");
     }
 
     private static EvacuationPriorityLevel effective(EvacuationPriorityLevel stored, boolean director) {

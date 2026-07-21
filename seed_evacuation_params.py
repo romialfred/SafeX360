@@ -18,7 +18,9 @@ import re
 
 from db_env import connect
 
-DIRECTOR_RE = re.compile(r"directeur|directrice|director", re.IGNORECASE)
+# Leadership du site -> P1 (aligne sur EmployeeEvacuationService.isDirector) :
+# directeurs + tetes de site anglophones (Manager, Superintendent).
+DIRECTOR_RE = re.compile(r"directeur|directrice|director|manager|superintendent", re.IGNORECASE)
 
 DDL_EVAC = """
 CREATE TABLE IF NOT EXISTS employee_evacuation (
