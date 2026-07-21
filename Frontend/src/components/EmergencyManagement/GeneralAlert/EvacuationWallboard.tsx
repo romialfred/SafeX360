@@ -6,7 +6,7 @@ import {
 } from 'recharts';
 import {
     IconShieldCheck, IconStethoscope, IconShieldX, IconUsers,
-    IconAlertTriangle, IconMaximize, IconWifi, IconRefresh, IconMapPin, IconBuildingCommunity,
+    IconAlertTriangle, IconMaximize, IconWifi, IconRefresh, IconMapPin, IconBuildingCommunity, IconActivity,
 } from '@tabler/icons-react';
 import {
     getAlert, getAlertCheckIns,
@@ -15,7 +15,7 @@ import {
 import { listAssemblyPoints, type AssemblyPointDTO } from '../../../services/EmergencyService';
 import { getEmployeesWithDepartment } from '../../../services/EmployeeService';
 import { formatReasonCode } from './alertHelpers';
-import { computeEvacuationStats, formatClock, type EvacEmployee, type RosterPerson } from './evacuationStats';
+import { computeEvacuationStats, formatClock, type EvacEmployee, type RosterPerson, type EvacStatus } from './evacuationStats';
 
 /**
  * EvacuationWallboard — Écran géant détaché (salle de crise).
@@ -84,6 +84,81 @@ function Panel({ title, icon, children, className = '' }: {
     );
 }
 
+// ── Journal temps réel (volet droit, façon fil d'actualité pro) ──────────────
+
+type FeedEvent = {
+    employeeId: number;
+    name: string;
+    department: string;
+    status: EvacStatus;
+    at: string;
+    assemblyPointName?: string | null;
+};
+
+const FEED_META: Record<EvacStatus, { emoji: string; verb: string; color: string; bg: string; ring: string }> = {
+    SAFE:           { emoji: '🎉', verb: 'mis en sécurité',     color: '#34d399', bg: 'rgba(16,185,129,0.12)',  ring: 'rgba(16,185,129,0.45)' },
+    INJURED:        { emoji: '🤕', verb: 'signalé blessé',       color: '#fbbf24', bg: 'rgba(245,158,11,0.13)',  ring: 'rgba(245,158,11,0.45)' },
+    MISSING:        { emoji: '🚨', verb: 'porté absent',         color: '#f87171', bg: 'rgba(239,68,68,0.15)',   ring: 'rgba(239,68,68,0.5)'   },
+    NOT_APPLICABLE: { emoji: '➖', verb: 'déclaré non concerné', color: '#cbd5e1', bg: 'rgba(148,163,184,0.10)', ring: 'rgba(148,163,184,0.35)' },
+};
+
+const fmtFeedTime = (iso: string): string => {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+};
+
+function ActivityFeed({ events, active }: { events: FeedEvent[]; active: boolean }) {
+    const listRef = useRef<HTMLDivElement>(null);
+    // Auto-défilement : la dernière mise à jour reste visible en bas (façon chat).
+    useEffect(() => {
+        const el = listRef.current;
+        if (el) el.scrollTop = el.scrollHeight;
+    }, [events]);
+
+    return (
+        <>
+            <style>{`@keyframes feedIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}`}</style>
+            <div className="shrink-0 px-4 py-3 border-b border-white/10 flex items-center gap-2">
+                <IconActivity size={17} className="text-sky-300" stroke={2} />
+                <div className="text-[13px] font-extrabold uppercase tracking-[0.1em] text-white">Journal du centre de commande</div>
+                {active && <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-1" />}
+                <span className="ml-auto text-[12px] text-slate-400 tabular-nums">{events.length}</span>
+            </div>
+            <div ref={listRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
+                {events.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center text-center px-4">
+                        <IconActivity size={30} className="text-slate-600 mb-2" stroke={1.5} />
+                        <p className="text-[13px] text-slate-400">En attente d'actions du centre de commande…</p>
+                        <p className="text-[11.5px] text-slate-500 mt-1">Chaque mise en sécurité, blessure ou absence s'affiche ici en direct.</p>
+                    </div>
+                ) : (
+                    events.map((ev) => {
+                        const m = FEED_META[ev.status] ?? FEED_META.NOT_APPLICABLE;
+                        return (
+                            <div key={`${ev.employeeId}:${ev.at}`}
+                                className="px-3 py-2 rounded-xl border flex items-start gap-2.5"
+                                style={{ background: m.bg, borderColor: m.ring, animation: 'feedIn .35s ease' }}>
+                                <span className="text-[19px] leading-none mt-0.5 select-none">{m.emoji}</span>
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="text-[14.5px] font-bold text-white truncate">{ev.name}</span>
+                                        <span className="ml-auto text-[11px] tabular-nums text-slate-400 shrink-0">{fmtFeedTime(ev.at)}</span>
+                                    </div>
+                                    <div className="text-[12.5px] font-bold" style={{ color: m.color }}>{m.verb}</div>
+                                    <div className="text-[11.5px] text-slate-400 truncate">
+                                        {ev.department}{ev.assemblyPointName ? ` · ${ev.assemblyPointName}` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
+            </div>
+        </>
+    );
+}
+
 export default function EvacuationWallboard() {
     const { id } = useParams<{ id: string }>();
     const [alert, setAlert] = useState<GeneralAlertDTO | null>(null);
@@ -142,12 +217,37 @@ export default function EvacuationWallboard() {
         return () => { alive = false; clearInterval(iv); };
     }, [id]);
 
+    const isActive = alert?.status === 'ACTIVE';
+    // La durée doit se FIGER à la clôture : dès que l'alerte n'est plus active,
+    // on gèle « maintenant » sur endedAt — sinon le chrono continue de courir.
+    const endedAtMs = alert?.endedAt ? new Date(alert.endedAt).getTime() : null;
+    const effectiveNowMs = !isActive && endedAtMs && !Number.isNaN(endedAtMs)
+        ? endedAtMs
+        : (nowMs || undefined);
+
     const s = useMemo(
-        () => computeEvacuationStats(employees, checkIns, assemblyPoints, alert?.triggeredAt, nowMs || undefined),
-        [employees, checkIns, assemblyPoints, alert?.triggeredAt, nowMs],
+        () => computeEvacuationStats(employees, checkIns, assemblyPoints, alert?.triggeredAt, effectiveNowMs),
+        [employees, checkIns, assemblyPoints, alert?.triggeredAt, effectiveNowMs],
     );
 
-    const isActive = alert?.status === 'ACTIVE';
+    // Journal temps réel : un événement par pointage horodaté (plus ancien → plus récent).
+    const feedEvents = useMemo<FeedEvent[]>(() => {
+        const empMap = new Map(employees.map((e) => [e.id, e]));
+        return checkIns
+            .filter((c) => c.checkedAt)
+            .map((c) => {
+                const emp = empMap.get(c.employeeId);
+                return {
+                    employeeId: c.employeeId,
+                    name: c.employeeName || emp?.name || `Employé #${c.employeeId}`,
+                    department: (c.employeeDepartment || emp?.department || 'Sans département').trim(),
+                    status: c.status as EvacStatus,
+                    at: c.checkedAt as string,
+                    assemblyPointName: c.assemblyPointName ?? null,
+                };
+            })
+            .sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
+    }, [checkIns, employees]);
     const isDrill = Boolean(alert?.drillMode);
     const clock = nowMs ? new Date(nowMs).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '—';
 
@@ -164,10 +264,10 @@ export default function EvacuationWallboard() {
     const worstDepts = s.byDepartment.slice(0, 6); // les moins avancés (déjà triés)
 
     return (
-        <div ref={rootRef} className="min-h-screen w-full text-white overflow-x-hidden"
+        <div ref={rootRef} className="h-screen w-full text-white flex flex-col overflow-hidden"
             style={{ background: 'linear-gradient(180deg,#111a2e 0%,#0d1424 60%,#0a0f1c 100%)' }}>
             {/* ── En-tête ── */}
-            <header className="flex items-center justify-between gap-4 px-8 pt-5 pb-4 flex-wrap border-b border-white/10">
+            <header className="shrink-0 flex items-center justify-between gap-4 px-8 pt-5 pb-4 flex-wrap border-b border-white/10">
                 <div className="flex items-center gap-4 min-w-0">
                     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${isActive ? 'bg-red-600' : 'bg-emerald-600'}`}>
                         {isActive ? <IconAlertTriangle size={30} stroke={2} className="animate-pulse" /> : <IconShieldCheck size={30} stroke={2} />}
@@ -211,7 +311,8 @@ export default function EvacuationWallboard() {
                 </div>
             </header>
 
-            <div className="px-8 py-6 space-y-6">
+            <div className="flex-1 min-h-0 flex flex-col xl:flex-row overflow-y-auto xl:overflow-hidden">
+                <main className="flex-1 min-w-0 min-h-0 px-8 py-6 space-y-6 xl:overflow-y-auto">
                 {/* ═══ Rangée 1 : Hero + Jauge + Progression ═══ */}
                 <div className="grid grid-cols-12 gap-6">
                     {/* Non localisés — LE chiffre */}
@@ -400,10 +501,16 @@ export default function EvacuationWallboard() {
                         </div>
                     </Panel>
                 )}
+                </main>
+
+                {/* ── Volet droit : journal temps réel du centre de commande ── */}
+                <aside className="w-full xl:w-[380px] shrink-0 flex flex-col min-h-0 border-t xl:border-t-0 xl:border-l border-white/10 bg-slate-900/40 max-xl:h-[42vh]">
+                    <ActivityFeed events={feedEvents} active={isActive} />
+                </aside>
             </div>
 
             {/* ── Pied ── */}
-            <footer className="px-8 py-3 flex items-center justify-between text-[12.5px] text-slate-400 border-t border-white/10">
+            <footer className="shrink-0 px-8 py-3 flex items-center justify-between text-[12.5px] text-slate-400 border-t border-white/10">
                 <span className="inline-flex items-center gap-1.5">
                     <IconWifi size={14} className={syncing ? 'text-sky-300' : 'text-slate-400'} />
                     Actualisation automatique toutes les {POLL_MS / 1000}s
