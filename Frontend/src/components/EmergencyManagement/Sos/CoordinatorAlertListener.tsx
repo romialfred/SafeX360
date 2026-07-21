@@ -607,17 +607,10 @@ const CoordinatorAlertListener = () => {
                             type="button"
                             onClick={handleAcknowledge}
                             disabled={acknowledging}
-                            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3.5 rounded-lg bg-emerald-600 text-white text-[14px] font-bold hover:bg-emerald-700 transition-colors shadow-lg ring-2 ring-emerald-300 disabled:opacity-60"
+                            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3.5 rounded-lg bg-emerald-600 text-white text-[15px] font-bold hover:bg-emerald-700 transition-colors shadow-lg ring-2 ring-emerald-300 disabled:opacity-60"
                         >
-                            <IconCheck size={18} stroke={2.6} />
+                            <IconCheck size={19} stroke={2.6} />
                             {acknowledging ? 'Prise en charge…' : 'PRENDRE EN CHARGE'}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleViewDetail}
-                            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3.5 rounded-lg bg-slate-800 text-white text-[14px] font-semibold hover:bg-slate-900 transition-colors shadow-md"
-                        >
-                            Voir détail complet
                         </button>
                         <button
                             type="button"

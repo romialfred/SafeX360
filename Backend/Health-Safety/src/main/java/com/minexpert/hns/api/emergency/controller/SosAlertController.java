@@ -9,8 +9,11 @@ import org.springframework.web.bind.annotation.*;
 
 import com.minexpert.hns.api.emergency.dto.SosAlertDTO;
 import com.minexpert.hns.api.emergency.dto.SosLifecycleEventDTO;
+import com.minexpert.hns.api.emergency.dto.SosMessageDTO;
 import com.minexpert.hns.api.emergency.dto.SosTransitionRequest;
+import com.minexpert.hns.api.emergency.enums.SosMessageSender;
 import com.minexpert.hns.api.emergency.service.SosAlertService;
+import com.minexpert.hns.api.emergency.service.SosMessageService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -28,6 +31,7 @@ import lombok.RequiredArgsConstructor;
 public class SosAlertController {
 
     private final SosAlertService service;
+    private final SosMessageService messageService;
 
     // ─── Lecture ─────────────────────────────────────────────────────────────
 
@@ -108,5 +112,24 @@ public class SosAlertController {
         @RequestParam(required = false) Long actorId
     ) {
         return ResponseEntity.ok(service.falseAlarm(id, actorId, req));
+    }
+
+    // ─── Fil de communication (console d'intervention) ────────────────────────
+
+    @GetMapping("/{id}/messages")
+    public ResponseEntity<List<SosMessageDTO>> messages(@PathVariable Long id) {
+        return ResponseEntity.ok(messageService.list(id));
+    }
+
+    @PostMapping("/{id}/messages")
+    public ResponseEntity<SosMessageDTO> postMessage(
+        @PathVariable Long id,
+        @RequestBody SosMessageDTO req,
+        @RequestParam(required = false) Long actorId
+    ) {
+        SosMessageSender sender = req.getSenderType() != null ? req.getSenderType() : SosMessageSender.COORDINATOR;
+        return ResponseEntity.ok(
+            messageService.post(id, sender, actorId, req.getSenderName(), req.getBody())
+        );
     }
 }

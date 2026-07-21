@@ -10,4 +10,7 @@ public interface EmployeeNameDTO {
     Long getCompId();
 
     String getEmail();
+
+    /** Téléphone personnel (peut être null) — utilisé par la console d'intervention SOS. */
+    String getPhone();
 }

@@ -11,4 +11,6 @@ public class EmployeeNameDTO {
     private Long id;
     private String name;
     private String empNumber;
+    /** Téléphone du concerné (console d'intervention SOS). */
+    private String phone;
 }

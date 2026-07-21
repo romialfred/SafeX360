@@ -34,6 +34,7 @@ class SosAlertServiceTest {
     @Mock private SimpMessagingTemplate messaging;
     @Mock private EmergencyEmailService emergencyEmailService;
     @Mock private EmergencyPermissionService permissionService;
+    @Mock private com.minexpert.hns.clients.HrmsClient hrmsClient;
 
     private SosAlertService service;
 
@@ -46,7 +47,8 @@ class SosAlertServiceTest {
             auditService,
             messaging,
             emergencyEmailService,
-            permissionService
+            permissionService,
+            hrmsClient
         );
     }
 

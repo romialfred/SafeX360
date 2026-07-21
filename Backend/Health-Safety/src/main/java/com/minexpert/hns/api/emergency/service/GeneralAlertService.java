@@ -219,6 +219,21 @@ public class GeneralAlertService {
     // ── Check-in ─────────────────────────────────────────────────────────────
 
     @Transactional
+    /**
+     * Garde IRRÉVERSIBLE : dès qu'une alerte est CLÔTURÉE (ENDED), le pointage
+     * est FIGÉ — plus aucun changement de statut d'un employé (en sécurité,
+     * absent, blessé…) n'est accepté. Une alerte terminée ne se rouvre pas :
+     * le gel est donc définitif. Renvoie l'alerte active pour réutilisation.
+     */
+    private GeneralAlert requireActiveAlert(Long alertId) {
+        GeneralAlert a = alertRepo.findById(alertId)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "ALERT_NOT_FOUND"));
+        if (a.getStatus() == GeneralAlertStatus.ENDED) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "ALERT_ENDED");
+        }
+        return a;
+    }
+
     public EvacuationCheckInDTO checkIn(
         Long alertId,
         Long employeeId,
@@ -228,6 +243,8 @@ public class GeneralAlertService {
         String note,
         Long actorId
     ) {
+        // Pointage refusé si l'alerte est clôturée (gel irréversible).
+        GeneralAlert activeAlert = requireActiveAlert(alertId);
         // Upsert : si l'employé a déjà pointé, on met à jour
         EvacuationCheckIn ci = checkInRepo
             .findByGeneralAlertIdAndEmployeeId(alertId, employeeId)
@@ -249,7 +266,7 @@ public class GeneralAlertService {
         EvacuationCheckIn saved = checkInRepo.save(ci);
 
         // Broadcast l'alerte mise à jour pour refresh des stats côté UI
-        alertRepo.findById(alertId).ifPresent(a -> broadcast(a.getCompanyId(), toDto(a)));
+        broadcast(activeAlert.getCompanyId(), toDto(activeAlert));
 
         String apName = (saved.getAssemblyPointId() != null)
                 ? apRepo.findById(saved.getAssemblyPointId()).map(AssemblyPoint::getName).orElse(null)
@@ -272,6 +289,8 @@ public class GeneralAlertService {
         if (req == null || req.getEntries() == null || req.getEntries().isEmpty()) {
             return List.of();
         }
+        // Pointage en lot refusé si l'alerte est clôturée (gel irréversible).
+        GeneralAlert activeAlert = requireActiveAlert(alertId);
 
         // Un seul aller-retour en base pour connaître les pointages déjà posés.
         Map<Long, EvacuationCheckIn> existingByEmployee = checkInRepo
@@ -303,7 +322,7 @@ public class GeneralAlertService {
         List<EvacuationCheckIn> saved = checkInRepo.saveAll(toSave);
 
         // Une seule diffusion pour tout le lot.
-        alertRepo.findById(alertId).ifPresent(a -> broadcast(a.getCompanyId(), toDto(a)));
+        broadcast(activeAlert.getCompanyId(), toDto(activeAlert));
 
         List<Long> apIds = saved.stream().map(EvacuationCheckIn::getAssemblyPointId)
                 .filter(java.util.Objects::nonNull).distinct().toList();

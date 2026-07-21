@@ -287,6 +287,12 @@ const GeneralAlertDetailPage = () => {
 
     const handleSaveEmployeeStatus = async () => {
         if (!editingEmployee || !alert?.id) return;
+        // Gel irréversible : une alerte terminée n'accepte plus aucun pointage
+        // (le serveur le refuse aussi — ceci évite l'appel et informe l'agent).
+        if (alert.status !== 'ACTIVE') {
+            errorNotification('Alerte terminée — le pointage est figé et ne peut plus être modifié.');
+            return;
+        }
         setEditSaving(true);
         try {
             await checkInToAlert({
@@ -777,14 +783,21 @@ const GeneralAlertDetailPage = () => {
                         </p>
                     </div>
 
+                    {!isActive && (
+                        <div className="mt-2 flex items-center gap-1.5 px-3 py-2 rounded-md bg-slate-100 text-slate-600 text-[12px] font-medium">
+                            <IconArchive size={13} stroke={1.8} /> Alerte terminée — le pointage est figé, aucun statut ne peut plus être modifié.
+                        </div>
+                    )}
                     <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
                         <button type="button" onClick={closeEditStatus} disabled={editSaving} className="inline-flex items-center gap-1 px-3.5 py-2 rounded-md border border-slate-200 bg-white text-slate-700 text-[12.5px] font-medium hover:bg-slate-50 disabled:opacity-50">
-                            <IconX size={12} stroke={2} /> Annuler
+                            <IconX size={12} stroke={2} /> {isActive ? 'Annuler' : 'Fermer'}
                         </button>
-                        <button type="button" onClick={handleSaveEmployeeStatus} disabled={editSaving} className="inline-flex items-center gap-1 px-3.5 py-2 rounded-md bg-amber-600 text-white text-[12.5px] font-semibold hover:bg-amber-700 transition-colors shadow-sm disabled:opacity-50">
-                            <IconShieldCheck size={12} stroke={2} />
-                            {editSaving ? 'Enregistrement…' : 'Enregistrer le statut'}
-                        </button>
+                        {isActive && (
+                            <button type="button" onClick={handleSaveEmployeeStatus} disabled={editSaving} className="inline-flex items-center gap-1 px-3.5 py-2 rounded-md bg-amber-600 text-white text-[12.5px] font-semibold hover:bg-amber-700 transition-colors shadow-sm disabled:opacity-50">
+                                <IconShieldCheck size={12} stroke={2} />
+                                {editSaving ? 'Enregistrement…' : 'Enregistrer le statut'}
+                            </button>
+                        )}
                     </div>
                 </div>
             </Modal>

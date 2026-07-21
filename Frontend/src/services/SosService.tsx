@@ -21,6 +21,7 @@ export interface SosAlertDTO {
     companyId: number;
     employeeId: number;
     employeeName?: string | null;
+    employeePhone?: string | null;
     coordinatorId?: number | null;
     coordinatorName?: string | null;
     rescueTeamId?: number | null;
@@ -58,6 +59,22 @@ export interface SosTransitionRequest {
     falseAlarmReason?: string | null;
 }
 
+/**
+ * Message du fil de communication d'un SOS (console d'intervention).
+ *
+ * <p>`senderType` distingue la parole du coordinateur (bulle droite), du
+ * concerné/victime (bulle gauche) et les jalons système (au centre).</p>
+ */
+export interface SosMessageDTO {
+    id: number;
+    sosAlertId: number;
+    senderType: 'COORDINATOR' | 'VICTIM' | 'SYSTEM';
+    senderId?: number | null;
+    senderName?: string | null;
+    body: string;
+    createdAt: string;
+}
+
 // ── Lecture ─────────────────────────────────────────────────────────────────
 
 export const listSosAlerts = (
@@ -76,6 +93,27 @@ export const getSosAlert = (id: number): Promise<SosAlertDTO> =>
 
 export const getSosLifecycle = (id: number): Promise<SosLifecycleEventDTO[]> =>
     axiosInstance.get(`/hns/emergency/sos/${id}/lifecycle`).then((r) => r.data);
+
+// ── Fil de communication (chat) ──────────────────────────────────────────────
+
+/** Liste les messages du fil d'un SOS, triés par date croissante. */
+export const listSosMessages = (id: number): Promise<SosMessageDTO[]> =>
+    axiosInstance.get(`/hns/emergency/sos/${id}/messages`).then((r) => r.data);
+
+/** Poste un message coordinateur dans le fil du SOS. */
+export const postSosMessage = (
+    id: number,
+    body: string,
+    actorId?: number,
+    senderName?: string
+): Promise<SosMessageDTO> =>
+    axiosInstance
+        .post(
+            `/hns/emergency/sos/${id}/messages`,
+            { body, senderType: 'COORDINATOR', senderName },
+            { params: actorId !== undefined ? { actorId } : {} }
+        )
+        .then((r) => r.data);
 
 // ── Création ────────────────────────────────────────────────────────────────
 

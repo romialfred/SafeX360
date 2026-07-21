@@ -58,6 +58,7 @@ public class SosAlertService {
     private final SimpMessagingTemplate messaging;
     private final EmergencyEmailService emergencyEmailService;
     private final EmergencyPermissionService permissionService;
+    private final com.minexpert.hns.clients.HrmsClient hrmsClient;
 
     /**
      * Clôture d'un SOS (CLOSED / FALSE_ALARM) réservée aux COORDINATEURS : sans
@@ -267,7 +268,27 @@ public class SosAlertService {
     }
 
     public Optional<SosAlertDTO> get(Long id) {
-        return alertRepo.findById(id).map(this::toDto);
+        // Enrichissement nom + téléphone du concerné (console d'intervention) :
+        // fait uniquement sur le détail (un seul appel HRMS), pas sur les listes.
+        return alertRepo.findById(id).map(this::toDto).map(this::enrichEmployee);
+    }
+
+    /** Résout nom + téléphone du concerné via HRMS ; échec HRMS = non bloquant. */
+    private SosAlertDTO enrichEmployee(SosAlertDTO dto) {
+        if (dto.getEmployeeId() == null) {
+            return dto;
+        }
+        try {
+            var list = hrmsClient.getEmployeeNameByIds(List.of(dto.getEmployeeId()));
+            if (list != null && !list.isEmpty()) {
+                var e = list.get(0);
+                dto.setEmployeeName(e.getName());
+                dto.setEmployeePhone(e.getPhone());
+            }
+        } catch (Exception ex) {
+            log.warn("[SosAlertService] enrichissement HRMS échoué pour SOS#{}: {}", dto.getId(), ex.getMessage());
+        }
+        return dto;
     }
 
     public List<SosLifecycleEventDTO> getLifecycle(Long alertId) {

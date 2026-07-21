@@ -24,6 +24,7 @@ public class SosAlertDTO {
     @NotNull(message = "employeeId is required")
     private Long employeeId;
     private String employeeName;
+    private String employeePhone;
     private Long coordinatorId;
     private String coordinatorName;
     private Long rescueTeamId;

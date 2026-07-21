@@ -205,7 +205,7 @@ public interface EmployeeRepository extends CrudRepository<Employee, Long> {
     @Query("SELECT e.contractCategory AS category, COUNT(e) AS count FROM Employee e GROUP BY e.contractCategory")
     List<CategoryCount> countEmployeesByContract();
 
-    @Query("SELECT e.id AS id, CONCAT(e.firstName, ' ', e.familyName) AS name, e.uniqueNumber AS empNumber " +
+    @Query("SELECT e.id AS id, CONCAT(e.firstName, ' ', e.familyName) AS name, e.uniqueNumber AS empNumber, e.phoneNumber AS phone " +
             "FROM Employee e " +
             "WHERE e.id IN :employees " +
             "AND (e.effectiveEndDate IS NULL OR e.effectiveEndDate > CURRENT_DATE)")

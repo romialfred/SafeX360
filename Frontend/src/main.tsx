@@ -45,3 +45,19 @@ if (!import.meta.env.DEV && 'serviceWorker' in navigator) {
     })
     .catch(() => undefined);
 }
+
+// Chunk périmé après un déploiement : une page ouverte avant le déploiement
+// référence des chunks lazy dont le hash n'existe plus → « Failed to fetch
+// dynamically imported module » à la navigation. Vite émet `vite:preloadError` ;
+// on recharge UNE fois pour récupérer l'index + les chunks à jour. Garde-fou
+// sessionStorage pour ne pas boucler si le rechargement ne résout pas.
+window.addEventListener('vite:preloadError', () => {
+  const KEY = 'safex:chunk-reloaded';
+  if (sessionStorage.getItem(KEY)) return;
+  sessionStorage.setItem(KEY, '1');
+  window.location.reload();
+});
+// Une navigation réussie efface le garde-fou (prochain incident → 1 reload permis).
+window.addEventListener('load', () => {
+  setTimeout(() => sessionStorage.removeItem('safex:chunk-reloaded'), 8000);
+});
