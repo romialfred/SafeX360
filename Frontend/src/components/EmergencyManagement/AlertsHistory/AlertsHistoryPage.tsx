@@ -8,11 +8,11 @@ import {
     IconUrgent,
     IconHistory,
     IconShieldCheck,
-    IconShieldX,
-    IconStethoscope,
     IconUsers,
     IconSearch,
-    IconMapPin,
+    IconBolt,
+    IconArrowRight,
+    IconActivity,
 } from '@tabler/icons-react';
 import PageHeader from '../../UtilityComp/PageHeader';
 import ColoredTabs from '../../UtilityComp/ColoredTabs';
@@ -62,6 +62,15 @@ const formatDuration = (sec?: number): string => {
     if (h > 0) return `${h}h ${m}m`;
     if (totalMin > 0) return `${m}m`;
     return '< 1 min';
+};
+
+/** Écart en secondes entre deux instants ISO (null si l'un manque). */
+const diffSeconds = (from?: string | null, to?: string | null): number | null => {
+    if (!from || !to) return null;
+    const a = new Date(from).getTime();
+    const b = new Date(to).getTime();
+    if (Number.isNaN(a) || Number.isNaN(b)) return null;
+    return Math.max(0, Math.round((b - a) / 1000));
 };
 
 // Statuts SOS considérés « ouverts » (traitement en cours).
@@ -341,97 +350,174 @@ const AlertsHistoryPage = () => {
     );
 };
 
+// ── Briques statistiques réutilisables ───────────────────────────────────────
+
+const CHIP_TONE: Record<string, string> = {
+    emerald: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+    amber: 'bg-amber-50 text-amber-700 border-amber-100',
+    red: 'bg-red-50 text-red-700 border-red-100',
+    slate: 'bg-slate-50 text-slate-600 border-slate-100',
+    sky: 'bg-sky-50 text-sky-700 border-sky-100',
+};
+
+/** Petite pastille chiffrée « valeur + libellé ». */
+function StatChip({ value, label, tone }: { value: number | string; label: string; tone: keyof typeof CHIP_TONE }) {
+    return (
+        <div className={`flex-1 min-w-0 rounded-lg border px-1.5 py-1.5 text-center ${CHIP_TONE[tone]}`}>
+            <div className="text-[17px] font-bold leading-none">{value}</div>
+            <div className="text-[9px] uppercase tracking-[0.05em] mt-1 opacity-80 truncate">{label}</div>
+        </div>
+    );
+}
+
+/** Barre de progression segmentée (proportions d'un effectif). */
+function SegBar({ segments }: { segments: { pct: number; color: string }[] }) {
+    return (
+        <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden flex">
+            {segments
+                .filter((s) => s.pct > 0)
+                .map((s, i) => (
+                    <div key={i} style={{ width: `${s.pct}%`, background: s.color }} title={`${Math.round(s.pct)} %`} />
+                ))}
+        </div>
+    );
+}
+
 // ── Tuile Alerte Générale ────────────────────────────────────────────────────
 
 function GeneralAlertTile({ alert, onOpen }: { alert: GeneralAlertDTO; onOpen: () => void }) {
     const isActive = alert.status === 'ACTIVE';
     const isDrill = Boolean(alert.drillMode);
 
+    // ── Statistiques d'appel nominatif ──
+    const safe = alert.safeCount ?? 0;
+    const injured = alert.injuredCount ?? 0;
+    const missing = alert.missingCount ?? 0;
+    const na = alert.notApplicableCount ?? 0;
+    const pointed = safe + injured + missing + na;
+    const roster = alert.totalEmployees ?? pointed;
+    const pending = Math.max(0, roster - pointed);
+    const concerned = Math.max(0, roster - na); // personnes concernées par l'évacuation
+    const securedPct = concerned > 0 ? Math.round((safe / concerned) * 100) : 0;
+    const pct = (n: number) => (roster > 0 ? (n / roster) * 100 : 0);
+    const hasRoster = roster > 0;
+
+    // Couleur du % sécurisés (rouge si des manquants, ambre si incomplet, vert si tout sécurisé)
+    const secTone = missing > 0 ? 'red' : pending > 0 || securedPct < 100 ? 'amber' : 'emerald';
+    const secColor = secTone === 'red' ? 'text-red-600' : secTone === 'amber' ? 'text-amber-600' : 'text-emerald-600';
+
     return (
         <button
             type="button"
             onClick={onOpen}
-            className={`text-left bg-white border rounded-xl shadow-sm p-4 cursor-pointer hover:shadow-md transition-[box-shadow,border-color] flex flex-col gap-3 ${
+            className={`group text-left bg-white border rounded-xl shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-[box-shadow,border-color] flex flex-col ${
                 isActive ? 'border-red-300 ring-2 ring-red-100' : 'border-slate-200 hover:border-slate-300'
             }`}
         >
-            {/* Badges statut + exercice/réel */}
-            <div className="flex items-center justify-between gap-2">
-                <span
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-bold uppercase tracking-[0.08em] ${
-                        isActive ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'
-                    }`}
-                >
-                    {isActive && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
-                    {isActive ? 'EN COURS' : 'Terminée'}
-                </span>
-                <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-[0.08em] border ${
-                        isDrill
-                            ? 'bg-sky-50 text-sky-700 border-sky-200'
-                            : 'bg-orange-50 text-orange-700 border-orange-200'
-                    }`}
-                >
-                    {isDrill ? 'Exercice' : 'Réel'}
-                </span>
-            </div>
+            {/* Bandeau d'accent coloré */}
+            <div className={`h-1.5 w-full ${isActive ? 'bg-gradient-to-r from-red-500 to-orange-500' : 'bg-gradient-to-r from-emerald-500 to-teal-500'}`} />
 
-            {/* Motif */}
-            <div>
-                <p
-                    className="text-[15px] text-slate-900 leading-tight"
-                    style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500 }}
-                >
-                    {formatReasonCode(alert.reasonCode)}
-                </p>
-                {alert.message && (
-                    <p className="text-[12px] text-slate-600 italic mt-1 line-clamp-2">« {alert.message} »</p>
-                )}
-            </div>
-
-            {/* Méta : déclenchement, durée, déclencheur */}
-            <div className="flex flex-col gap-1.5 text-[11.5px] text-slate-600">
-                <span className="inline-flex items-center gap-1.5">
-                    <IconClock size={12} stroke={1.8} className="text-slate-400" />
-                    Déclenchée le {formatDateTime(alert.triggeredAt)}
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                    <IconHistory size={12} stroke={1.8} className="text-slate-400" />
-                    Durée : {formatDuration(alert.elapsedSeconds)}
-                </span>
-                {alert.triggeredByName && (
-                    <span className="inline-flex items-center gap-1.5">
-                        <IconUser size={12} stroke={1.8} className="text-slate-400" />
-                        Par {alert.triggeredByName}
+            <div className="p-4 flex flex-col gap-3">
+                {/* Badges statut + exercice/réel */}
+                <div className="flex items-center justify-between gap-2">
+                    <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-bold uppercase tracking-[0.08em] ${
+                            isActive ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'
+                        }`}
+                    >
+                        {isActive && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
+                        {isActive ? 'EN COURS' : 'Terminée'}
                     </span>
-                )}
+                    <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-[0.08em] border ${
+                            isDrill ? 'bg-sky-50 text-sky-700 border-sky-200' : 'bg-orange-50 text-orange-700 border-orange-200'
+                        }`}
+                    >
+                        {isDrill ? 'Exercice' : 'Réel'}
+                    </span>
+                </div>
+
+                {/* Motif */}
+                <div>
+                    <p
+                        className="text-[15px] text-slate-900 leading-tight"
+                        style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500 }}
+                    >
+                        {formatReasonCode(alert.reasonCode)}
+                    </p>
+                    {alert.message && <p className="text-[12px] text-slate-600 italic mt-1 line-clamp-1">« {alert.message} »</p>}
+                </div>
+
+                {/* ── Bloc statistique : évacuation ── */}
+                <div className="rounded-xl bg-slate-50/70 border border-slate-100 p-3">
+                    <div className="flex items-end justify-between mb-2">
+                        <div>
+                            <p className="text-[10px] uppercase tracking-[0.08em] text-slate-500 font-semibold">Évacuation sécurisée</p>
+                            <p className="text-[10.5px] text-slate-500 mt-0.5">
+                                {safe}/{concerned || '—'} concerné(s) · {roster || '—'} au total
+                            </p>
+                        </div>
+                        <div className={`text-[26px] leading-none font-bold ${secColor}`} style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
+                            {hasRoster ? `${securedPct}%` : '—'}
+                        </div>
+                    </div>
+                    <SegBar
+                        segments={[
+                            { pct: pct(safe), color: '#10b981' },
+                            { pct: pct(injured), color: '#f59e0b' },
+                            { pct: pct(missing), color: '#ef4444' },
+                            { pct: pct(na), color: '#cbd5e1' },
+                            { pct: pct(pending), color: '#eef2f7' },
+                        ]}
+                    />
+                    <div className="flex items-stretch gap-1.5 mt-2.5">
+                        <StatChip value={safe} label="Sécurisés" tone="emerald" />
+                        <StatChip value={injured} label="Blessés" tone="amber" />
+                        <StatChip value={missing} label="Manquants" tone="red" />
+                        <StatChip value={pending} label="À pointer" tone="slate" />
+                    </div>
+                </div>
+
+                {/* Méta : déclenchement, durée, déclencheur, clôture */}
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px] text-slate-600">
+                    <span className="inline-flex items-center gap-1.5">
+                        <IconClock size={12} stroke={1.8} className="text-slate-400" />
+                        {formatDateTime(alert.triggeredAt)}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                        <IconHistory size={12} stroke={1.8} className="text-slate-400" />
+                        {formatDuration(alert.elapsedSeconds)}
+                    </span>
+                    {alert.triggeredByName && (
+                        <span className="inline-flex items-center gap-1.5 truncate">
+                            <IconUser size={12} stroke={1.8} className="text-slate-400 shrink-0" />
+                            <span className="truncate">{alert.triggeredByName}</span>
+                        </span>
+                    )}
+                    {na > 0 && (
+                        <span className="inline-flex items-center gap-1.5 text-slate-500">
+                            <IconUsers size={12} stroke={1.8} className="text-slate-400" />
+                            {na} non concerné(s)
+                        </span>
+                    )}
+                </div>
+
                 {alert.status === 'ENDED' && (alert.endedByName || alert.endedAt) && (
-                    <span className="inline-flex items-center gap-1.5 text-emerald-700">
+                    <span className="inline-flex items-center gap-1.5 text-[11px] text-emerald-700 -mt-1">
                         <IconShieldCheck size={12} stroke={1.8} className="text-emerald-500" />
                         Clôturée{alert.endedByName ? ` par ${alert.endedByName}` : ''}
                         {alert.endedAt ? ` — ${formatDateTime(alert.endedAt)}` : ''}
                     </span>
                 )}
-            </div>
 
-            {/* Compteurs appel nominatif */}
-            <div className="flex items-center flex-wrap gap-x-3 gap-y-1 pt-2.5 border-t border-slate-100 text-[11.5px]">
-                <span className="inline-flex items-center gap-1 text-emerald-700" title="En sécurité">
-                    <IconShieldCheck size={13} stroke={1.9} />
-                    {alert.safeCount ?? 0}
-                </span>
-                <span className="inline-flex items-center gap-1 text-amber-700" title="Blessés">
-                    <IconStethoscope size={13} stroke={1.9} />
-                    {alert.injuredCount ?? 0}
-                </span>
-                <span className="inline-flex items-center gap-1 text-red-700" title="Manquants">
-                    <IconShieldX size={13} stroke={1.9} />
-                    {alert.missingCount ?? 0}
-                </span>
-                <span className="inline-flex items-center gap-1 text-slate-600 ml-auto" title="Effectif total">
-                    <IconUsers size={13} stroke={1.9} className="text-slate-400" />
-                    {alert.totalEmployees ?? '—'}
-                </span>
+                {/* Pied actionnable */}
+                <div className="flex items-center justify-between pt-2.5 border-t border-slate-100">
+                    <span className="text-[10.5px] text-slate-400 font-mono">Alerte #{alert.id}</span>
+                    <span className={`inline-flex items-center gap-1 text-[11.5px] font-semibold ${isActive ? 'text-red-600' : 'text-slate-500'} group-hover:gap-2 transition-[gap]`}>
+                        {isActive ? 'Poursuivre' : 'Revoir'}
+                        <IconArrowRight size={13} stroke={2} />
+                    </span>
+                </div>
             </div>
         </button>
     );
@@ -439,78 +525,161 @@ function GeneralAlertTile({ alert, onOpen }: { alert: GeneralAlertDTO; onOpen: (
 
 // ── Tuile SOS ────────────────────────────────────────────────────────────────
 
+// Étapes de cycle de vie du SOS + horodatage associé.
+const SOS_STEPS: { key: keyof SosAlertDTO; label: string }[] = [
+    { key: 'triggeredAt', label: 'Reçu' },
+    { key: 'acknowledgedAt', label: 'Pris' },
+    { key: 'dispatchedAt', label: 'Dispatch' },
+    { key: 'onSiteAt', label: 'Sur place' },
+    { key: 'closedAt', label: 'Fin' },
+];
+
 function SosTile({ sos, onOpen }: { sos: SosAlertDTO; onOpen: () => void }) {
     const meta = SOS_STATUS_META[sos.status];
     const open = isSosOpen(sos);
     const reason = sos.reasonCode ? SOS_REASON_LABELS[sos.reasonCode] ?? sos.reasonCode : 'Motif non précisé';
+    const isFalse = sos.status === 'FALSE_ALARM';
+
+    // Délais de réaction dérivés des horodatages du cycle de vie.
+    const ackDelay = diffSeconds(sos.triggeredAt, sos.acknowledgedAt);
+    const onSiteDelay = diffSeconds(sos.triggeredAt, sos.onSiteAt);
+
+    // Index de la dernière étape atteinte (pour colorer la timeline).
+    const lastReached = SOS_STEPS.reduce((acc, step, i) => (sos[step.key] ? i : acc), 0);
+    const doneColor = isFalse ? '#94a3b8' : '#dc2626';
+
+    // Accent supérieur selon le statut.
+    const accent =
+        sos.status === 'RECEIVED'
+            ? 'from-red-500 to-orange-500'
+            : sos.status === 'ACKNOWLEDGED'
+            ? 'from-orange-500 to-amber-500'
+            : sos.status === 'DISPATCHED'
+            ? 'from-amber-500 to-yellow-500'
+            : sos.status === 'ON_SITE'
+            ? 'from-sky-500 to-cyan-500'
+            : isFalse
+            ? 'from-slate-400 to-slate-500'
+            : 'from-emerald-500 to-teal-500';
 
     return (
         <button
             type="button"
             onClick={onOpen}
-            className={`text-left bg-white border rounded-xl shadow-sm p-4 cursor-pointer hover:shadow-md transition-[box-shadow,border-color] flex flex-col gap-3 ${
+            className={`group text-left bg-white border rounded-xl shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-[box-shadow,border-color] flex flex-col ${
                 sos.status === 'RECEIVED' ? 'border-red-300 ring-2 ring-red-100' : 'border-slate-200 hover:border-slate-300'
             }`}
         >
-            {/* Badges statut + exercice */}
-            <div className="flex items-center justify-between gap-2">
-                <span
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-bold uppercase tracking-[0.08em] ${meta.cls}`}
-                >
-                    {meta.pulse && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
-                    {meta.label}
-                </span>
-                {sos.drillMode && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-[0.08em] border bg-sky-50 text-sky-700 border-sky-200">
-                        Exercice
-                    </span>
-                )}
-            </div>
+            <div className={`h-1.5 w-full bg-gradient-to-r ${accent}`} />
 
-            {/* Motif */}
-            <div>
-                <p
-                    className="text-[15px] text-slate-900 leading-tight"
-                    style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500 }}
-                >
-                    {reason}
-                </p>
-                {sos.description && (
-                    <p className="text-[12px] text-slate-600 italic mt-1 line-clamp-2">« {sos.description} »</p>
-                )}
-            </div>
-
-            {/* Méta : employé, déclenchement, coordinateur */}
-            <div className="flex flex-col gap-1.5 text-[11.5px] text-slate-600">
-                <span className="inline-flex items-center gap-1.5">
-                    <IconUser size={12} stroke={1.8} className="text-slate-400" />
-                    {sos.employeeName ?? `Employé #${sos.employeeId}`}
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                    <IconClock size={12} stroke={1.8} className="text-slate-400" />
-                    {formatDateTime(sos.triggeredAt)}
-                </span>
-                {sos.coordinatorName && (
-                    <span className="inline-flex items-center gap-1.5 text-slate-700">
-                        <IconShieldCheck size={12} stroke={1.8} className="text-emerald-500" />
-                        Coordinateur : {sos.coordinatorName}
+            <div className="p-4 flex flex-col gap-3">
+                {/* Badges statut + exercice + réaction */}
+                <div className="flex items-center justify-between gap-2">
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-bold uppercase tracking-[0.08em] ${meta.cls}`}>
+                        {meta.pulse && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
+                        {meta.label}
                     </span>
-                )}
-                {sos.rescueTeamName && (
-                    <span className="inline-flex items-center gap-1.5 text-slate-700">
-                        <IconMapPin size={12} stroke={1.8} className="text-slate-400" />
-                        {sos.rescueTeamName}
-                    </span>
-                )}
-            </div>
+                    {ackDelay != null ? (
+                        <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                                ackDelay <= 120 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'
+                            }`}
+                            title="Délai de prise en charge"
+                        >
+                            <IconBolt size={11} stroke={2} />
+                            {formatDuration(ackDelay)}
+                        </span>
+                    ) : sos.drillMode ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-[0.08em] border bg-sky-50 text-sky-700 border-sky-200">
+                            Exercice
+                        </span>
+                    ) : null}
+                </div>
 
-            {/* Pied : durée + réf */}
-            <div className="flex items-center justify-between pt-2.5 border-t border-slate-100 text-[11px]">
-                <span className="inline-flex items-center gap-1 text-slate-500">
-                    <IconHistory size={12} stroke={1.8} className="text-slate-400" />
-                    {open ? 'En cours' : 'Durée'} : {formatDuration(sos.elapsedSeconds)}
-                </span>
-                <span className="text-slate-400 font-mono">#{sos.id}</span>
+                {/* Motif */}
+                <div>
+                    <p
+                        className="text-[15px] text-slate-900 leading-tight"
+                        style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500 }}
+                    >
+                        {reason}
+                    </p>
+                    {sos.description && <p className="text-[12px] text-slate-600 italic mt-1 line-clamp-1">« {sos.description} »</p>}
+                </div>
+
+                {/* ── Timeline d'intervention ── */}
+                <div className="rounded-xl bg-slate-50/70 border border-slate-100 px-3 pt-3 pb-2.5">
+                    <div className="relative">
+                        <div className="absolute left-[6%] right-[6%] top-[6px] h-[2px] bg-slate-200" />
+                        <div className="relative grid grid-cols-5">
+                            {SOS_STEPS.map((step, i) => {
+                                const done = Boolean(sos[step.key]);
+                                const current = open && i === lastReached;
+                                return (
+                                    <div key={step.key} className="flex flex-col items-center gap-1.5">
+                                        <span
+                                            className={`w-3.5 h-3.5 rounded-full border-2 ${current ? 'animate-pulse' : ''}`}
+                                            style={{
+                                                background: done ? doneColor : '#fff',
+                                                borderColor: done ? doneColor : '#cbd5e1',
+                                            }}
+                                        />
+                                        <span className={`text-[8.5px] leading-none ${done ? 'text-slate-600 font-medium' : 'text-slate-400'}`}>
+                                            {step.label}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                    {/* Stats de réaction */}
+                    <div className="flex items-stretch gap-1.5 mt-3">
+                        <StatChip value={ackDelay != null ? formatDuration(ackDelay) : '—'} label="Réaction" tone={ackDelay != null && ackDelay <= 120 ? 'emerald' : 'amber'} />
+                        <StatChip value={onSiteDelay != null ? formatDuration(onSiteDelay) : '—'} label="Sur place" tone="sky" />
+                        <StatChip value={formatDuration(sos.elapsedSeconds)} label={open ? 'En cours' : 'Total'} tone={open ? 'red' : 'slate'} />
+                    </div>
+                </div>
+
+                {/* Méta : employé, coordinateur, équipe */}
+                <div className="flex flex-col gap-1.5 text-[11px] text-slate-600">
+                    <span className="inline-flex items-center gap-1.5 truncate">
+                        <IconUser size={12} stroke={1.8} className="text-slate-400 shrink-0" />
+                        <span className="truncate">{sos.employeeName ?? `Employé #${sos.employeeId}`}</span>
+                    </span>
+                    <div className="flex items-center gap-x-3 gap-y-1 flex-wrap">
+                        {sos.coordinatorName && (
+                            <span className="inline-flex items-center gap-1.5 text-slate-700">
+                                <IconShieldCheck size={12} stroke={1.8} className="text-emerald-500" />
+                                {sos.coordinatorName}
+                            </span>
+                        )}
+                        {sos.rescueTeamName && (
+                            <span className="inline-flex items-center gap-1.5 text-slate-700">
+                                <IconActivity size={12} stroke={1.8} className="text-sky-500" />
+                                {sos.rescueTeamName}
+                            </span>
+                        )}
+                    </div>
+                    {isFalse && sos.falseAlarmReason && (
+                        <span className="inline-flex items-start gap-1.5 text-slate-500 italic">
+                            <IconAlertTriangle size={12} stroke={1.8} className="text-slate-400 shrink-0 mt-0.5" />
+                            <span className="line-clamp-1">« {sos.falseAlarmReason} »</span>
+                        </span>
+                    )}
+                </div>
+
+                {/* Pied actionnable */}
+                <div className="flex items-center justify-between pt-2.5 border-t border-slate-100">
+                    <span className="inline-flex items-center gap-1.5 text-[10.5px] text-slate-400">
+                        <IconClock size={11} stroke={1.8} />
+                        {formatDateTime(sos.triggeredAt)}
+                        <span className="font-mono ml-1">#{sos.id}</span>
+                    </span>
+                    <span className={`inline-flex items-center gap-1 text-[11.5px] font-semibold ${open ? 'text-red-600' : 'text-slate-500'} group-hover:gap-2 transition-[gap]`}>
+                        {open ? 'Prendre en charge' : 'Revoir'}
+                        <IconArrowRight size={13} stroke={2} />
+                    </span>
+                </div>
             </div>
         </button>
     );
