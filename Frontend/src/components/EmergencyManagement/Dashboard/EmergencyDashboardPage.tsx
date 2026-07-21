@@ -12,13 +12,15 @@ import {
     IconChartBar,
     IconBolt,
     IconActivity,
-    IconUser,
+    IconTrendingUp,
+    IconGauge,
+    IconFlame,
+    IconHeartRateMonitor,
 } from '@tabler/icons-react';
 import {
     ResponsiveContainer,
-    LineChart,
+    ComposedChart,
     Line,
-    AreaChart,
     Area,
     XAxis,
     YAxis,
@@ -29,6 +31,8 @@ import {
     Cell,
     BarChart,
     Bar,
+    RadialBarChart,
+    RadialBar,
     Legend,
 } from 'recharts';
 import PageHeader from '../../UtilityComp/PageHeader';
@@ -40,24 +44,18 @@ import {
 import { useEmergencyWebSocket } from '../Sos/EmergencyWebSocketProvider';
 import SosLiveMap from '../Sos/SosLiveMap';
 import { listSosAlerts, type SosAlertDTO } from '../../../services/SosService';
-import { formatReasonCode } from '../GeneralAlert/alertHelpers';
 import { SOS_REASON_LABELS, SOS_STATUS_COLORS } from '../Sos/sosLabels';
 
 /**
- * Page Tableau de bord Emergency (LOT 48 Phase 5).
+ * Page Tableau de bord Emergency — refonte 2026-07-21.
  *
- * <p>Agrège SOS + Alertes Générales + Lifecycle metrics avec :</p>
- * <ul>
- *   <li>8 KPIs tuiles (total / actifs / durée moyenne ack / résolution / drills)</li>
- *   <li>2 graphiques temporels (lines daily counts SOS et Alertes)</li>
- *   <li>Pie chart distribution statut SOS</li>
- *   <li>Bar chart top motifs</li>
- *   <li>Carte SOS récents avec pins par statut</li>
- *   <li>Top coordinateurs (qui a traité le plus)</li>
- * </ul>
+ * <p>Refonte demandée : les KPI sont regroupés en <strong>3 cartes composites sur une seule ligne</strong>
+ * (SOS / Alertes Générales / Performance) au lieu de 8 tuiles éparpillées sur 2 lignes, et les
+ * graphiques sont plus aboutis (timeline combinée SOS+Alertes, jauge radiale de taux de résolution,
+ * donut avec total central).</p>
  *
- * <p>Live updates via WebSocket : à chaque message SOS/GeneralAlert reçu,
- * on rafraîchit le summary backend (debounce 2s pour éviter les rafales).</p>
+ * <p>Live updates via WebSocket : à chaque message SOS/GeneralAlert reçu on rafraîchit le summary
+ * backend (debounce 2s). Aucun changement backend : tout est dérivé du même DTO.</p>
  */
 
 const REASON_LABELS_SOS = SOS_REASON_LABELS;
@@ -143,21 +141,19 @@ const EmergencyDashboardPage = () => {
         };
     }, [subscribe, subscribeGeneralAlert]);
 
-    // ── Données dérivées pour charts ──
-    const sosDailySeries = useMemo(() => {
+    // ── Timeline combinée SOS + Alertes (fusion par date) ──
+    const activitySeries = useMemo(() => {
         if (!data) return [];
-        return data.sosDailyCounts.map((d) => ({
-            date: formatDateShort(d.date),
-            SOS: d.count,
-        }));
-    }, [data]);
-
-    const generalAlertDailySeries = useMemo(() => {
-        if (!data) return [];
-        return data.generalAlertDailyCounts.map((d) => ({
-            date: formatDateShort(d.date),
-            Alertes: d.count,
-        }));
+        const map = new Map<string, { date: string; SOS: number; Alertes: number }>();
+        data.sosDailyCounts.forEach((d) => map.set(d.date, { date: d.date, SOS: d.count, Alertes: 0 }));
+        data.generalAlertDailyCounts.forEach((d) => {
+            const e = map.get(d.date) ?? { date: d.date, SOS: 0, Alertes: 0 };
+            e.Alertes = d.count;
+            map.set(d.date, e);
+        });
+        return Array.from(map.values())
+            .sort((a, b) => a.date.localeCompare(b.date))
+            .map((e) => ({ ...e, label: formatDateShort(e.date) }));
     }, [data]);
 
     const statusPieData = useMemo(() => {
@@ -178,6 +174,19 @@ const EmergencyDashboardPage = () => {
             count: r.count,
         }));
     }, [data]);
+
+    // ── Indicateurs dérivés ──
+    const resolutionRate = useMemo(() => {
+        if (!data || data.sosTotal === 0) return 0;
+        return Math.round((data.sosClosed / data.sosTotal) * 100);
+    }, [data]);
+
+    const falseAlarmRate = useMemo(() => {
+        if (!data || data.sosTotal === 0) return 0;
+        return Math.round((data.sosFalseAlarm / data.sosTotal) * 100);
+    }, [data]);
+
+    const totalEvents = useMemo(() => (data ? data.sosTotal + data.generalAlertsTotal : 0), [data]);
 
     if (!selectedCompanyId) {
         return (
@@ -273,169 +282,226 @@ const EmergencyDashboardPage = () => {
                 </div>
             ) : data ? (
                 <>
-                    {/* ════ KPI tuiles 4 colonnes ════ */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
-                        <KpiTile
-                            icon={<IconUrgent size={14} stroke={1.7} />}
-                            label="SOS Total"
-                            value={data.sosTotal}
+                    {/* ════ KPI — 3 cartes composites sur UNE ligne ════ */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-5">
+                        {/* ── Carte SOS composite ── */}
+                        <CompositeCard
                             accent="red"
-                            sub={`${data.sosActive} actif(s)`}
+                            icon={<IconUrgent size={16} stroke={1.8} />}
+                            title="SOS"
+                            headline={data.sosTotal}
+                            headlineLabel="déclenchés"
+                            badge={
+                                data.sosActive > 0
+                                    ? { text: `${data.sosActive} actif${data.sosActive > 1 ? 's' : ''}`, tone: 'live' }
+                                    : { text: 'Aucun actif', tone: 'ok' }
+                            }
+                            stats={[
+                                { label: 'Actifs', value: data.sosActive, tone: data.sosActive > 0 ? 'red' : 'slate' },
+                                { label: 'Clôturés', value: data.sosClosed, tone: 'emerald' },
+                                { label: 'Fausses alertes', value: data.sosFalseAlarm, tone: 'slate' },
+                            ]}
                         />
-                        <KpiTile
-                            icon={<IconClock size={14} stroke={1.7} />}
-                            label="Temps moyen ACK"
-                            value={formatDuration(data.sosAvgAckSeconds)}
+
+                        {/* ── Carte Alertes Générales composite ── */}
+                        <CompositeCard
                             accent="orange"
-                            sub="Réactivité coordinateur"
+                            icon={<IconBolt size={16} stroke={1.8} />}
+                            title="Alertes Générales"
+                            headline={data.generalAlertsTotal}
+                            headlineLabel="évacuations"
+                            badge={
+                                data.generalAlertsActive > 0
+                                    ? { text: `${data.generalAlertsActive} active${data.generalAlertsActive > 1 ? 's' : ''}`, tone: 'live' }
+                                    : { text: 'Aucune active', tone: 'ok' }
+                            }
+                            stats={[
+                                { label: 'Actives', value: data.generalAlertsActive, tone: data.generalAlertsActive > 0 ? 'orange' : 'slate' },
+                                { label: 'Réelles', value: data.generalAlertsReal, tone: 'sky' },
+                                { label: 'Exercices', value: data.generalAlertsDrills, tone: 'violet' },
+                            ]}
                         />
-                        <KpiTile
-                            icon={<IconShieldCheck size={14} stroke={1.7} />}
-                            label="Temps moyen résolution"
-                            value={formatDuration(data.sosAvgResolutionSeconds)}
-                            accent="sky"
-                            sub="RECEIVED → CLOSED"
-                        />
-                        <KpiTile
-                            icon={<IconBolt size={14} stroke={1.7} />}
-                            label="Alertes Générales"
-                            value={data.generalAlertsTotal}
-                            accent="amber"
-                            sub={`${data.generalAlertsReal} réelles · ${data.generalAlertsDrills} drills`}
-                        />
+
+                        {/* ── Carte Performance & réactivité ── */}
+                        <div className="bg-white border border-slate-200 border-l-[3px] border-l-sky-400 rounded-xl p-4 shadow-sm">
+                            <div className="flex items-center justify-between gap-2 mb-3">
+                                <div className="flex items-center gap-2">
+                                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-sky-50 text-sky-700">
+                                        <IconGauge size={16} stroke={1.8} />
+                                    </span>
+                                    <p
+                                        className="text-[13px] font-semibold text-slate-800"
+                                        style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}
+                                    >
+                                        Performance & réactivité
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <MetricRow
+                                    icon={<IconClock size={13} stroke={1.8} />}
+                                    label="Prise en charge (ACK)"
+                                    value={formatDuration(data.sosAvgAckSeconds)}
+                                    tone="orange"
+                                />
+                                <MetricRow
+                                    icon={<IconShieldCheck size={13} stroke={1.8} />}
+                                    label="Résolution SOS"
+                                    value={formatDuration(data.sosAvgResolutionSeconds)}
+                                    tone="emerald"
+                                />
+                                <MetricRow
+                                    icon={<IconUsersGroup size={13} stroke={1.8} />}
+                                    label="Durée moy. évacuation"
+                                    value={formatDuration(data.generalAlertAvgDurationSeconds)}
+                                    tone="violet"
+                                />
+                            </div>
+                        </div>
                     </div>
 
-                    {/* ════ KPI ligne 2 — annexes ════ */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
-                        <KpiTile
-                            icon={<IconShieldCheck size={13} stroke={1.7} />}
-                            label="SOS Clôturés"
-                            value={data.sosClosed}
-                            accent="emerald"
-                            small
-                        />
-                        <KpiTile
-                            icon={<IconAlertTriangle size={13} stroke={1.7} />}
-                            label="Fausses alertes"
-                            value={data.sosFalseAlarm}
-                            accent="slate"
-                            small
-                        />
-                        <KpiTile
-                            icon={<IconUsersGroup size={13} stroke={1.7} />}
-                            label="Évac. moyenne"
-                            value={formatDuration(data.generalAlertAvgDurationSeconds)}
-                            accent="violet"
-                            sub="durée alerte"
-                            small
-                        />
-                        <KpiTile
-                            icon={<IconActivity size={13} stroke={1.7} />}
-                            label="Alertes actives"
-                            value={data.generalAlertsActive}
-                            accent="rose"
-                            small
-                        />
-                    </div>
-
-                    {/* ════ Charts ligne 1 — timelines ════ */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-5">
+                    {/* ════ Timeline combinée SOS + Alertes (pleine largeur) ════ */}
+                    <div className="mt-4">
                         <ChartCard
-                            title={`SOS par jour (${windowDays}j)`}
-                            icon={<IconChartBar size={14} stroke={1.7} />}
-                            description="Évolution du volume de SOS déclenchés"
+                            title={`Activité des urgences (${windowDays}j)`}
+                            icon={<IconTrendingUp size={14} stroke={1.7} />}
+                            description="Volume quotidien de SOS et d'alertes générales déclenchés"
+                            right={
+                                <div className="flex items-center gap-3">
+                                    <LegendDot color="#dc2626" label="SOS" />
+                                    <LegendDot color="#f97316" label="Alertes" />
+                                </div>
+                            }
                         >
-                            {sosDailySeries.length > 0 && (
-                                <ResponsiveContainer width="100%" height={220}>
-                                    <AreaChart data={sosDailySeries} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                            {activitySeries.length === 0 ? (
+                                <EmptyChartState text="Aucune activité sur la fenêtre" />
+                            ) : (
+                                <ResponsiveContainer width="100%" height={260}>
+                                    <ComposedChart data={activitySeries} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
                                         <defs>
                                             <linearGradient id="sosGrad" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="0%" stopColor="#dc2626" stopOpacity={0.6} />
-                                                <stop offset="100%" stopColor="#dc2626" stopOpacity={0.05} />
+                                                <stop offset="0%" stopColor="#dc2626" stopOpacity={0.55} />
+                                                <stop offset="100%" stopColor="#dc2626" stopOpacity={0.04} />
                                             </linearGradient>
                                         </defs>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                                        <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#64748b' }} />
-                                        <YAxis tick={{ fontSize: 10, fill: '#64748b' }} allowDecimals={false} />
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" vertical={false} />
+                                        <XAxis dataKey="label" tick={{ fontSize: 10.5, fill: '#64748b' }} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} />
+                                        <YAxis tick={{ fontSize: 10.5, fill: '#64748b' }} allowDecimals={false} tickLine={false} axisLine={false} width={28} />
                                         <Tooltip
-                                            contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}
+                                            contentStyle={{ fontSize: 12, borderRadius: 10, border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(15,23,42,.08)' }}
                                             labelStyle={{ color: '#334155', fontWeight: 600 }}
                                         />
-                                        <Area type="monotone" dataKey="SOS" stroke="#dc2626" strokeWidth={2} fill="url(#sosGrad)" />
-                                    </AreaChart>
-                                </ResponsiveContainer>
-                            )}
-                        </ChartCard>
-
-                        <ChartCard
-                            title={`Alertes Générales par jour (${windowDays}j)`}
-                            icon={<IconBolt size={14} stroke={1.7} />}
-                            description="Évolution des évacuations déclenchées (drills + réels)"
-                        >
-                            {generalAlertDailySeries.length > 0 && (
-                                <ResponsiveContainer width="100%" height={220}>
-                                    <LineChart data={generalAlertDailySeries} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                                        <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#64748b' }} />
-                                        <YAxis tick={{ fontSize: 10, fill: '#64748b' }} allowDecimals={false} />
-                                        <Tooltip
-                                            contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}
-                                            labelStyle={{ color: '#334155', fontWeight: 600 }}
-                                        />
-                                        <Line type="monotone" dataKey="Alertes" stroke="#f97316" strokeWidth={2.5} dot={{ fill: '#f97316', r: 3 }} />
-                                    </LineChart>
+                                        <Area type="monotone" dataKey="SOS" stroke="#dc2626" strokeWidth={2.2} fill="url(#sosGrad)" />
+                                        <Line type="monotone" dataKey="Alertes" stroke="#f97316" strokeWidth={2.4} dot={{ fill: '#f97316', r: 2.5 }} activeDot={{ r: 4 }} />
+                                    </ComposedChart>
                                 </ResponsiveContainer>
                             )}
                         </ChartCard>
                     </div>
 
-                    {/* ════ Charts ligne 2 — pie + bar ════ */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+                    {/* ════ Ligne : Donut statut · Jauge résolution · Barres motifs ════ */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
+                        {/* Donut statut avec total central */}
                         <ChartCard
-                            title="Répartition par statut"
+                            title="Cycle de vie des SOS"
                             icon={<IconUrgent size={14} stroke={1.7} />}
-                            description="Distribution des SOS sur la fenêtre"
+                            description="Répartition par statut sur la fenêtre"
                         >
                             {statusPieData.length === 0 ? (
                                 <EmptyChartState text="Aucun SOS sur la fenêtre" />
                             ) : (
-                                <ResponsiveContainer width="100%" height={220}>
-                                    <PieChart>
-                                        <Pie
-                                            data={statusPieData}
-                                            innerRadius={50}
-                                            outerRadius={80}
-                                            paddingAngle={2}
-                                            dataKey="value"
-                                            label={({ name, value }) => `${name}: ${value}`}
-                                            labelLine={false}
+                                <div className="relative">
+                                    <ResponsiveContainer width="100%" height={230}>
+                                        <PieChart>
+                                            <Pie
+                                                data={statusPieData}
+                                                innerRadius={62}
+                                                outerRadius={92}
+                                                paddingAngle={2}
+                                                dataKey="value"
+                                                stroke="none"
+                                            >
+                                                {statusPieData.map((entry, i) => (
+                                                    <Cell key={i} fill={entry.color} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip contentStyle={{ fontSize: 12, borderRadius: 10 }} />
+                                            <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                    <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center" style={{ top: '-28px' }}>
+                                        <span
+                                            className="text-[30px] leading-none text-slate-900"
+                                            style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500 }}
                                         >
-                                            {statusPieData.map((entry, i) => (
-                                                <Cell key={i} fill={entry.color} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                                        <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" />
-                                    </PieChart>
-                                </ResponsiveContainer>
+                                            {data.sosTotal}
+                                        </span>
+                                        <span className="text-[10.5px] uppercase tracking-[0.1em] text-slate-400 mt-1">SOS total</span>
+                                    </div>
+                                </div>
                             )}
                         </ChartCard>
 
+                        {/* Jauge radiale taux de résolution */}
                         <ChartCard
-                            title="Top motifs déclenchement"
-                            icon={<IconChartBar size={14} stroke={1.7} />}
-                            description="Top 6 raisons les plus fréquentes"
+                            title="Qualité de réponse"
+                            icon={<IconGauge size={14} stroke={1.7} />}
+                            description="Taux de résolution & fiabilité des alertes"
+                        >
+                            {data.sosTotal === 0 ? (
+                                <EmptyChartState text="Aucun SOS à évaluer" />
+                            ) : (
+                                <div className="relative">
+                                    <ResponsiveContainer width="100%" height={190}>
+                                        <RadialBarChart
+                                            innerRadius="72%"
+                                            outerRadius="100%"
+                                            data={[{ name: 'Résolution', value: resolutionRate, fill: '#10b981' }]}
+                                            startAngle={210}
+                                            endAngle={-30}
+                                        >
+                                            <RadialBar background={{ fill: '#f1f5f9' }} dataKey="value" cornerRadius={12} />
+                                        </RadialBarChart>
+                                    </ResponsiveContainer>
+                                    <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center" style={{ top: '-14px' }}>
+                                        <span
+                                            className="text-[34px] leading-none text-emerald-600"
+                                            style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500 }}
+                                        >
+                                            {resolutionRate}%
+                                        </span>
+                                        <span className="text-[10.5px] uppercase tracking-[0.1em] text-slate-400 mt-1">résolus</span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2 mt-1">
+                                        <div className="text-center px-2 py-1.5 bg-slate-50/70 border border-slate-100 rounded-lg">
+                                            <p className="text-[15px] text-slate-800 leading-none font-semibold">{data.sosClosed}</p>
+                                            <p className="text-[10px] text-slate-500 mt-1">Clôturés</p>
+                                        </div>
+                                        <div className="text-center px-2 py-1.5 bg-slate-50/70 border border-slate-100 rounded-lg">
+                                            <p className="text-[15px] text-slate-800 leading-none font-semibold">{falseAlarmRate}%</p>
+                                            <p className="text-[10px] text-slate-500 mt-1">Fausses alertes</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </ChartCard>
+
+                        {/* Barres top motifs */}
+                        <ChartCard
+                            title="Motifs de déclenchement"
+                            icon={<IconFlame size={14} stroke={1.7} />}
+                            description="Causes les plus fréquentes"
                         >
                             {reasonsBarData.length === 0 ? (
                                 <EmptyChartState text="Aucun motif sur la fenêtre" />
                             ) : (
-                                <ResponsiveContainer width="100%" height={220}>
-                                    <BarChart data={reasonsBarData} layout="vertical" margin={{ top: 5, right: 20, left: 50, bottom: 5 }}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                                        <XAxis type="number" tick={{ fontSize: 10, fill: '#64748b' }} allowDecimals={false} />
-                                        <YAxis dataKey="reason" type="category" tick={{ fontSize: 11, fill: '#334155' }} width={120} />
-                                        <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-                                        <Bar dataKey="count" fill="#dc2626" radius={[0, 4, 4, 0]}>
+                                <ResponsiveContainer width="100%" height={230}>
+                                    <BarChart data={reasonsBarData} layout="vertical" margin={{ top: 5, right: 24, left: 8, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" horizontal={false} />
+                                        <XAxis type="number" tick={{ fontSize: 10, fill: '#64748b' }} allowDecimals={false} tickLine={false} axisLine={false} />
+                                        <YAxis dataKey="reason" type="category" tick={{ fontSize: 10.5, fill: '#334155' }} width={110} tickLine={false} axisLine={false} />
+                                        <Tooltip contentStyle={{ fontSize: 12, borderRadius: 10 }} cursor={{ fill: '#f8fafc' }} />
+                                        <Bar dataKey="count" radius={[0, 5, 5, 0]} barSize={18}>
                                             {reasonsBarData.map((_, i) => (
                                                 <Cell key={i} fill={REASON_COLORS[i % REASON_COLORS.length]} />
                                             ))}
@@ -504,10 +570,10 @@ const EmergencyDashboardPage = () => {
                     </div>
 
                     {/* ════ Footer info ════ */}
-                    <p className="mt-4 text-[10.5px] text-slate-400 italic text-right">
-                        Données générées à {new Date(data.generatedAt).toLocaleTimeString('fr-FR')} ·
-                        Fenêtre : {windowDays} jour(s) ·
-                        Mise à jour automatique sur événement SOS / Alerte Générale (live WebSocket)
+                    <p className="mt-4 text-[10.5px] text-slate-400 italic text-right flex items-center justify-end gap-1.5">
+                        <IconHeartRateMonitor size={12} stroke={1.6} />
+                        {totalEvents} événement(s) sur {windowDays}j · Données à {new Date(data.generatedAt).toLocaleTimeString('fr-FR')} ·
+                        Mise à jour automatique (live WebSocket)
                     </p>
                 </>
             ) : null}
@@ -519,56 +585,124 @@ const EmergencyDashboardPage = () => {
 // Sous-composants
 // ────────────────────────────────────────────────────────────────────────────
 
-const KPI_ACCENT: Record<string, { bg: string; text: string; ring: string }> = {
-    red:     { bg: 'bg-red-50',     text: 'text-red-700',     ring: 'border-l-red-400' },
-    orange:  { bg: 'bg-orange-50',  text: 'text-orange-700',  ring: 'border-l-orange-400' },
-    amber:   { bg: 'bg-amber-50',   text: 'text-amber-700',   ring: 'border-l-amber-400' },
-    sky:     { bg: 'bg-sky-50',     text: 'text-sky-700',     ring: 'border-l-sky-400' },
-    emerald: { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'border-l-emerald-400' },
-    violet:  { bg: 'bg-violet-50',  text: 'text-violet-700',  ring: 'border-l-violet-400' },
-    rose:    { bg: 'bg-rose-50',    text: 'text-rose-700',    ring: 'border-l-rose-400' },
-    slate:   { bg: 'bg-slate-50',   text: 'text-slate-700',   ring: 'border-l-slate-400' },
+const ACCENT: Record<string, { border: string; iconBg: string; iconText: string; head: string }> = {
+    red:     { border: 'border-l-red-500',    iconBg: 'bg-red-50',    iconText: 'text-red-700',    head: 'text-red-700' },
+    orange:  { border: 'border-l-orange-500', iconBg: 'bg-orange-50', iconText: 'text-orange-700', head: 'text-orange-700' },
+    sky:     { border: 'border-l-sky-500',    iconBg: 'bg-sky-50',    iconText: 'text-sky-700',    head: 'text-sky-700' },
 };
 
-function KpiTile({
-    icon, label, value, sub, accent, small,
+const STAT_TONE: Record<string, string> = {
+    red: 'text-red-600',
+    orange: 'text-orange-600',
+    emerald: 'text-emerald-600',
+    sky: 'text-sky-600',
+    violet: 'text-violet-600',
+    slate: 'text-slate-700',
+};
+
+/** Carte KPI composite : un gros chiffre + 3 mini-stats regroupées (ex. tout le SOS en une tuile). */
+function CompositeCard({
+    accent, icon, title, headline, headlineLabel, badge, stats,
 }: {
+    accent: 'red' | 'orange' | 'sky';
     icon: React.ReactNode;
-    label: string;
-    value: number | string;
-    sub?: string;
-    accent: keyof typeof KPI_ACCENT;
-    small?: boolean;
+    title: string;
+    headline: number;
+    headlineLabel: string;
+    badge: { text: string; tone: 'live' | 'ok' };
+    stats: { label: string; value: number; tone: keyof typeof STAT_TONE }[];
 }) {
-    const tone = KPI_ACCENT[accent];
+    const a = ACCENT[accent];
     return (
-        <div className={`bg-white border border-slate-200 border-l-[3px] ${tone.ring} rounded-xl p-3 shadow-sm`}>
-            <div className="flex items-start justify-between gap-2 mb-1">
-                <p className="text-[10.5px] uppercase tracking-[0.1em] text-slate-500 font-semibold">
-                    {label}
-                </p>
-                <span className={`inline-flex items-center justify-center w-6 h-6 rounded-md ${tone.bg} ${tone.text}`}>
-                    {icon}
+        <div className={`bg-white border border-slate-200 border-l-[3px] ${a.border} rounded-xl p-4 shadow-sm flex flex-col`}>
+            <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2">
+                    <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg ${a.iconBg} ${a.iconText}`}>
+                        {icon}
+                    </span>
+                    <p
+                        className={`text-[13px] font-semibold ${a.head}`}
+                        style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}
+                    >
+                        {title}
+                    </p>
+                </div>
+                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10.5px] font-semibold ${
+                    badge.tone === 'live'
+                        ? 'bg-red-50 text-red-700 border border-red-200'
+                        : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                }`}>
+                    {badge.tone === 'live' && <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />}
+                    {badge.text}
                 </span>
             </div>
-            <p
-                className={`${small ? 'text-[18px]' : 'text-[24px]'} text-slate-900 leading-none`}
-                style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500 }}
-            >
-                {typeof value === 'number' ? value.toLocaleString('fr-FR') : value}
-            </p>
-            {sub && <p className="text-[10.5px] text-slate-500 mt-1">{sub}</p>}
+
+            <div className="flex items-end gap-2 mb-3">
+                <span
+                    className="text-[38px] leading-none text-slate-900"
+                    style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500 }}
+                >
+                    {headline.toLocaleString('fr-FR')}
+                </span>
+                <span className="text-[11px] text-slate-400 mb-1.5">{headlineLabel}</span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 mt-auto">
+                {stats.map((s) => (
+                    <div key={s.label} className="text-center px-1 py-2 bg-slate-50/70 border border-slate-100 rounded-lg">
+                        <p className={`text-[17px] leading-none font-semibold ${STAT_TONE[s.tone]}`}>
+                            {s.value.toLocaleString('fr-FR')}
+                        </p>
+                        <p className="text-[9.5px] text-slate-500 mt-1 leading-tight">{s.label}</p>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }
 
+/** Ligne métrique compacte pour la carte Performance. */
+function MetricRow({
+    icon, label, value, tone,
+}: {
+    icon: React.ReactNode;
+    label: string;
+    value: string;
+    tone: keyof typeof STAT_TONE;
+}) {
+    return (
+        <div className="flex items-center gap-2.5 px-2.5 py-2 bg-slate-50/60 border border-slate-100 rounded-lg">
+            <span className={`inline-flex items-center justify-center w-6 h-6 rounded-md bg-white border border-slate-100 ${STAT_TONE[tone]}`}>
+                {icon}
+            </span>
+            <span className="text-[11.5px] text-slate-600 flex-1">{label}</span>
+            <span
+                className="text-[14px] text-slate-900"
+                style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 500 }}
+            >
+                {value}
+            </span>
+        </div>
+    );
+}
+
+function LegendDot({ color, label }: { color: string; label: string }) {
+    return (
+        <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-600">
+            <span className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
+            {label}
+        </span>
+    );
+}
+
 function ChartCard({
-    title, description, icon, children,
+    title, description, icon, children, right,
 }: {
     title: string;
     description?: string;
     icon: React.ReactNode;
     children: React.ReactNode;
+    right?: React.ReactNode;
 }) {
     return (
         <section className="bg-white border border-slate-200 rounded-xl shadow-sm">
@@ -583,6 +717,7 @@ function ChartCard({
                     </h3>
                     {description && <p className="text-[11px] text-slate-500 mt-0.5">{description}</p>}
                 </div>
+                {right && <div className="shrink-0">{right}</div>}
             </header>
             <div className="p-4">{children}</div>
         </section>
