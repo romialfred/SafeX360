@@ -15,7 +15,7 @@ import {
 import { listAssemblyPoints, type AssemblyPointDTO } from '../../../services/EmergencyService';
 import { getEmployeesWithDepartment } from '../../../services/EmployeeService';
 import { formatReasonCode } from './alertHelpers';
-import { computeEvacuationStats, formatClock, type EvacEmployee } from './evacuationStats';
+import { computeEvacuationStats, formatClock, type EvacEmployee, type RosterPerson } from './evacuationStats';
 
 /**
  * EvacuationWallboard — Écran géant détaché (salle de crise).
@@ -31,11 +31,13 @@ import { computeEvacuationStats, formatClock, type EvacEmployee } from './evacua
 
 const POLL_MS = 5000;
 
-function BigTile({ icon, label, value, color, pulse }: {
+function BigTile({ icon, label, value, color, pulse, roster }: {
     icon: React.ReactNode; label: string; value: number | string; color: string; pulse?: boolean;
+    roster?: RosterPerson[];
 }) {
+    const hasRoster = Array.isArray(roster);
     return (
-        <div className="rounded-2xl p-4 flex flex-col justify-between"
+        <div className={`group relative rounded-2xl p-4 flex flex-col justify-between ${hasRoster ? 'cursor-help' : ''}`}
             style={{ background: `${color}22`, border: `1.5px solid ${color}66` }}>
             <div className="flex items-center gap-2" style={{ color }}>
                 {icon}
@@ -44,6 +46,27 @@ function BigTile({ icon, label, value, color, pulse }: {
             <span className={`mt-1 text-[58px] leading-none font-black tabular-nums ${pulse ? 'animate-pulse' : ''}`} style={{ color }}>
                 {value}
             </span>
+            {hasRoster && (
+                <div className="absolute left-0 top-full mt-2 z-40 w-80 max-w-[90vw] opacity-0 invisible translate-y-1
+                                group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-150">
+                    <div className="rounded-xl bg-slate-900 border border-white/25 shadow-2xl overflow-hidden">
+                        <div className="px-3 py-2 flex items-center justify-between" style={{ background: `${color}26` }}>
+                            <span className="text-[13px] font-bold uppercase tracking-wider" style={{ color }}>{label}</span>
+                            <span className="text-[12px] font-semibold text-slate-300 tabular-nums">{roster!.length}</span>
+                        </div>
+                        <div className="max-h-[300px] overflow-y-auto divide-y divide-white/5">
+                            {roster!.length === 0 ? (
+                                <p className="px-3 py-3 text-[13px] text-slate-400 text-center">Personne dans cette catégorie</p>
+                            ) : roster!.map((p) => (
+                                <div key={p.id} className="px-3 py-1.5 flex items-center justify-between gap-3">
+                                    <span className="text-[13.5px] text-white font-medium truncate">{p.name}</span>
+                                    <span className="text-[11.5px] text-slate-400 truncate flex-shrink-0 max-w-[45%]">{p.department}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -53,9 +76,9 @@ function Panel({ title, icon, children, className = '' }: {
 }) {
     return (
         <div className={`rounded-2xl bg-slate-800/80 border border-white/20 p-4 ${className}`}>
-            <h3 className="text-[13px] font-extrabold text-white uppercase tracking-[0.1em] mb-3 flex items-center gap-2 pl-2.5 border-l-4 border-sky-400">
+            <div className="text-[13px] font-extrabold text-white uppercase tracking-[0.1em] mb-3 flex items-center gap-2 pl-2.5 border-l-4 border-sky-400">
                 {icon}{title}
-            </h3>
+            </div>
             {children}
         </div>
     );
@@ -151,9 +174,9 @@ export default function EvacuationWallboard() {
                     </div>
                     <div className="min-w-0">
                         <div className="flex items-center gap-3 flex-wrap">
-                            <h1 className="text-[30px] leading-none font-black text-white tracking-tight" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
+                            <div className="text-[30px] leading-none font-black tracking-tight" style={{ color: '#ffffff', fontFamily: "'Source Serif 4', Georgia, serif" }}>
                                 Salle de Crise
-                            </h1>
+                            </div>
                             {isActive ? (
                                 <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-600 text-[12px] font-bold uppercase tracking-wider">
                                     <span className="w-2 h-2 rounded-full bg-white animate-pulse" /> Alerte en cours
@@ -213,7 +236,7 @@ export default function EvacuationWallboard() {
 
                     {/* Jauge radiale — taux de mise en sécurité */}
                     <div className="col-span-12 lg:col-span-3 rounded-3xl bg-slate-800/70 border border-white/15 p-5 flex flex-col">
-                        <h3 className="text-[15px] font-bold text-white mb-1">Taux de mise en sécurité</h3>
+                        <div className="text-[13px] font-extrabold text-white uppercase tracking-[0.1em] mb-1 pl-2.5 border-l-4 border-sky-400">Taux de mise en sécurité</div>
                         <div className="relative flex-1 min-h-[190px]">
                             <ResponsiveContainer>
                                 <RadialBarChart innerRadius="72%" outerRadius="100%" data={[{ value: s.securedPct }]} startAngle={90} endAngle={-270}>
@@ -231,7 +254,7 @@ export default function EvacuationWallboard() {
                     {/* Progression temporelle */}
                     <div className="col-span-12 lg:col-span-5 rounded-3xl bg-slate-800/70 border border-white/15 p-5">
                         <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-[15px] font-bold text-white">Progression de la mise en sécurité</h3>
+                            <div className="text-[13px] font-extrabold text-white uppercase tracking-[0.1em] pl-2.5 border-l-4 border-sky-400">Progression de la mise en sécurité</div>
                             <span className="text-[13px] text-slate-300">{s.ratePerMin > 0 ? `≈ ${s.ratePerMin}/min` : ''}</span>
                         </div>
                         <div style={{ width: '100%', height: 200 }}>
@@ -266,10 +289,10 @@ export default function EvacuationWallboard() {
 
                 {/* ═══ Rangée 2 : 4 tuiles ═══ */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-                    <BigTile icon={<IconShieldCheck size={22} stroke={2} />} label="En sécurité" color="#34d399" value={s.safe} />
-                    <BigTile icon={<IconStethoscope size={22} stroke={2} />} label="Blessés" color="#fbbf24" value={s.injured} pulse={isActive && s.injured > 0} />
-                    <BigTile icon={<IconShieldX size={22} stroke={2} />} label="Absents" color="#f87171" value={s.missing} pulse={isActive && s.missing > 0} />
-                    <BigTile icon={<IconUsers size={22} stroke={2} />} label="Reste à pointer" color="#cbd5e1" value={s.pending} />
+                    <BigTile icon={<IconShieldCheck size={22} stroke={2} />} label="En sécurité" color="#34d399" value={s.safe} roster={s.rosterByStatus.SAFE} />
+                    <BigTile icon={<IconStethoscope size={22} stroke={2} />} label="Blessés" color="#fbbf24" value={s.injured} pulse={isActive && s.injured > 0} roster={s.rosterByStatus.INJURED} />
+                    <BigTile icon={<IconShieldX size={22} stroke={2} />} label="Absents" color="#f87171" value={s.missing} pulse={isActive && s.missing > 0} roster={s.rosterByStatus.MISSING} />
+                    <BigTile icon={<IconUsers size={22} stroke={2} />} label="Reste à pointer" color="#cbd5e1" value={s.pending} roster={s.rosterByStatus.PENDING} />
                 </div>
 
                 {/* ═══ Rangée 3 : Donut + Points + Départements ═══ */}
