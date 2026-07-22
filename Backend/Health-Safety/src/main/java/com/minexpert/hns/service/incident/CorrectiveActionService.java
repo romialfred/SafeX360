@@ -67,4 +67,8 @@ public interface CorrectiveActionService {
     /** État courant de la revue d'efficacité d'une action (peut être « non revue »). */
     EffectivenessDTO getEffectiveness(Long companyId, Long id) throws HSException;
 
+    /** Répartition des actions par niveau de hiérarchie de maîtrise (§8.1.2). */
+    java.util.List<com.minexpert.hns.repository.incident.projection.HierarchyCount> getControlHierarchyCounts(
+            Long companyId);
+
 }

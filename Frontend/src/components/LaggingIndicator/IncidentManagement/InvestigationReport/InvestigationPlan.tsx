@@ -9,11 +9,16 @@ import { removeCorrectiveAction } from "../../../../services/CorrectiveActionSer
 import { errorNotification, successNotification } from "../../../../utility/NotificationUtility";
 import { adhocStatusConfig } from "../../../NewComponents/AdhocActions/adhocLabels";
 import { useTranslation } from "react-i18next";
+import ActionClassificationFields from "../../CorrectiveAction/ActionClassificationFields";
+import { listCausesByIncident } from "../../../../services/IncidentCauseService";
 
 
 const InvestigationPlan = ({ form, incident }: any) => {
     const { t } = useTranslation('incidents');
     const [emps, setEmps] = useState([]);
+    // Causes structurées de l'incident (E1.2) — pour relier chaque action à LA
+    // cause qu'elle traite (traçabilité cause→action, ISO 45001 §10.2 a-b).
+    const [causeOptions, setCauseOptions] = useState<{ value: string; label: string }[]>([]);
 
     const handleAddIncident = () => {
         form.insertListItem('correctiveActions', {
@@ -24,7 +29,12 @@ const InvestigationPlan = ({ form, incident }: any) => {
             // vers l'enum ActionStatus côté backend → 400 (désérialisation) qui
             // faisait échouer TOUTE la soumission d'investigation.
             status: "PENDING",
-            description: ""
+            description: "",
+            // Classification ISO 45001 §8.1.2 / §10.2.
+            controlHierarchy: '',
+            actionType: '',
+            priority: 'P2',
+            causeId: null,
         });
     }
 
@@ -41,6 +51,17 @@ const InvestigationPlan = ({ form, incident }: any) => {
             })
             .catch((_err: any) => { });
     }, []);
+
+    useEffect(() => {
+        if (!incident?.id) return;
+        listCausesByIncident(incident.id)
+            .then((causes) => setCauseOptions(
+                (causes || [])
+                    .filter((c) => c.id != null)
+                    .map((c) => ({ value: String(c.id), label: c.label })),
+            ))
+            .catch(() => setCauseOptions([]));
+    }, [incident?.id]);
 
 
 
@@ -120,6 +141,21 @@ const InvestigationPlan = ({ form, incident }: any) => {
                 <div className='col-span-2'>
 
                     <TextEditor withAsterisk form={form} id={`correctiveActions.${index}.description`} title={t('investigation.plan.descriptionLabel')} />
+                </div>
+                {/* Classification §8.1.2/§10.2 + lien vers LA cause traitée (§10.2 a-b). */}
+                <div className='col-span-2 space-y-3 border-t border-slate-200 pt-3'>
+                    <ActionClassificationFields form={form} prefix={`correctiveActions.${index}.`} requireHierarchy={false} />
+                    {causeOptions.length > 0 && (
+                        <Select
+                            size="sm"
+                            clearable
+                            label="Cause traitée par cette action"
+                            placeholder="Relier à une cause de l'analyse causale"
+                            data={causeOptions}
+                            comboboxProps={{ withinPortal: true }}
+                            {...form.getInputProps(`correctiveActions.${index}.causeId`)}
+                        />
+                    )}
                 </div>
             </Fieldset>)}
 

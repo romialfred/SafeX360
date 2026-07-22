@@ -336,6 +336,20 @@ public class CorrectiveActionServiceImpl implements CorrectiveActionService {
         if (target != null) {
             correctiveAction.setStatus(target);
         }
+        // Classification (§8.1.2/§10.2) editable en mode PARTIEL : on n'ecrit que si
+        // fourni — les voies qui ne l'envoient pas (page de progression) la preservent.
+        if (correctiveActionDTO.getControlHierarchy() != null) {
+            correctiveAction.setControlHierarchy(correctiveActionDTO.getControlHierarchy());
+        }
+        if (correctiveActionDTO.getActionType() != null) {
+            correctiveAction.setActionType(correctiveActionDTO.getActionType());
+        }
+        if (correctiveActionDTO.getPriority() != null) {
+            correctiveAction.setPriority(correctiveActionDTO.getPriority());
+        }
+        if (correctiveActionDTO.getCauseId() != null) {
+            correctiveAction.setCauseId(correctiveActionDTO.getCauseId());
+        }
         correctiveAction.setUpdatedAt(LocalDateTime.now());
         correctiveAction.setCompanyId(companyId);
         correctiveActionRepository.save(correctiveAction);
@@ -596,6 +610,12 @@ public class CorrectiveActionServiceImpl implements CorrectiveActionService {
     public EffectivenessDTO getEffectiveness(Long companyId, Long id) throws HSException {
         CorrectiveAction action = loadActionForCompany(companyId, id);
         return toEffectivenessDTO(action);
+    }
+
+    @Override
+    public java.util.List<com.minexpert.hns.repository.incident.projection.HierarchyCount> getControlHierarchyCounts(
+            Long companyId) {
+        return correctiveActionRepository.countByControlHierarchy(companyId);
     }
 
     private EffectivenessDTO toEffectivenessDTO(CorrectiveAction a) {

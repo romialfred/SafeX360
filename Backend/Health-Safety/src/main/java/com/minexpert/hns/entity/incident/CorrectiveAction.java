@@ -7,7 +7,10 @@ import com.minexpert.hns.dto.CorrectiveActionDTO;
 import com.minexpert.hns.entity.GeneralInspection;
 import com.minexpert.hns.entity.activities.HsActivity;
 import com.minexpert.hns.entity.nonConformity.NonConformity;
+import com.minexpert.hns.enums.ActionPriority;
 import com.minexpert.hns.enums.ActionStatus;
+import com.minexpert.hns.enums.ActionType;
+import com.minexpert.hns.enums.ControlHierarchy;
 import com.minexpert.hns.enums.EffectivenessVerdict;
 
 import jakarta.persistence.Column;
@@ -106,6 +109,26 @@ public class CorrectiveAction {
     @Column(name = "residual_severity")
     private Integer residualSeverity;
 
+    // ── Classification de l'action (ISO 45001 §8.1.2 / §10.2) ──
+    /** Hiérarchie des mesures de maîtrise : ELIMINATION → PPE (§8.1.2). */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "control_hierarchy", length = 16)
+    private ControlHierarchy controlHierarchy;
+
+    /** Nature : IMMEDIATE / CORRECTIVE / PREVENTIVE. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "action_type", length = 16)
+    private ActionType actionType;
+
+    /** Priorité P1..P3. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "priority", length = 4)
+    private ActionPriority priority;
+
+    /** Approbateur nommé (qui a validé le lancement de l'action). */
+    @Column(name = "approved_by")
+    private Long approvedBy;
+
     public CorrectiveAction(Long id) {
         this.id = id;
     }
@@ -129,7 +152,11 @@ public class CorrectiveAction {
                 this.createdAt,
                 this.updatedAt,
                 this.riskControlId,
-                this.causeId);
+                this.causeId,
+                this.controlHierarchy,
+                this.actionType,
+                this.priority,
+                this.approvedBy);
     }
 
     // Add logic to ensure only one FK is set

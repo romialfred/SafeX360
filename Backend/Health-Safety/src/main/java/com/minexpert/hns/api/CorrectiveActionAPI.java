@@ -57,6 +57,13 @@ public class CorrectiveActionAPI {
         return new ResponseEntity<>(correctiveActionService.getAllActions(companyId), HttpStatus.OK);
     }
 
+    /** Mesures par niveau de hiérarchie de maîtrise (§8.1.2) — indicateur de maturité. */
+    @GetMapping("/hierarchy-counts")
+    public ResponseEntity<List<com.minexpert.hns.repository.incident.projection.HierarchyCount>> getHierarchyCounts(
+            @RequestParam(name = "companyId", required = false) Long companyId) {
+        return new ResponseEntity<>(correctiveActionService.getControlHierarchyCounts(companyId), HttpStatus.OK);
+    }
+
     @GetMapping("/getAllAdhoc")
     public ResponseEntity<List<CorrectiveActionResponse>> getAllAdhocActions(
             @RequestParam(name = "companyId", required = false) Long companyId) throws HSException {

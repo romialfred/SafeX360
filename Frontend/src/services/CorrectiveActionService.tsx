@@ -143,6 +143,12 @@ const getActionEffectiveness = async (id: number | string) => {
         .then((response) => response.data);
 }
 
+// Mesures par niveau de hiérarchie de maîtrise (ISO 45001 §8.1.2).
+export interface HierarchyCount { hierarchy: string; total: number; }
+const getHierarchyCounts = async (): Promise<HierarchyCount[]> => {
+    return axiosInstance.get(`${url}/hierarchy-counts`).then((response) => response.data ?? []);
+}
+
 export {
     removeCorrectiveAction,
     getAllAdhoc,
@@ -162,5 +168,6 @@ export {
     cancelCorrectiveAction,
     getCorrectiveActionDescription,
     reviewActionEffectiveness,
-    getActionEffectiveness
+    getActionEffectiveness,
+    getHierarchyCounts
 };

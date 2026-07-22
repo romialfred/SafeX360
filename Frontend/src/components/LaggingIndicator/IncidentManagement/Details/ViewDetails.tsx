@@ -43,6 +43,7 @@ import { notifyError } from '../../../../utility/notifyError';
 import { addIncidentHistory, getIncidentHistoryByIncidentId } from '../../../../services/IncidentHistoryService';
 import IncidentHistory from './IncidentHistoryTab';
 import ChangeHistory from '../../../UtilityComp/ChangeHistory';
+import IncidentInjuriesPanel from '../IncidentInjuriesPanel';
 import { getWeathersByIds } from '../../../../services/WeatherService';
 import { getAllInvestigationProcessByInvestigationId } from '../../../../services/InvestigationFileService';
 
@@ -244,6 +245,15 @@ const ViewDetails = () => {
             icon: IconCalendarEvent,
             content: <IncidentHistory incident={incident} history={history} />,
             hide: history.length === 0
+        },
+        injuries: {
+            label: "Lésions",
+            icon: IconHistory,
+            // Éditable même après CLÔTURE : les jours perdus et l'aggravation d'une
+            // lésion (ex. MTC devenant LTI) évoluent APRÈS la clôture du dossier
+            // (réalité HSE / §9.1.1). Seul un incident REJETÉ (non-événement) est figé.
+            content: <IncidentInjuriesPanel incidentId={incidentId} canEdit={locked.status !== 'REJECTED'} />,
+            hide: false
         },
         journal: {
             label: "Journal d'audit",

@@ -77,6 +77,12 @@ const CODE_MESSAGES: Record<string, string> = {
   CAUSE_LABEL_REQUIRED: "Décrivez la cause avant de l'ajouter.",
   CAUSAL_ANALYSIS_NOT_FOUND: "L'analyse causale est introuvable. Rechargez la page puis réessayez.",
   CAUSE_NOT_FOUND: "La cause est introuvable. Rechargez la page puis réessayez.",
+  // Classification des lésions + heures travaillées (ISO 45001 §9.1.1).
+  INJURY_OUTCOME_REQUIRED: "Sélectionnez l'issue de la lésion (LTI, MTC, presque-accident…).",
+  INJURY_LOST_DAYS_NEGATIVE: "Le nombre de jours perdus ne peut pas être négatif.",
+  INJURY_NOT_FOUND: "La lésion est introuvable. Rechargez la page puis réessayez.",
+  WORKED_HOURS_PERIOD_INVALID: "Choisissez un mois valide (1 à 12) et une année.",
+  WORKED_HOURS_INVALID: "Le nombre d'heures travaillées doit être positif.",
 };
 
 export function notifyError(err: any, fallback = "Une erreur est survenue"): void {

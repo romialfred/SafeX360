@@ -78,7 +78,11 @@ public interface CorrectiveActionRepository extends CrudRepository<CorrectiveAct
             c.status,
             c.description,
             c.progress,
-            'INCIDENT'
+            'INCIDENT',
+            c.controlHierarchy,
+            c.actionType,
+            c.priority,
+            c.causeId
             )
             FROM CorrectiveAction c
             WHERE c.incident.id = :incidentId
@@ -381,6 +385,13 @@ public interface CorrectiveActionRepository extends CrudRepository<CorrectiveAct
     /** CAPA liees a un controle du Plan de maitrise d'un risque (lien federateur). */
     @Query("SELECT c FROM CorrectiveAction c WHERE c.riskControlId = :riskControlId AND (:companyId IS NULL OR c.companyId = :companyId)")
     List<CorrectiveAction> findByRiskControlId(@Param("companyId") Long companyId, @Param("riskControlId") Long riskControlId);
+
+    /** Repartition des actions par niveau de hierarchie de maitrise (§8.1.2). */
+    @Query("SELECT c.controlHierarchy AS hierarchy, COUNT(c) AS total FROM CorrectiveAction c "
+            + "WHERE c.controlHierarchy IS NOT NULL AND (:companyId IS NULL OR c.companyId = :companyId) "
+            + "GROUP BY c.controlHierarchy")
+    List<com.minexpert.hns.repository.incident.projection.HierarchyCount> countByControlHierarchy(
+            @Param("companyId") Long companyId);
 
     long countByIncident_CompanyIdAndDepartmentIdAndStatusInAndDeadlineBetween(Long companyId, Long departmentId,
             List<ActionStatus> statuses,

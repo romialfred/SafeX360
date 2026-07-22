@@ -30,6 +30,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import IncidentCard from './IncidentCard';
+import SafetyKpiPanel from './SafetyKpiPanel';
 import EmptyState from '../../UtilityComp/EmptyState';
 import { IconShieldExclamation } from '@tabler/icons-react';
 
@@ -514,6 +515,8 @@ const IncidentManagementData = () => {
     return (
         <div className="card">
             <Toast ref={toast} />
+            {/* Indicateurs de fréquence des lésions (ISO 45001 §9.1.1 — LTIFR/TRIFR). */}
+            <div className="mb-3"><SafetyKpiPanel /></div>
             {/* NOUVEAU LOT 49 — Filtre Source en tete : Employes vs IA */}
             {sourceFilterBanner}
             <Toolbar className="mb-3 !p-2" left={leftToolbarTemplate} right={rightToolbarTemplate} />

@@ -13,6 +13,7 @@ import { errorNotification, successNotification } from '../../../utility/Notific
 import SegmentedFilter from '../../UtilityComp/SegmentedFilter';
 import EmptyState from '../../UtilityComp/EmptyState';
 import CorrectiveActionCard from './CorrectiveActionCard';
+import ControlHierarchyWidget from './ControlHierarchyWidget';
 import {
     CA_STATUS_OPTIONS,
     CA_TYPE_LABELS,
@@ -181,6 +182,8 @@ const CorrectiveData = () => {
 
     return (
         <div className="space-y-3">
+            {/* Indicateur de maturité HSE : mesures par niveau de hiérarchie (§8.1.2). */}
+            <ControlHierarchyWidget />
             {/* Barre de filtres */}
             <div className="bg-white rounded-xl border border-slate-200 p-3">
                 <SegmentedFilter

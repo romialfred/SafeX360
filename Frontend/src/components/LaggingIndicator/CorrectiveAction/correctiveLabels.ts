@@ -80,6 +80,42 @@ export const CA_TYPE_LABELS: Record<string, string> = {
 export const caTypeLabel = (code?: string | null) =>
     code ? CA_TYPE_LABELS[code] ?? code : '—';
 
+// ─── Classification de l'action (ISO 45001 §8.1.2 / §10.2) ──────────────────
+
+// Hiérarchie des mesures de maîtrise, de la plus efficace à la moins efficace.
+// L'ordre = rang de maturité ; les 2 derniers niveaux (EPI/administratif) sont
+// « faibles » et déclenchent une incitation à remonter la hiérarchie.
+export const CONTROL_HIERARCHY_CONFIG: Record<string, { label: string; short: string; rank: number; chip: string; weak?: boolean }> = {
+    ELIMINATION: { label: 'Élimination', short: 'Éliminer le danger', rank: 1, chip: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    SUBSTITUTION: { label: 'Substitution', short: 'Remplacer le danger', rank: 2, chip: 'bg-teal-50 text-teal-700 border-teal-200' },
+    ENGINEERING: { label: 'Ingénierie', short: 'Isoler du danger', rank: 3, chip: 'bg-sky-50 text-sky-700 border-sky-200' },
+    ADMINISTRATIVE: { label: 'Administratif', short: 'Consignes / procédures', rank: 4, chip: 'bg-amber-50 text-amber-700 border-amber-200', weak: true },
+    PPE: { label: 'EPI', short: 'Protéger l\'individu', rank: 5, chip: 'bg-orange-50 text-orange-700 border-orange-200', weak: true },
+};
+export const CONTROL_HIERARCHY_ORDER = ['ELIMINATION', 'SUBSTITUTION', 'ENGINEERING', 'ADMINISTRATIVE', 'PPE'] as const;
+export const CONTROL_HIERARCHY_OPTIONS = CONTROL_HIERARCHY_ORDER.map((value) => ({
+    value,
+    label: `${CONTROL_HIERARCHY_CONFIG[value].label} — ${CONTROL_HIERARCHY_CONFIG[value].short}`,
+}));
+export const controlHierarchyConfig = (v?: string | null) =>
+    (v && CONTROL_HIERARCHY_CONFIG[v]) || { label: v || '—', short: '', rank: 99, chip: 'bg-slate-100 text-slate-600 border-slate-200' };
+/** Vrai si la mesure est « faible » (EPI/administratif seul) → nudge. */
+export const isWeakControl = (v?: string | null) => Boolean(v && CONTROL_HIERARCHY_CONFIG[v]?.weak);
+
+export const ACTION_TYPE_CONFIG: Record<string, string> = {
+    IMMEDIATE: 'Immédiate',
+    CORRECTIVE: 'Corrective',
+    PREVENTIVE: 'Préventive',
+};
+export const ACTION_TYPE_OPTIONS = Object.entries(ACTION_TYPE_CONFIG).map(([value, label]) => ({ value, label }));
+
+export const ACTION_PRIORITY_CONFIG: Record<string, { label: string; chip: string }> = {
+    P1: { label: 'P1 — Élevée', chip: 'bg-rose-50 text-rose-700 border-rose-200' },
+    P2: { label: 'P2 — Moyenne', chip: 'bg-amber-50 text-amber-700 border-amber-200' },
+    P3: { label: 'P3 — Faible', chip: 'bg-slate-100 text-slate-600 border-slate-200' },
+};
+export const ACTION_PRIORITY_OPTIONS = Object.entries(ACTION_PRIORITY_CONFIG).map(([value, cfg]) => ({ value, label: cfg.label }));
+
 // ─── Formatage ─────────────────────────────────────────────────────────────
 
 /** Date courte FR : « 24 juil. 2026 ». */

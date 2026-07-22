@@ -23,11 +23,17 @@ import { getCorrectiveActionByIncidentId } from "../../../services/CorrectiveAct
 
 
 type ActionPlan = {
-    actionName: '',
-    deadline: '',
-    assignedEmployeeId: "",
-    status: "",
-    description: ""
+    actionName: string;
+    deadline: any;
+    assignedEmployeeId: any;
+    status: string;
+    description: string;
+    id?: any;
+    // Classification ISO 45001 §8.1.2 / §10.2.
+    controlHierarchy?: string;
+    actionType?: string;
+    priority?: string;
+    causeId?: string | number | null;
 }
 type TeamMember = {
     id: number;
@@ -91,7 +97,7 @@ const Investigation = () => {
                 file
             };
         });
-        form.setValues({ ...form.values, ...investigation, startDate: new Date(investigation.startDate), endDate: investigation.endDate ? new Date(investigation.endDate) : undefined, evidence: evidenceFiles, correctiveActions: actions.map((x: any) => ({ ...x, deadline: new Date(x.deadline), assignedEmployeeId: "" + x.assignedEmployeeId })) });
+        form.setValues({ ...form.values, ...investigation, startDate: new Date(investigation.startDate), endDate: investigation.endDate ? new Date(investigation.endDate) : undefined, evidence: evidenceFiles, correctiveActions: actions.map((x: any) => ({ ...x, deadline: new Date(x.deadline), assignedEmployeeId: "" + x.assignedEmployeeId, causeId: x.causeId != null ? String(x.causeId) : null })) });
 
     }, [actions, investigation])
 
@@ -187,7 +193,18 @@ const Investigation = () => {
             const evidence = await convertFilesToBase64New(form.values.evidence);
             const data = {
                 investigation: { ...investigation, ...form.values, evidence: evidence, incidentId: id, correctiveActions: undefined },
-                correctiveActions: form.values.correctiveActions.map(x => ({ ...x, departmentId: x.assignedEmployeeId ? empMap[x.assignedEmployeeId]?.departmentId : user.departmentId, ownerId: (x.assignedEmployeeId || user.id), assignedEmployeeId: (x.assignedEmployeeId || user.id) }))
+                correctiveActions: form.values.correctiveActions.map(x => ({
+                    ...x,
+                    departmentId: x.assignedEmployeeId ? empMap[x.assignedEmployeeId]?.departmentId : user.departmentId,
+                    ownerId: (x.assignedEmployeeId || user.id),
+                    assignedEmployeeId: (x.assignedEmployeeId || user.id),
+                    // Classification §8.1.2/§10.2 : enums vides ('') → null (400 Jackson) ;
+                    // causeId (string du Select) → number, ou null.
+                    controlHierarchy: x.controlHierarchy || null,
+                    actionType: x.actionType || null,
+                    priority: x.priority || null,
+                    causeId: x.causeId ? Number(x.causeId) : null,
+                }))
             };
             dispatch(showOverlay());
             if (investigation) {

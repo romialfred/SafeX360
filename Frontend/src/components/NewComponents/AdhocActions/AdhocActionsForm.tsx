@@ -17,6 +17,7 @@ import TextEditor from "../../UtilityComp/TextEditor";
 import { hideOverlay, showOverlay } from "../../../slices/OverlaySlice";
 import { errorNotification, successNotification } from "../../../utility/NotificationUtility";
 import { createCorrectiveAction } from "../../../services/CorrectiveActionService";
+import ActionClassificationFields from "../../LaggingIndicator/CorrectiveAction/ActionClassificationFields";
 import { getEmployeeDropdown } from "../../../services/EmployeeService";
 import { isValidRichText } from "../../../utility/OtherUtilities";
 import { adhocStatusConfig, toIsoDateLocal } from "./adhocLabels";
@@ -80,11 +81,16 @@ const AdhocActionsForm = () => {
             description: '',
             ownerId: user?.id || null,
             departmentId: user?.departmentId || null,
+            // Classification ISO 45001 §8.1.2 / §10.2 (hiérarchie obligatoire).
+            controlHierarchy: '',
+            actionType: '',
+            priority: 'P2',
         },
         validate: {
             actionName: (value) => (value.trim().length < 5 ? t('form.validationActionNameMin') : null),
             description: (value) => (isValidRichText(value) ? null : t('form.validationDescriptionRequired')),
             deadline: (value) => (value ? null : t('form.validationDeadlineRequired')),
+            controlHierarchy: (value) => (value ? null : 'La hiérarchie de maîtrise est requise (§8.1.2).'),
         },
     });
 
@@ -113,6 +119,10 @@ const AdhocActionsForm = () => {
             deadline: form.values.deadline instanceof Date
                 ? toIsoDateLocal(form.values.deadline)
                 : null,
+            // Enums : '' (non renseigné) → null pour éviter un 400 Jackson.
+            controlHierarchy: form.values.controlHierarchy || null,
+            actionType: form.values.actionType || null,
+            priority: form.values.priority || null,
         };
 
         createCorrectiveAction(payload)
@@ -163,6 +173,14 @@ const AdhocActionsForm = () => {
                                 {...form.getInputProps('actionName')}
                             />
                             <TextEditor form={form} id="description" title={t('form.descriptionLabel')} withAsterisk />
+                        </SectionCard>
+
+                        <SectionCard
+                            icon={<IconClipboardText size={15} stroke={1.8} />}
+                            title="Classification de l'action (ISO 45001 §8.1.2)"
+                            subtitle="Hiérarchie de maîtrise, nature et priorité"
+                        >
+                            <ActionClassificationFields form={form} />
                         </SectionCard>
 
                         <SectionCard

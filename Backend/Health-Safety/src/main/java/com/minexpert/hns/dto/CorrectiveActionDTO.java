@@ -8,7 +8,10 @@ import com.minexpert.hns.entity.activities.HsActivity;
 import com.minexpert.hns.entity.incident.CorrectiveAction;
 import com.minexpert.hns.entity.incident.Incident;
 import com.minexpert.hns.entity.nonConformity.NonConformity;
+import com.minexpert.hns.enums.ActionPriority;
 import com.minexpert.hns.enums.ActionStatus;
+import com.minexpert.hns.enums.ActionType;
+import com.minexpert.hns.enums.ControlHierarchy;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -38,6 +41,11 @@ public class CorrectiveActionDTO {
     private Long riskControlId;
     // Lien (souple) vers LA cause traitee par cette action (ISO 45001 §10.2 a-b).
     private Long causeId;
+    // Classification de l'action (ISO 45001 §8.1.2 / §10.2).
+    private ControlHierarchy controlHierarchy;
+    private ActionType actionType;
+    private ActionPriority priority;
+    private Long approvedBy;
 
     public CorrectiveAction toEntity() {
         // Construction par setters (et non par le constructeur positionnel
@@ -64,6 +72,10 @@ public class CorrectiveActionDTO {
         entity.setUpdatedAt(this.updatedAt);
         entity.setRiskControlId(this.riskControlId);
         entity.setCauseId(this.causeId);
+        entity.setControlHierarchy(this.controlHierarchy);
+        entity.setActionType(this.actionType);
+        entity.setPriority(this.priority);
+        entity.setApprovedBy(this.approvedBy);
         return entity;
     }
 }
