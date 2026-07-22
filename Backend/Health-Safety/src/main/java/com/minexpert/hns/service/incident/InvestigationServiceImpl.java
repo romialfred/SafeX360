@@ -192,15 +192,16 @@ public class InvestigationServiceImpl implements InvestigationService {
         if (actor == null) {
             throw new HSException("VALIDATION_ACTOR_REQUIRED");
         }
-        // Independance (ISO 45001 §10.2) : pas d'auto-validation. Le validateur ne
-        // doit pas figurer dans l'equipe d'enquete — sinon la « revue par un pair »
-        // se reduit a une auto-attestation, exactement ce que le controle interdit.
-        boolean actorOnTeam = StringListConverter.convertStringToParticipants(investigation.getTeam())
-                .stream()
-                .anyMatch(p -> actor.equals(p.getId()));
-        if (actorOnTeam) {
-            throw new HSException("VALIDATOR_MUST_BE_INDEPENDENT");
-        }
+        // Independance (ISO 45001 §10.2) : imposee au niveau du ROLE — seuls les
+        // roles « Accountable » (coordinateur/manager HSE + admins) portent
+        // l'autorite INCIDENT_VALIDATE (@PreAuthorize cote controller), a
+        // l'exclusion de l'INCIDENT_INVESTIGATOR qui mene l'enquete. On NE compare
+        // PAS ici l'acteur aux membres de l'equipe : l'acteur (X-User-Id) et les
+        // participants sont dans des espaces d'identifiants distincts (compte vs
+        // employe), une comparaison directe serait a la fois non fiable (faux
+        // negatif) ET risquerait de bloquer un coordinateur legitime (faux
+        // positif). Raffinement « validateur hors equipe » = suivi, subordonne a
+        // l'alignement X-User-Id -> empId (meme dette que la garde SELF employe).
         investigation.setValidated(true);
         investigation.setReviewedBy(actor);
         investigation.setReviewedAt(LocalDateTime.now());

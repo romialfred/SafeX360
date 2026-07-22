@@ -91,6 +91,8 @@ const CODE_MESSAGES: Record<string, string> = {
     "La validation doit être réalisée par un pair indépendant : un membre de l'équipe d'enquête ne peut pas valider sa propre enquête.",
   VALIDATION_ACTOR_REQUIRED:
     "Impossible d'identifier le validateur. Reconnectez-vous puis réessayez.",
+  VALIDATION_COMMENT_TOO_LONG:
+    "Le commentaire de validation est trop long (2000 caractères maximum).",
 };
 
 export function notifyError(err: any, fallback = "Une erreur est survenue"): void {
@@ -118,7 +120,15 @@ export function notifyError(err: any, fallback = "Une erreur est survenue"): voi
     err?.response?.data?.message ||
     err?.message ||
     fallback;
-  const message = CODE_MESSAGES[raw] ?? raw ?? fallback;
+  // 403 sans code metier connu (ex. @PreAuthorize -> « Access denied. ») : message
+  // generique d'autorisation plutot que le libelle technique brut. Une RESPONSE
+  // portant un code metier connu (mappe ci-dessous) garde son message specifique.
+  const status = err?.response?.status;
+  const message =
+    CODE_MESSAGES[raw] ??
+    (status === 403 && !CODE_MESSAGES[raw]
+      ? "Vous n'avez pas les droits nécessaires pour effectuer cette action."
+      : raw ?? fallback);
 
   // Affichage de la notification Mantine (rouge)
   errorNotification(message);
@@ -126,7 +136,6 @@ export function notifyError(err: any, fallback = "Une erreur est survenue"): voi
   // Logging detaille uniquement en mode developpement.
   // `import.meta.env.DEV` est defini par Vite (true en dev, false en build prod).
   if (import.meta.env?.DEV) {
-    const status = err?.response?.status;
     // On garde un seul console.error pour rester lisible dans la devtools.
     // eslint-disable-next-line no-console
     console.error(

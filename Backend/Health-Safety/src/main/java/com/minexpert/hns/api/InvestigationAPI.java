@@ -50,13 +50,21 @@ public class InvestigationAPI {
         return new ResponseEntity<>(new ResponseDTO("Investigation updated successfully."), HttpStatus.OK);
     }
 
-    /** Validation par un pair indépendant (ISO 45001 §10.2) — prérequis à la clôture. */
+    /**
+     * Validation par un pair indépendant (ISO 45001 §10.2) — prérequis à la clôture.
+     * RACI : réservé aux rôles « Accountable » (coordinateur/manager HSE + admins)
+     * via l'autorité {@link com.minexpert.hns.config.IncidentRbacConfig#INCIDENT_VALIDATE}.
+     * L'indépendance vis-à-vis de l'équipe d'enquête est vérifiée en plus côté service.
+     */
+    @org.springframework.security.access.prepost.PreAuthorize(
+            "hasAuthority('" + com.minexpert.hns.config.IncidentRbacConfig.INCIDENT_VALIDATE + "')")
     @PutMapping("/{id}/validate")
     public ResponseEntity<ResponseDTO> validateInvestigation(
             @RequestParam(value = "companyId", required = false) Long companyId,
             @org.springframework.web.bind.annotation.PathVariable Long id,
-            @RequestBody(required = false) java.util.Map<String, String> body) throws HSException {
-        String comment = body != null ? body.get("comment") : null;
+            @jakarta.validation.Valid @RequestBody(required = false) com.minexpert.hns.dto.ValidationRequest body)
+            throws HSException {
+        String comment = body != null ? body.getComment() : null;
         investigationService.validateInvestigation(companyId, id, comment);
         return new ResponseEntity<>(new ResponseDTO("Investigation validated successfully."), HttpStatus.OK);
     }

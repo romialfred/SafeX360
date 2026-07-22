@@ -34,4 +34,34 @@ public final class AuthUtils {
             return null;
         }
     }
+
+    /**
+     * Vrai si la requête courante porte l'autorité RBAC donnée (posée par la
+     * passerelle dans {@code X-Permissions}, jamais fournie par le client). Sert
+     * aux gardes de service qui ne peuvent pas passer par {@code @PreAuthorize}
+     * (ex. une action conditionnée par le statut cible sur un endpoint partagé).
+     */
+    public static boolean hasAuthority(String authority) {
+        if (authority == null) {
+            return false;
+        }
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getAuthorities() == null) {
+            return false;
+        }
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> authority.equals(a.getAuthority()));
+    }
+
+    /**
+     * Vrai si la requête courante porte AU MOINS une autorité RBAC (posée par la
+     * passerelle dans {@code X-Permissions}). Signal robuste de « requête utilisateur
+     * passée par la passerelle », indépendant de la présence du claim identité —
+     * utile aux gardes fail-closed qui ne doivent pas s'ouvrir si {@code X-User-Id}
+     * venait à manquer alors que des autorités sont pourtant présentes.
+     */
+    public static boolean hasAnyAuthority() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null && auth.getAuthorities() != null && !auth.getAuthorities().isEmpty();
+    }
 }

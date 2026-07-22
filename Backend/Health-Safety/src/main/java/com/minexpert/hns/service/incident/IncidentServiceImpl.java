@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.minexpert.hns.clients.HrmsClient;
+import com.minexpert.hns.utility.AuthUtils;
 import com.minexpert.hns.dto.IncidentDTO;
 import com.minexpert.hns.dto.request.DepartmentNames;
 import com.minexpert.hns.dto.response.DepartmentIncidentStats;
@@ -344,6 +345,7 @@ public class IncidentServiceImpl implements IncidentService {
         IncidentStatus previous = incident.getStatus();
         assertIncidentTransition(previous, status);
         if (status == IncidentStatus.CLOSED) {
+            assertCloseAuthority();
             assertRiskReducedForClosure(previous, id);
             assertInvestigationValidatedForClosure(id);
         }
@@ -385,6 +387,30 @@ public class IncidentServiceImpl implements IncidentService {
         int postScore = ra.getPostProbability() * ra.getPostSeverity();
         if (postScore > initialScore) {
             throw new HSException("RISK_NOT_REDUCED");
+        }
+    }
+
+    /**
+     * Garde RACI (ISO 45001 §5.3) : prononcer la clôture d'un incident est une
+     * responsabilité « Accountable » (coordinateur/manager HSE ou admin). On
+     * exige l'autorité {@code INCIDENT_CLOSE} (frappée par la passerelle pour ces
+     * seuls rôles). Un appel SANS identité utilisateur (système/interne) n'est
+     * pas bridé — cette voie n'existe pas aujourd'hui (seul le parcours
+     * utilisateur via l'historique clôt un incident) mais on reste tolérant pour
+     * ne pas casser un futur appel machine légitime. La garde précède toute
+     * mutation : un refus n'altère pas l'incident.
+     */
+    private void assertCloseAuthority() {
+        // « Requête utilisateur passée par la passerelle » = présence d'une identité
+        // (X-User-Id) OU d'autorités RBAC (X-Permissions). On ne se fie PAS au seul
+        // X-User-Id : un futur émetteur de jeton qui omettrait le claim `id`
+        // laisserait alors la garde s'ouvrir (fail-open) alors que la requête porte
+        // pourtant des autorités. Un appel réellement interne (aucune identité, aucune
+        // autorité) reste toléré — cette voie n'existe pas aujourd'hui.
+        boolean gatewayUserRequest = AuthUtils.currentActorId() != null || AuthUtils.hasAnyAuthority();
+        if (gatewayUserRequest && !AuthUtils.hasAuthority(com.minexpert.hns.config.IncidentRbacConfig.INCIDENT_CLOSE)) {
+            throw new org.springframework.security.access.AccessDeniedException(
+                    "Closing an incident requires the INCIDENT_CLOSE authority (Accountable role).");
         }
     }
 

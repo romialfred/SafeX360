@@ -143,17 +143,24 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
     // HNS (hasAuthority). Rôles ultra-sensibles (DOSIMETRY_MEDICAL/_EXPORT_MEDICAL/
     // _ADMIN, BLAST_ADMIN, BLAST_ALARM, INSPECTION_ADMIN) réservés aux admins faute
     // de rôles médecin/RPO dédiés (dette : enrichir UserRole).
+    // INCIDENT_VALIDATE / INCIDENT_CLOSE : gouvernance RACI du module Incidents
+    // (ISO 45001 §10.2). Accordées aux rôles « Accountable » (coordinateur/manager
+    // HSE + admins) — voir HNS IncidentRbacConfig. NON accordées à l'investigateur,
+    // l'auditeur ni l'employé : l'investigateur mène l'enquête mais ne signe pas sa
+    // propre revue et ne prononce pas la clôture.
     private static final String ADMIN_PERMS = String.join(",",
             "DOSIMETRY_READ_AGGREGATE", "DOSIMETRY_READ_NOMINATIVE", "DOSIMETRY_WRITE",
             "DOSIMETRY_MEDICAL", "DOSIMETRY_PCR_RPO", "DOSIMETRY_ADMIN", "DOSIMETRY_EXPORT_MEDICAL",
             "BLAST_VIEW", "BLAST_PLAN", "BLAST_CONFIRM", "BLAST_ALARM", "BLAST_REPORT", "BLAST_ADMIN",
             "INSPECTION_VIEW", "INSPECTION_PLAN", "INSPECTION_EXECUTE", "INSPECTION_VALIDATE",
-            "INSPECTION_TEMPLATE_MANAGE", "INSPECTION_ADMIN");
+            "INSPECTION_TEMPLATE_MANAGE", "INSPECTION_ADMIN",
+            "INCIDENT_VALIDATE", "INCIDENT_CLOSE");
     private static final String COORDINATOR_PERMS = String.join(",",
             "DOSIMETRY_READ_AGGREGATE", "DOSIMETRY_READ_NOMINATIVE", "DOSIMETRY_WRITE", "DOSIMETRY_PCR_RPO",
             "BLAST_VIEW", "BLAST_PLAN", "BLAST_CONFIRM", "BLAST_REPORT",
             "INSPECTION_VIEW", "INSPECTION_PLAN", "INSPECTION_EXECUTE", "INSPECTION_VALIDATE",
-            "INSPECTION_TEMPLATE_MANAGE");
+            "INSPECTION_TEMPLATE_MANAGE",
+            "INCIDENT_VALIDATE", "INCIDENT_CLOSE");
     private static final String INVESTIGATOR_PERMS = String.join(",",
             "DOSIMETRY_READ_AGGREGATE", "DOSIMETRY_READ_NOMINATIVE", "INSPECTION_VIEW", "BLAST_VIEW");
     private static final String AUDITOR_PERMS = String.join(",",
