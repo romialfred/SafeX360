@@ -17,9 +17,11 @@ public class CauseDTO {
     private CauseLevel level;
     private String category;
     private Long parentCauseId;
+    /** Cause = contrôle/barrière défaillant(e) (ISO 45001 §10.2 a-b · ICAM). */
+    private Boolean failedControl;
 
     public static CauseDTO fromEntity(Cause c) {
         return new CauseDTO(c.getId(), c.getCausalAnalysisId(), c.getLabel(), c.getLevel(),
-                c.getCategory(), c.getParentCauseId());
+                c.getCategory(), c.getParentCauseId(), c.getFailedControl());
     }
 }

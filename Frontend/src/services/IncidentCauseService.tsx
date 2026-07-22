@@ -30,6 +30,8 @@ export interface CauseDTO {
     level?: CauseLevel | null;
     category?: string | null;
     parentCauseId?: number | null;
+    /** Cause = contrôle/barrière défaillant(e) (ISO 45001 §10.2 a-b · ICAM). */
+    failedControl?: boolean | null;
 }
 
 const base = "/hns/incident-cause";

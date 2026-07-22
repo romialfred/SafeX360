@@ -11,6 +11,7 @@ import SafeHtml from "../../../UtilityComp/SafeHtml";
 import { validateInvestigation } from "../../../../services/InvestigationService";
 import { successNotification } from "../../../../utility/NotificationUtility";
 import { notifyError } from "../../../../utility/notifyError";
+import ChangeHistory from "../../../UtilityComp/ChangeHistory";
 
 const InvestigationDetailsTab = ({ investigation, processes, onValidated, canValidate = false, reviewerName }: any) => {
     const [opened, { open, close }] = useDisclosure(false);
@@ -358,6 +359,12 @@ const InvestigationDetailsTab = ({ investigation, processes, onValidated, canVal
                     ))}
                 </Carousel>
             </Modal>
+            {/* Journal d'audit de l'enquête (ISO 45001 §7.5.3) — traçabilité champ-par-champ. */}
+            {investigation?.id && (
+                <div className="mt-4">
+                    <ChangeHistory entityType="INVESTIGATION" entityId={investigation.id} title="Journal d'audit de l'enquête" />
+                </div>
+            )}
         </div>
     );
 };

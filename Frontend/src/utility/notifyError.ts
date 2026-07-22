@@ -88,6 +88,8 @@ const CODE_MESSAGES: Record<string, string> = {
   // Gouvernance d'enquête — validation par un pair (ISO 45001 §10.2).
   INVESTIGATION_NOT_VALIDATED:
     "L'enquête doit d'abord être validée par un pair avant de pouvoir clôturer cet incident (onglet Investigation).",
+  HPI_REQUIRES_VALIDATED_INVESTIGATION:
+    "Incident à Haut Potentiel (ICMM · ISO 45001 §6.1.2) : une enquête complète, validée par un pair, est obligatoire avant la clôture — même pour un presque-accident.",
   INVESTIGATION_ALREADY_VALIDATED: "Cette enquête a déjà été validée.",
   VALIDATOR_MUST_BE_INDEPENDENT:
     "La validation doit être réalisée par un pair indépendant : un membre de l'équipe d'enquête ne peut pas valider sa propre enquête.",

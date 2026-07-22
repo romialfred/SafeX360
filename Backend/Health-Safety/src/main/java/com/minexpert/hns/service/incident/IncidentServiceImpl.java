@@ -365,6 +365,7 @@ public class IncidentServiceImpl implements IncidentService {
             assertCloseAuthority();
             assertRiskReducedForClosure(previous, id);
             assertInvestigationValidatedForClosure(id);
+            assertHpiInvestigatedForClosure(incident);
         }
         incident.setStatus(status);
         incident.setUpdatedAt(LocalDateTime.now());
@@ -505,6 +506,28 @@ public class IncidentServiceImpl implements IncidentService {
                 .orElse(false);
         if (unvalidatedInvestigationExists) {
             throw new HSException("INVESTIGATION_NOT_VALIDATED");
+        }
+    }
+
+    /**
+     * Triage Haut Potentiel (ICMM · ISO 45001 §6.1.2 / §10.2) : un incident à
+     * potentiel élevé (pire scénario crédible grave/mortel) NE PEUT PAS être clos
+     * sans qu'une enquête ait été menée ET validée par un pair — même s'il s'agit
+     * d'un simple presque-accident. C'est ce qui fait « vivre » la sévérité
+     * potentielle : le badge HPI ne se contente plus d'informer, il IMPOSE la
+     * profondeur d'enquête. Complète {@link #assertInvestigationValidatedForClosure}
+     * qui, lui, n'exige rien si AUCUNE enquête n'existe.
+     */
+    private void assertHpiInvestigatedForClosure(Incident incident) throws HSException {
+        if (incident == null || !Boolean.TRUE.equals(incident.getHighPotential())) {
+            return; // Incident non-HPI : pas d'exigence d'enquête renforcée.
+        }
+        boolean validatedInvestigationExists = investigationRepository
+                .findByIncidentIdWithCompanyContext(incident.getId(), null)
+                .map(inv -> Boolean.TRUE.equals(inv.getValidated()))
+                .orElse(false);
+        if (!validatedInvestigationExists) {
+            throw new HSException("HPI_REQUIRES_VALIDATED_INVESTIGATION");
         }
     }
 

@@ -45,6 +45,16 @@ public class Cause {
     @Column(name = "parent_cause_id")
     private Long parentCauseId;
 
+    /**
+     * Marque une cause comme « contrôle/barrière défaillant(e) » (ISO 45001
+     * §10.2 a-b · ICAM). Distingue une cause qui EST l'absence ou la défaillance
+     * d'une mesure de maîtrise existante (barrière percée) d'une cause générique —
+     * ce qui oriente directement l'action corrective vers la remise en état ou le
+     * renforcement du contrôle. Additif, nullable.
+     */
+    @Column(name = "failed_control")
+    private Boolean failedControl;
+
     public Cause(Long id) {
         this.id = id;
     }

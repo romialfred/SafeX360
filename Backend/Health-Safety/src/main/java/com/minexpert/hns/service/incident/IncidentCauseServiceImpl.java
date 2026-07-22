@@ -106,6 +106,7 @@ public class IncidentCauseServiceImpl implements IncidentCauseService {
         c.setLevel(dto.getLevel());
         c.setCategory(dto.getCategory());
         c.setParentCauseId(dto.getParentCauseId());
+        c.setFailedControl(dto.getFailedControl());
         return CauseDTO.fromEntity(causeRepository.save(c));
     }
 
