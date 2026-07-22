@@ -240,6 +240,11 @@ public class IncidentServiceImpl implements IncidentService {
         // le preserve depuis l'entite chargee comme status/createdAt, jamais depuis le
         // corps client — sinon un DTO qui l'omet/l'altere casserait la contrainte unique.
         updatedIncident.setNumber(incident.getNumber());
+        // Champs réglementaires (E3.1) : gérés par les endpoints dédiés, PRÉSERVÉS
+        // depuis l'entité chargée — une édition de contenu ne doit pas les effacer.
+        updatedIncident.setNotifiable(incident.getNotifiable());
+        updatedIncident.setRegulatoryDeadline(incident.getRegulatoryDeadline());
+        updatedIncident.setNotifiedToAuthorityAt(incident.getNotifiedToAuthorityAt());
         updatedIncident.setUpdatedAt(LocalDateTime.now());
         updatedIncident.setEvidence(mediaService.saveAllMedia(incidentDTO.getEvidence()));
         incidentRepository.save(updatedIncident);
@@ -356,6 +361,41 @@ public class IncidentServiceImpl implements IncidentService {
         // (dérivé dans ChangeLogService), pas le « responsable » déclaratif du formulaire.
         changeLogService.record(ChangeLogService.INCIDENT, id, incident.getCompanyId(),
                 "status", previous != null ? previous.name() : null, status != null ? status.name() : null);
+    }
+
+    @Override
+    public void setRegulatoryStatus(Long companyId, Long id, Boolean notifiable, java.time.LocalDate deadline)
+            throws HSException {
+        Incident incident = incidentRepository.findByIdWithCompanyContext(id, companyId)
+                .orElseThrow(() -> new HSException("INCIDENT_NOT_FOUND"));
+        Boolean previous = incident.getNotifiable();
+        incident.setNotifiable(notifiable);
+        // L'échéance n'a de sens que si l'incident est notifiable ; sinon on la vide.
+        incident.setRegulatoryDeadline(Boolean.TRUE.equals(notifiable) ? deadline : null);
+        incident.setUpdatedAt(LocalDateTime.now());
+        incidentRepository.save(incident);
+        changeLogService.record(ChangeLogService.INCIDENT, id, incident.getCompanyId(),
+                "notifiable", String.valueOf(previous), String.valueOf(notifiable));
+    }
+
+    @Override
+    public void markNotifiedToAuthority(Long companyId, Long id) throws HSException {
+        Incident incident = incidentRepository.findByIdWithCompanyContext(id, companyId)
+                .orElseThrow(() -> new HSException("INCIDENT_NOT_FOUND"));
+        // On ne « déclare à l'autorité » qu'un incident effectivement notifiable :
+        // sinon la date de déclaration serait un fait réglementaire sans obligation.
+        if (!Boolean.TRUE.equals(incident.getNotifiable())) {
+            throw new HSException("INCIDENT_NOT_NOTIFIABLE");
+        }
+        if (incident.getNotifiedToAuthorityAt() != null) {
+            throw new HSException("INCIDENT_ALREADY_NOTIFIED");
+        }
+        java.time.LocalDate today = java.time.LocalDate.now();
+        incident.setNotifiedToAuthorityAt(today);
+        incident.setUpdatedAt(LocalDateTime.now());
+        incidentRepository.save(incident);
+        changeLogService.record(ChangeLogService.INCIDENT, id, incident.getCompanyId(),
+                "notifiedToAuthorityAt", null, today.toString());
     }
 
     /**

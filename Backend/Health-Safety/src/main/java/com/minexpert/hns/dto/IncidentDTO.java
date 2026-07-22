@@ -99,6 +99,14 @@ public class IncidentDTO {
     /** Modele IA utilise (ex: "claude-sonnet-4-5"). */
     private String aiModel;
 
+    // Reporting réglementaire (E3.1) — LECTURE seule côté DTO : ces champs sont
+    // gérés par les endpoints dédiés /regulatory et /mark-notified, JAMAIS écrits
+    // par toIncident() (sinon une édition de contenu les effacerait). Exposés ici
+    // pour le bandeau d'échéance réglementaire du détail incident.
+    private Boolean notifiable;
+    private java.time.LocalDate regulatoryDeadline;
+    private java.time.LocalDate notifiedToAuthorityAt;
+
     public Incident toIncident() {
         Incident incident = new Incident();
         incident.setId(id);

@@ -1,0 +1,184 @@
+import { useEffect, useState } from "react";
+import { Badge, Button, Switch, Tooltip } from "@mantine/core";
+import { DateInput } from "@mantine/dates";
+import { IconFileDownload, IconGavel, IconShieldCheck, IconAlertTriangle } from "@tabler/icons-react";
+import {
+    exportIncidentPdf,
+    markNotifiedToAuthority,
+    setRegulatoryStatus,
+} from "../../../../services/IncidentService";
+import { errorNotification, successNotification } from "../../../../utility/NotificationUtility";
+import { notifyError } from "../../../../utility/notifyError";
+
+// E3.1 — Déclaration réglementaire (ISO 45001 §7.5.3) : notifiabilité à
+// l'autorité (inspection des mines), minuterie statutaire, déclaration effective,
+// et export PDF officiel de l'incident + son enquête.
+
+const toDate = (v: any): Date | null => {
+    if (!v) return null;
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? null : d;
+};
+
+// Date locale au format ISO court (évite le décalage UTC de toISOString()).
+const toIsoLocal = (d: Date | null): string | null => {
+    if (!d) return null;
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+};
+
+const RegulatoryPanel = ({ incident, onChange, canEdit = true }: any) => {
+    const [notifiable, setNotifiable] = useState<boolean>(!!incident?.notifiable);
+    const [deadline, setDeadline] = useState<Date | null>(toDate(incident?.regulatoryDeadline));
+    const [saving, setSaving] = useState(false);
+    const [exporting, setExporting] = useState(false);
+
+    useEffect(() => {
+        setNotifiable(!!incident?.notifiable);
+        setDeadline(toDate(incident?.regulatoryDeadline));
+    }, [incident?.id, incident?.notifiable, incident?.regulatoryDeadline]);
+
+    const notifiedAt = incident?.notifiedToAuthorityAt;
+    const incidentId = incident?.id;
+
+    const daysLeft = (): number | null => {
+        if (!deadline) return null;
+        const diff = Math.ceil((deadline.getTime() - Date.now()) / 86400000);
+        return diff;
+    };
+
+    const handleSave = () => {
+        if (!incidentId || saving) return;
+        setSaving(true);
+        setRegulatoryStatus(incidentId, notifiable, notifiable ? toIsoLocal(deadline) : null)
+            .then(() => {
+                successNotification("Statut réglementaire enregistré.");
+                onChange?.();
+            })
+            .catch((err) => notifyError(err, "Impossible d'enregistrer le statut réglementaire."))
+            .finally(() => setSaving(false));
+    };
+
+    const handleMarkNotified = () => {
+        if (!incidentId) return;
+        markNotifiedToAuthority(incidentId)
+            .then(() => {
+                successNotification("Incident marqué comme déclaré à l'autorité.");
+                onChange?.();
+            })
+            .catch((err) => notifyError(err, "Impossible d'enregistrer la déclaration."));
+    };
+
+    const handleExport = () => {
+        if (!incidentId || exporting) return;
+        setExporting(true);
+        exportIncidentPdf(incidentId)
+            .then((blob) => {
+                const href = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = href;
+                a.download = `incident-${incident?.number || incidentId}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(href);
+            })
+            .catch(() => {
+                // La réponse d'erreur est un Blob (responseType blob) : notifyError ne
+                // saurait pas l'extraire → message fixe clair.
+                errorNotification("Impossible de générer le PDF de l'incident.");
+            })
+            .finally(() => setExporting(false));
+    };
+
+    const dl = daysLeft();
+
+    return (
+        <div className="border border-gray-200 rounded-xl bg-white shadow-sm p-4 flex flex-col gap-4">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+                <h4 className="text-base text-gray-800 flex items-center gap-2">
+                    <IconGavel size={18} className="text-slate-600" /> Déclaration réglementaire
+                </h4>
+                <Tooltip label="Export PDF officiel (incident + enquête)">
+                    <Button
+                        size="xs"
+                        variant="light"
+                        color="slate"
+                        leftSection={<IconFileDownload size={16} />}
+                        loading={exporting}
+                        onClick={handleExport}
+                    >
+                        Exporter le PDF
+                    </Button>
+                </Tooltip>
+            </div>
+
+            {/* Bandeau d'échéance / statut de déclaration */}
+            {notifiedAt ? (
+                <div className="flex items-center gap-2 rounded-lg bg-green-50 border-l-4 border-green-500 px-3 py-2">
+                    <IconShieldCheck size={20} className="text-green-600 shrink-0" />
+                    <span className="text-sm text-green-800">
+                        Déclaré à l'autorité le {new Date(notifiedAt).toLocaleDateString("fr-FR")}.
+                    </span>
+                </div>
+            ) : incident?.notifiable ? (
+                <div className="flex items-center justify-between gap-3 flex-wrap rounded-lg bg-amber-50 border-l-4 border-amber-500 px-3 py-2">
+                    <div className="flex items-center gap-2">
+                        <IconAlertTriangle size={20} className="text-amber-600 shrink-0" />
+                        <span className="text-sm text-amber-800">
+                            Déclaration à l'autorité requise
+                            {incident?.regulatoryDeadline && (
+                                <> avant le {new Date(incident.regulatoryDeadline).toLocaleDateString("fr-FR")}</>
+                            )}
+                            {dl !== null && (
+                                <Badge
+                                    ml={8}
+                                    size="sm"
+                                    color={dl < 0 ? "red" : dl <= 2 ? "orange" : "yellow"}
+                                    variant="filled"
+                                >
+                                    {dl < 0 ? `${Math.abs(dl)} j de retard` : `${dl} j restant${dl > 1 ? "s" : ""}`}
+                                </Badge>
+                            )}
+                        </span>
+                    </div>
+                    {canEdit && (
+                        <Button size="xs" color="amber" variant="filled" onClick={handleMarkNotified}>
+                            Marquer comme déclaré
+                        </Button>
+                    )}
+                </div>
+            ) : null}
+
+            {/* Édition de la notifiabilité */}
+            {canEdit && (
+                <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+                    <Switch
+                        checked={notifiable}
+                        onChange={(e) => setNotifiable(e.currentTarget.checked)}
+                        label="Incident notifiable à l'autorité"
+                        color="teal"
+                    />
+                    {notifiable && (
+                        <DateInput
+                            size="xs"
+                            label="Échéance statutaire"
+                            valueFormat="DD/MM/YYYY"
+                            value={deadline}
+                            onChange={(v: any) => setDeadline(v ? new Date(v) : null)}
+                            clearable
+                            className="max-w-[200px]"
+                        />
+                    )}
+                    <Button size="xs" onClick={handleSave} loading={saving} className="!bg-primary-500">
+                        Enregistrer
+                    </Button>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default RegulatoryPanel;

@@ -26,4 +26,12 @@ public interface IncidentService {
 
     DepartmentIncidentStats getDepartmentIncidentStats(Long companyId, Long departmentId);
 
+    // ── Reporting réglementaire (ISO 45001 §7.5.3 · E3.1) ──
+    /** Marque l'incident notifiable et fixe l'échéance statutaire (minuterie). */
+    void setRegulatoryStatus(Long companyId, Long id, Boolean notifiable, java.time.LocalDate deadline)
+            throws HSException;
+
+    /** Enregistre la déclaration effective à l'autorité (arrête la minuterie). */
+    void markNotifiedToAuthority(Long companyId, Long id) throws HSException;
+
 }

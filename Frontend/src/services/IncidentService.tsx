@@ -58,4 +58,24 @@ const getDepartmentStatistics = async (departmentId: number | string | null) => 
 };
 
 
-export { reportIncident, getAllIncidents, getIncidentById, updateIncident, getIncidentDetails, getYearlyClosureSummary, getDepartmentStatistics }
+// ── Reporting réglementaire (ISO 45001 §7.5.3 · E3.1) ──
+const setRegulatoryStatus = async (id: number, notifiable: boolean, regulatoryDeadline: string | null) => {
+    return axiosInstance.put(`${url}/${id}/regulatory`, { notifiable, regulatoryDeadline })
+        .then((response) => response.data);
+};
+
+const markNotifiedToAuthority = async (id: number) => {
+    return axiosInstance.put(`${url}/${id}/mark-notified`).then((response) => response.data);
+};
+
+/** Télécharge le PDF officiel de l'incident (réponse binaire). */
+const exportIncidentPdf = async (id: number): Promise<Blob> => {
+    return axiosInstance.get(`${url}/${id}/export-pdf`, { responseType: "blob" })
+        .then((response) => response.data as Blob);
+};
+
+export {
+    reportIncident, getAllIncidents, getIncidentById, updateIncident, getIncidentDetails,
+    getYearlyClosureSummary, getDepartmentStatistics,
+    setRegulatoryStatus, markNotifiedToAuthority, exportIncidentPdf,
+}

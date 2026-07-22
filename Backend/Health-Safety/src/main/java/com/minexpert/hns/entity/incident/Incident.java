@@ -77,6 +77,18 @@ public class Incident {
          */
         @Column(name = "high_potential")
         private Boolean highPotential;
+
+        // ── Reporting réglementaire (ISO 45001 §7.5.3 · E3.1) ──
+        /** Incident NOTIFIABLE à l'autorité (inspection des mines) — déclenche la minuterie statutaire. */
+        @Column(name = "notifiable")
+        private Boolean notifiable;
+        /** Échéance statutaire de déclaration (minuterie réglementaire). */
+        @Column(name = "regulatory_deadline")
+        private java.time.LocalDate regulatoryDeadline;
+        /** Date effective de déclaration à l'autorité (arrête la minuterie). */
+        @Column(name = "notified_to_authority_at")
+        private java.time.LocalDate notifiedToAuthorityAt;
+
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
 
@@ -102,6 +114,9 @@ public class Incident {
                 dto.setAiConfidence(aiConfidence);
                 dto.setAiModel(aiModel);
                 dto.setHighPotential(highPotential);
+                dto.setNotifiable(notifiable);
+                dto.setRegulatoryDeadline(regulatoryDeadline);
+                dto.setNotifiedToAuthorityAt(notifiedToAuthorityAt);
                 return dto;
         }
 

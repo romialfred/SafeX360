@@ -27,6 +27,7 @@ import { useDispatch } from 'react-redux';
 import { hideOverlay, showOverlay } from '../../../../slices/OverlaySlice';
 
 import IncidentDetailsTab from './IncidentDetailsTab';
+import RegulatoryPanel from './RegulatoryPanel';
 import ImpactAnalysis from '../ImpactAnalysis';
 import Lesson from './Lesson';
 import { INCIDENT_STATUS_OPTIONS, incidentStatusLabel } from '../incidentLabels';
@@ -136,6 +137,15 @@ const ViewDetails = () => {
         });
     }
 
+    // Recharge l'incident (utilisé après une modification réglementaire — E3.1).
+    const fetchIncident = () => {
+        getIncidentById(Number(id)).then((res) => {
+            setIncident(res);
+            const statusUpper = String(res?.status || '').toUpperCase();
+            setLocked({ locked: ['CLOSED', 'REJECTED'].includes(statusUpper), status: statusUpper });
+        }).catch((err) => console.log(err));
+    }
+
     // Recharge l'enquête (utilisé après validation par un pair — ISO 45001 §10.2)
     const fetchInvestigation = () => {
         getInvestigationByIncidentId(Number(id)).then((res) => {
@@ -216,11 +226,14 @@ const ViewDetails = () => {
         details: {
             label: 'Détails',
             icon: IconFileText,
-            content: <IncidentDetailsTab
-                incident={incident}
-                employees={employees}
-                weatherMap={weatherMap}
-            />,
+            content: <div className="flex flex-col gap-6">
+                <RegulatoryPanel incident={incident} onChange={fetchIncident} canEdit={!locked.locked} />
+                <IncidentDetailsTab
+                    incident={incident}
+                    employees={employees}
+                    weatherMap={weatherMap}
+                />
+            </div>,
             hide: false
         },
         analysis: {

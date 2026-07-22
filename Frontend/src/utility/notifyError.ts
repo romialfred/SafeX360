@@ -93,6 +93,10 @@ const CODE_MESSAGES: Record<string, string> = {
     "Impossible d'identifier le validateur. Reconnectez-vous puis réessayez.",
   VALIDATION_COMMENT_TOO_LONG:
     "Le commentaire de validation est trop long (2000 caractères maximum).",
+  // Reporting réglementaire (ISO 45001 §7.5.3 · E3.1).
+  INCIDENT_ALREADY_NOTIFIED: "Cet incident a déjà été déclaré à l'autorité.",
+  INCIDENT_NOT_NOTIFIABLE:
+    "Marquez d'abord l'incident comme notifiable avant d'enregistrer la déclaration à l'autorité.",
 };
 
 export function notifyError(err: any, fallback = "Une erreur est survenue"): void {
