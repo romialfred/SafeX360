@@ -121,6 +121,13 @@ public class IncidentServiceImpl implements IncidentService {
 
         incidentDTO.setCompanyId(companyId);
         Incident incident = incidentDTO.toIncident();
+        // Intégrité du déclarant (E1.3 · §7.5.3) : un incident ne doit JAMAIS naître
+        // sans déclarant. La voie web/IA fournit reporterId ; une voie qui l'omettrait
+        // (mobile, appel direct) créerait un incident anonyme faussant la traçabilité
+        // et les relances. On retombe sur l'EMPLOYÉ authentifié (empId non répudiable).
+        if (incident.getReporterId() == null) {
+            incident.setReporterId(com.minexpert.hns.utility.AuthUtils.currentEmpId());
+        }
         incident.setNumber(generateIncidentNumber(companyId));
         incident.setCreatedAt(LocalDateTime.now());
         incident.setUpdatedAt(LocalDateTime.now());

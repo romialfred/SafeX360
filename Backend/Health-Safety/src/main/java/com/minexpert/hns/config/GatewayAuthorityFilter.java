@@ -53,6 +53,7 @@ public class GatewayAuthorityFilter extends OncePerRequestFilter {
     private static final Logger LOGGER = LoggerFactory.getLogger(GatewayAuthorityFilter.class);
 
     static final String HEADER_USER_ID = "X-User-Id";
+    static final String HEADER_EMP_ID = "X-User-Emp-Id";
     static final String HEADER_PERMISSIONS = "X-Permissions";
 
 
@@ -75,6 +76,11 @@ public class GatewayAuthorityFilter extends OncePerRequestFilter {
             if (fromGateway) {
                 String permissionsHeader = request.getHeader(HEADER_PERMISSIONS);
                 String userIdHeader = request.getHeader(HEADER_USER_ID);
+                // Identité EMPLOYÉ (empId) — support des gardes de ségrégation §10.2 e.
+                // Peut être absent (compte sans employé rattaché) : dans ce cas les gardes
+                // d'indépendance ne bloquent pas (l'acteur ne peut être ni responsable ni
+                // membre d'équipe, tous deux étant des empId).
+                String empIdHeader = request.getHeader(HEADER_EMP_ID);
 
                 List<GrantedAuthority> authorities = new ArrayList<>(parsePermissions(permissionsHeader));
 
@@ -90,6 +96,8 @@ public class GatewayAuthorityFilter extends OncePerRequestFilter {
                 PreAuthenticatedAuthorityToken auth = new PreAuthenticatedAuthorityToken(
                         userIdHeader != null ? userIdHeader : "anonymous-gateway",
                         authorities);
+                // empId porté par les details (non répudiable, origine passerelle prouvée).
+                auth.setDetails(empIdHeader != null && !empIdHeader.isBlank() ? empIdHeader : null);
                 auth.setAuthenticated(true);
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }

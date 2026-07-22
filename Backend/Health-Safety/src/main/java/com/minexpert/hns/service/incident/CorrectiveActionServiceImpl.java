@@ -381,6 +381,14 @@ public class CorrectiveActionServiceImpl implements CorrectiveActionService {
         ActionStatus previous = correctiveAction.getStatus();
         assertActionTransition(previous, ActionStatus.IN_PROGRESS);
         correctiveAction.setStatus(ActionStatus.IN_PROGRESS);
+        // Traçabilité de l'approbation (§10.2 / gouvernance) : on estampille QUI a
+        // approuvé (empId authentifié, non répudiable) — l'approbateur était jusqu'ici
+        // jamais enregistré par le workflow d'approbation. Repli sur l'existant si
+        // l'appel n'a pas d'identité (appel système).
+        Long approverEmpId = com.minexpert.hns.utility.AuthUtils.currentEmpId();
+        if (approverEmpId != null) {
+            correctiveAction.setApprovedBy(approverEmpId);
+        }
         correctiveAction.setUpdatedAt(LocalDateTime.now());
         correctiveActionRepository.save(correctiveAction);
         changeLogService.record(ChangeLogService.CORRECTIVE_ACTION, id, correctiveAction.getCompanyId(),
@@ -568,6 +576,15 @@ public class CorrectiveActionServiceImpl implements CorrectiveActionService {
         }
         if (dto == null || dto.getVerdict() == null) {
             throw new HSException("EFFECTIVENESS_VERDICT_REQUIRED");
+        }
+        // Indépendance de la vérification d'efficacité (ISO 45001 §10.2 e) : le
+        // vérificateur doit DIFFÉRER du responsable de l'action — on ne peut pas
+        // juger « efficace » sa propre action. Comparaison empId↔empId (même espace
+        // d'identifiants). Acteur sans empId (compte système/sans employé) ⇒ ne peut
+        // être le responsable (un empId) ⇒ pas de blocage.
+        Long reviewerEmpId = com.minexpert.hns.utility.AuthUtils.currentEmpId();
+        if (reviewerEmpId != null && reviewerEmpId.equals(action.getAssignedEmployeeId())) {
+            throw new HSException("EFFECTIVENESS_VERIFIER_MUST_DIFFER");
         }
         // Borne serveur du risque residuel (le front clampe deja, mais un appel
         // direct pourrait stocker une valeur hors 1..5 -> bande de risque aberrante).

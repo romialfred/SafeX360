@@ -65,6 +65,10 @@ const IncidentManagementData = () => {
     // Source filter : ALL / EMPLOYEE / AI — permet de distinguer les declarations classiques
     // des declarations assistees par IA Vision (wizard Declaration par IA).
     const [selectedSource, setSelectedSource] = useState<'ALL' | 'EMPLOYEE' | 'AI'>('ALL');
+    // Filtre Haut Potentiel (ICMM / ISO 45001 §6.1.2) : n'affiche que les incidents
+    // à pire scénario crédible grave/mortel (highPotential dérivé serveur). Permet au
+    // HSE de piloter en priorité les événements à potentiel élevé (fil « HPI »).
+    const [hpiOnly, setHpiOnly] = useState<boolean>(false);
     const [filters, setFilters] = useState<DataTableFilterMeta>(defaultFilters);
     const [globalFilterValue, setGlobalFilterValue] = useState<string>('');
     const toast = useRef<Toast>(null);
@@ -427,9 +431,10 @@ const IncidentManagementData = () => {
                 selectedSource === 'ALL' ||
                 (selectedSource === 'AI' && ai) ||
                 (selectedSource === 'EMPLOYEE' && !ai);
-            return levelMatch && categoryMatch && statusMatch && departmentMatch && sourceMatch;
+            const hpiMatch = !hpiOnly || incident.highPotential === true;
+            return levelMatch && categoryMatch && statusMatch && departmentMatch && sourceMatch && hpiMatch;
         });
-    }, [enrichedIncidents, selectedLevel, selectedCategoryTab, selectedStatus, selectedDepartment, selectedSource]);
+    }, [enrichedIncidents, selectedLevel, selectedCategoryTab, selectedStatus, selectedDepartment, selectedSource, hpiOnly]);
 
     /**
      * Bandeau de filtre Source — pleine largeur, premiere ligne au-dessus de la table.
@@ -497,6 +502,26 @@ const IncidentManagementData = () => {
                     </span>
                 </button>
             </div>
+            {/* Filtre Haut Potentiel (ICMM / ISO 45001 §6.1.2) — bascule dédiée. */}
+            <button
+                type="button"
+                onClick={() => setHpiOnly((v) => !v)}
+                aria-pressed={hpiOnly}
+                title="Incidents à haut potentiel (pire scénario crédible grave/mortel)"
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] transition-colors border ${
+                    hpiOnly
+                        ? 'bg-amber-100 text-amber-800 border-amber-300 font-medium shadow-sm'
+                        : 'bg-white text-slate-500 border-slate-200 hover:bg-amber-50 hover:text-amber-700'
+                }`}
+            >
+                <IconAlertTriangle size={14} />
+                Haut Potentiel
+                <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10.5px] font-semibold ${
+                    hpiOnly ? 'bg-amber-200 text-amber-800' : 'bg-slate-100 text-slate-500'
+                }`}>
+                    {enrichedIncidents.filter((x: any) => x.highPotential === true).length}
+                </span>
+            </button>
             {selectedSource === 'AI' && (
                 <span className="ml-auto flex items-center gap-1.5 text-[12px] text-violet-700 bg-violet-50 px-2.5 py-1 rounded-md border border-violet-200">
                     <IconSparkles size={12} />

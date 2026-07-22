@@ -68,6 +68,8 @@ const CODE_MESSAGES: Record<string, string> = {
   EFFECTIVENESS_REVIEW_REQUIRES_COMPLETED:
     "La revue d'efficacité n'est possible qu'une fois l'action réalisée (100 %).",
   EFFECTIVENESS_VERDICT_REQUIRED: "Sélectionnez un verdict d'efficacité avant d'enregistrer la revue.",
+  EFFECTIVENESS_VERIFIER_MUST_DIFFER:
+    "L'efficacité doit être vérifiée par une personne indépendante : le responsable de l'action ne peut pas juger sa propre action efficace (ISO 45001 §10.2 e).",
   EFFECTIVENESS_STATUS_NOT_SETTABLE_HERE:
     "Les statuts « Vérifiée » et « Rouverte » se posent uniquement via la revue d'efficacité.",
   RISK_COMPONENT_OUT_OF_RANGE: "La probabilité et la gravité doivent être comprises entre 1 et 5.",

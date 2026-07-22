@@ -192,16 +192,25 @@ public class InvestigationServiceImpl implements InvestigationService {
         if (actor == null) {
             throw new HSException("VALIDATION_ACTOR_REQUIRED");
         }
-        // Independance (ISO 45001 §10.2) : imposee au niveau du ROLE — seuls les
-        // roles « Accountable » (coordinateur/manager HSE + admins) portent
-        // l'autorite INCIDENT_VALIDATE (@PreAuthorize cote controller), a
-        // l'exclusion de l'INCIDENT_INVESTIGATOR qui mene l'enquete. On NE compare
-        // PAS ici l'acteur aux membres de l'equipe : l'acteur (X-User-Id) et les
-        // participants sont dans des espaces d'identifiants distincts (compte vs
-        // employe), une comparaison directe serait a la fois non fiable (faux
-        // negatif) ET risquerait de bloquer un coordinateur legitime (faux
-        // positif). Raffinement « validateur hors equipe » = suivi, subordonne a
-        // l'alignement X-User-Id -> empId (meme dette que la garde SELF employe).
+        // Independance (ISO 45001 §10.2) — DOUBLE garde :
+        //  1) au niveau ROLE : seuls les roles « Accountable » (coordinateur/manager
+        //     HSE + admins) portent INCIDENT_VALIDATE (@PreAuthorize controller), a
+        //     l'exclusion de l'INCIDENT_INVESTIGATOR qui mene l'enquete ;
+        //  2) au niveau PERSONNE (ci-dessous) : le validateur ne doit pas etre membre
+        //     de l'equipe d'enquete. Desormais possible via l'empId autoritaire
+        //     (X-User-Emp-Id, meme espace d'identifiants que les participants) —
+        //     leve la dette « X-User-Id -> empId ». empId absent (compte sans
+        //     employe) ⇒ ne peut etre membre (un empId) ⇒ pas de blocage.
+        Long validatorEmpId = com.minexpert.hns.utility.AuthUtils.currentEmpId();
+        if (validatorEmpId != null) {
+            java.util.List<com.minexpert.hns.dto.ParticipantDTO> team =
+                    com.minexpert.hns.utility.StringListConverter
+                            .convertStringToParticipantsDTO(investigation.getTeam());
+            if (team != null && team.stream()
+                    .anyMatch(p -> validatorEmpId.equals(p.getId()))) {
+                throw new HSException("VALIDATOR_MUST_BE_INDEPENDENT");
+            }
+        }
         investigation.setValidated(true);
         investigation.setReviewedBy(actor);
         investigation.setReviewedAt(LocalDateTime.now());

@@ -36,6 +36,38 @@ public final class AuthUtils {
     }
 
     /**
+     * Id EMPLOYÉ (empId) de l'utilisateur authentifié, ou null. Distinct de
+     * {@link #currentActorId()} (id de compte) : c'est l'espace d'identifiants des
+     * PERSONNES (responsable d'action, membre d'équipe d'enquête). Posé par
+     * {@code GatewayAuthorityFilter} dans les {@code details} depuis l'en-tête
+     * {@code X-User-Emp-Id} (claim {@code empId} du JWT, non répudiable).
+     *
+     * <p>Sert aux gardes d'indépendance / ségrégation des tâches (ISO 45001 §10.2 e) :
+     * vérificateur ≠ responsable, validateur ≠ investigateur. Null (compte sans
+     * employé) ⇒ l'acteur ne peut être ni l'un ni l'autre (tous deux des empId),
+     * la garde ne bloque donc pas — comportement sûr par construction.
+     */
+    public static Long currentEmpId() {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null) {
+                return null;
+            }
+            Object details = auth.getDetails();
+            if (details == null) {
+                return null;
+            }
+            String raw = String.valueOf(details).trim();
+            if (raw.isEmpty()) {
+                return null;
+            }
+            return Long.parseLong(raw);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
      * Vrai si la requête courante porte l'autorité RBAC donnée (posée par la
      * passerelle dans {@code X-Permissions}, jamais fournie par le client). Sert
      * aux gardes de service qui ne peuvent pas passer par {@code @PreAuthorize}

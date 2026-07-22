@@ -44,6 +44,11 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
                         h.remove(ServiceTokenIssuer.HEADER);
                         h.remove("X-Permissions");
                         h.remove("X-User-Id");
+                        // Identité EMPLOYÉ (empId) — distincte de X-User-Id (id de compte).
+                        // Réinjectée depuis le claim `empId` du JWT ci-dessous ; strip de
+                        // toute version cliente pour empêcher l'usurpation. Sert aux gardes
+                        // de ségrégation des tâches (§10.2 e) qui comparent des empId entre eux.
+                        h.remove("X-User-Emp-Id");
                         h.remove("X-Role");
                         // Cloisonnement mines : ces en-têtes sont AUTORITAIRES (réinjectés
                         // depuis le JWT ci-dessous). On strip toute version cliente pour
@@ -104,6 +109,12 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
                 // Identité autoritaire depuis le JWT (claim `id`) pour les gardes SELF.
                 final Object idClaim = claims.get("id");
                 final String userId = idClaim != null ? String.valueOf(idClaim) : "";
+                // Identité EMPLOYÉ (empId) : espace d'identifiants des personnes (responsable
+                // d'action, membre d'équipe d'enquête). Distinct du claim `id` (compte). Requis
+                // pour les gardes d'indépendance §10.2 e (vérificateur ≠ responsable, validateur
+                // ≠ investigateur) qui comparent des empId — un compte peut ne pas avoir d'empId.
+                final Object empIdClaim = claims.get("empId");
+                final String empId = empIdClaim != null ? String.valueOf(empIdClaim) : "";
                 // Cloisonnement mines (autoritaire) : périmètre depuis le JWT.
                 final Object allMinesClaim = claims.get("allMines");
                 final boolean allMines = Boolean.TRUE.equals(allMinesClaim)
@@ -117,6 +128,9 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
                             r.header("X-Role", normalizedRole);
                             if (!userId.isBlank()) {
                                 r.header("X-User-Id", userId);
+                            }
+                            if (!empId.isBlank()) {
+                                r.header("X-User-Emp-Id", empId);
                             }
                             // TOUJOURS présents pour une requête utilisateur authentifiée
                             // (même vide), pour que HNS distingue requête utilisateur
