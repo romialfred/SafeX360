@@ -68,6 +68,10 @@ const CODE_MESSAGES: Record<string, string> = {
   EFFECTIVENESS_REVIEW_REQUIRES_COMPLETED:
     "La revue d'efficacité n'est possible qu'une fois l'action réalisée (100 %).",
   EFFECTIVENESS_VERDICT_REQUIRED: "Sélectionnez un verdict d'efficacité avant d'enregistrer la revue.",
+  // Bean Validation des actions correctives (ISO 45001 §10.2).
+  ACTION_NAME_REQUIRED: "Donnez un intitulé à l'action corrective avant de l'enregistrer.",
+  ACTION_NAME_TOO_LONG: "L'intitulé de l'action est trop long (255 caractères maximum).",
+  ACTION_DESCRIPTION_TOO_LONG: "La description de l'action est trop longue (5000 caractères maximum).",
   EFFECTIVENESS_VERIFIER_MUST_DIFFER:
     "L'efficacité doit être vérifiée par une personne indépendante : le responsable de l'action ne peut pas juger sa propre action efficace (ISO 45001 §10.2 e).",
   EFFECTIVENESS_STATUS_NOT_SETTABLE_HERE:

@@ -507,7 +507,7 @@ const IncidentManagementData = () => {
                 type="button"
                 onClick={() => setHpiOnly((v) => !v)}
                 aria-pressed={hpiOnly}
-                title="Incidents à haut potentiel (pire scénario crédible grave/mortel)"
+                title={t('list.hpiTooltip')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] transition-colors border ${
                     hpiOnly
                         ? 'bg-amber-100 text-amber-800 border-amber-300 font-medium shadow-sm'
@@ -515,7 +515,7 @@ const IncidentManagementData = () => {
                 }`}
             >
                 <IconAlertTriangle size={14} />
-                Haut Potentiel
+                {t('list.hpi')}
                 <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10.5px] font-semibold ${
                     hpiOnly ? 'bg-amber-200 text-amber-800' : 'bg-slate-100 text-slate-500'
                 }`}>

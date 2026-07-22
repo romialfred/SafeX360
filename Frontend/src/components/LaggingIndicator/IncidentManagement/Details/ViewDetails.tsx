@@ -35,6 +35,8 @@ import { INCIDENT_STATUS_OPTIONS, incidentStatusLabel } from '../incidentLabels'
 import RiskAssessment from '../RiskAssessment';
 import { getInvestigationByIncidentId } from '../../../../services/InvestigationService';
 import InvestigationDetailsTab from './InvestigationDetailsTab';
+import { usePermissions } from '../../../../hooks/usePermissions';
+import { isIncidentAccountable } from '../../../../utility/incidentRbac';
 import { getCorrectiveActionByIncidentId } from '../../../../services/CorrectiveActionService';
 import ActionPlansTab from './ActionPlansTab';
 import { useDisclosure } from '@mantine/hooks';
@@ -60,6 +62,11 @@ const ViewDetails = () => {
     const incidentId = Number(id);
     const [investigation, setInvestigation] = useState<any>({});
     const [locked, setLocked] = useState<{ locked: boolean; status: string }>({ locked: false, status: '' });
+    // Gouvernance Incidents (§10.2 RACI) : seuls les rôles « Accountable » valident
+    // l'enquête / posent le statut réglementaire / clôturent. Masquage UX aligné sur
+    // le RBAC passerelle (la sécurité réelle reste serveur, 403 fail-closed).
+    const perms = usePermissions();
+    const canGovern = perms.isAdmin || isIncidentAccountable(perms.role);
     const [actions, setActions] = useState<any[]>([]);
     const [opened, { open, close }] = useDisclosure(false);
     const [emps, setEmps] = useState<any[]>([]);
@@ -228,7 +235,7 @@ const ViewDetails = () => {
             label: 'Détails',
             icon: IconFileText,
             content: <div className="flex flex-col gap-6">
-                <RegulatoryPanel incident={incident} onChange={fetchIncident} canEdit={!locked.locked} />
+                <RegulatoryPanel incident={incident} onChange={fetchIncident} canEdit={!locked.locked && canGovern} />
                 <IncidentContextPanel incident={incident} />
                 <IncidentDetailsTab
                     incident={incident}
@@ -260,7 +267,8 @@ const ViewDetails = () => {
                 investigation={investigation}
                 processes={investigationProcesses}
                 onValidated={fetchInvestigation}
-                canValidate={!locked.locked}
+                canValidate={!locked.locked && canGovern}
+                canEditInvestigation={!locked.locked}
                 reviewerName={reviewerName}
             />,
             hide: !investigation || Object.keys(investigation).length === 0,

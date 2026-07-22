@@ -14,7 +14,7 @@ import { notifyError } from "../../../../utility/notifyError";
 import ChangeHistory from "../../../UtilityComp/ChangeHistory";
 import InvestigationGovernancePanel from "../InvestigationReport/InvestigationGovernancePanel";
 
-const InvestigationDetailsTab = ({ investigation, processes, onValidated, canValidate = false, reviewerName }: any) => {
+const InvestigationDetailsTab = ({ investigation, processes, onValidated, canValidate = false, canEditInvestigation = false, reviewerName }: any) => {
     const [opened, { open, close }] = useDisclosure(false);
     const [startIndex, setStartIndex] = useState(0);
     const [validationComment, setValidationComment] = useState("");
@@ -363,7 +363,7 @@ const InvestigationDetailsTab = ({ investigation, processes, onValidated, canVal
             {/* Gouvernance d'enquête (ISO 45001 §10.2) — frise ECFC + témoignages structurés. */}
             {investigation?.id && (
                 <div className="mt-4">
-                    <InvestigationGovernancePanel investigationId={investigation.id} canEdit={canValidate} />
+                    <InvestigationGovernancePanel investigationId={investigation.id} canEdit={canEditInvestigation} />
                 </div>
             )}
             {/* Journal d'audit de l'enquête (ISO 45001 §7.5.3) — traçabilité champ-par-champ. */}

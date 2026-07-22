@@ -13,6 +13,8 @@ import com.minexpert.hns.enums.ActionStatus;
 import com.minexpert.hns.enums.ActionType;
 import com.minexpert.hns.enums.ControlHierarchy;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,12 +24,18 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class CorrectiveActionDTO {
     private Long id;
+    // Bean Validation (ISO 45001 §10.2 · gouvernance) : une action DOIT porter un
+    // intitulé (ce que le formulaire exige déjà) — @Valid actif sur /create. Le
+    // cap de taille transforme un « data too long » (500) en 400 clair.
+    @NotBlank(message = "ACTION_NAME_REQUIRED")
+    @Size(max = 255, message = "ACTION_NAME_TOO_LONG")
     private String actionName;
     private Long assignedEmployeeId;
     private Long departmentId;
     private Long ownerId;
     private LocalDate deadline;
     private ActionStatus status;
+    @Size(max = 5000, message = "ACTION_DESCRIPTION_TOO_LONG")
     private String description;
     private Long companyId;
     private Integer progress;
