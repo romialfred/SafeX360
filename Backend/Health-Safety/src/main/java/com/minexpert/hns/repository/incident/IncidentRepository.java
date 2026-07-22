@@ -18,6 +18,15 @@ import com.minexpert.hns.repository.projection.LabelCount;
 public interface IncidentRepository extends CrudRepository<Incident, Long> {
     Optional<Incident> findByIdAndCompanyId(Long id, Long companyId);
 
+    // E3.2 — « Incidents similaires » : même mine, même lieu OU même processus,
+    // hors l'incident courant, les plus récents d'abord. Aide à repérer une
+    // récurrence (ISO 45001 §10.2 — apprentissage). Cloisonné par companyId.
+    @Query("SELECT i FROM Incident i WHERE i.companyId = :companyId AND i.id <> :excludeId "
+            + "AND (i.location.id = :locationId OR i.workProcess.id = :workProcessId) "
+            + "ORDER BY i.occurredAt DESC")
+    List<Incident> findSimilar(@Param("companyId") Long companyId, @Param("excludeId") Long excludeId,
+            @Param("locationId") Long locationId, @Param("workProcessId") Long workProcessId, Pageable pageable);
+
     // Génération robuste du numéro d'incident : la contrainte UNIQUE est GLOBALE
     // et des formats de numéro hétérogènes coexistent (INC-2026-000001 sur 3
     // segments ET INC-SYR-2026-0014 sur 4 segments). existsByNumber garantit

@@ -235,6 +235,29 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
                         <Select size="sm" {...form.getInputProps("workProcessId")} label="Processus de travail" placeholder="Sélectionner le processus" withAsterisk data={workProcesses.filter((x: any) => x.departmentId == form.values.department)} />
                     </div>
                     <MultiSelect size="sm" hidePickedOptions {...form.getInputProps("weatherConditions")} data={weatherConditions} label="Conditions environnementales" placeholder="Sélectionner les conditions" withAsterisk />
+                    {/* E3.2 — contexte terrain (engin/quart) + signalement confidentiel (facultatifs). */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <TextInput size="sm" {...form.getInputProps("equipment")} label="Engin / équipement impliqué" placeholder="Ex. : chargeuse CAT 966, foreuse…" />
+                        <Select
+                            size="sm"
+                            {...form.getInputProps("shift")}
+                            clearable
+                            label="Quart de travail"
+                            placeholder="Sélectionner le quart"
+                            data={[
+                                { value: "JOUR", label: "Jour" },
+                                { value: "NUIT", label: "Nuit" },
+                                { value: "MATIN", label: "Matin" },
+                                { value: "APRES_MIDI", label: "Après-midi" },
+                            ]}
+                        />
+                    </div>
+                    <Checkbox
+                        size="sm"
+                        checked={!!form.values.confidential}
+                        onChange={(e) => form.setFieldValue("confidential", e.currentTarget.checked)}
+                        label="Signalement confidentiel — masquer l'identité du déclarant à l'affichage"
+                    />
                 </div>
             </section>
         </div>

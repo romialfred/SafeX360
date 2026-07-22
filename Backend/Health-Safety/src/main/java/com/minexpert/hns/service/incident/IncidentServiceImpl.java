@@ -245,6 +245,11 @@ public class IncidentServiceImpl implements IncidentService {
         updatedIncident.setNotifiable(incident.getNotifiable());
         updatedIncident.setRegulatoryDeadline(incident.getRegulatoryDeadline());
         updatedIncident.setNotifiedToAuthorityAt(incident.getNotifiedToAuthorityAt());
+        // Contexte terrain + confidentialité (E3.2) : posés à la déclaration, PRÉSERVÉS
+        // (le formulaire d'édition ne les porte pas — évite un effacement silencieux).
+        updatedIncident.setEquipment(incident.getEquipment());
+        updatedIncident.setShift(incident.getShift());
+        updatedIncident.setConfidential(incident.getConfidential());
         updatedIncident.setUpdatedAt(LocalDateTime.now());
         updatedIncident.setEvidence(mediaService.saveAllMedia(incidentDTO.getEvidence()));
         incidentRepository.save(updatedIncident);
@@ -376,6 +381,29 @@ public class IncidentServiceImpl implements IncidentService {
         incidentRepository.save(incident);
         changeLogService.record(ChangeLogService.INCIDENT, id, incident.getCompanyId(),
                 "notifiable", String.valueOf(previous), String.valueOf(notifiable));
+    }
+
+    @Override
+    public List<com.minexpert.hns.dto.response.SimilarIncidentDTO> getSimilarIncidents(Long companyId, Long id)
+            throws HSException {
+        Incident incident = incidentRepository.findByIdWithCompanyContext(id, companyId)
+                .orElseThrow(() -> new HSException("INCIDENT_NOT_FOUND"));
+        Long locationId = incident.getLocation() != null ? incident.getLocation().getId() : null;
+        Long processId = incident.getWorkProcess() != null ? incident.getWorkProcess().getId() : null;
+        if (locationId == null && processId == null) {
+            return java.util.Collections.emptyList();
+        }
+        // Cloisonné : on requête sur la mine RÉELLE de l'incident (companyId peut être
+        // null en vue consolidée — l'incident, lui, porte toujours sa mine).
+        return incidentRepository
+                .findSimilar(incident.getCompanyId(), id, locationId, processId, PageRequest.of(0, 5))
+                .stream()
+                .map(i -> new com.minexpert.hns.dto.response.SimilarIncidentDTO(
+                        i.getId(), i.getNumber(), i.getTitle(), i.getOccurredAt(),
+                        i.getStatus() != null ? i.getStatus().name() : null,
+                        locationId != null && i.getLocation() != null && locationId.equals(i.getLocation().getId()),
+                        processId != null && i.getWorkProcess() != null && processId.equals(i.getWorkProcess().getId())))
+                .toList();
     }
 
     @Override

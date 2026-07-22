@@ -91,6 +91,14 @@ public class IncidentAPI {
         return new ResponseEntity<>(new ResponseDTO("Incident marked as notified to authority."), HttpStatus.OK);
     }
 
+    /** Incidents similaires (même lieu/processus, même mine) — recherche de récurrence. */
+    @GetMapping("/{id}/similar")
+    public ResponseEntity<java.util.List<com.minexpert.hns.dto.response.SimilarIncidentDTO>> getSimilarIncidents(
+            @RequestParam(value = "companyId", required = false) Long companyId,
+            @PathVariable Long id) throws HSException {
+        return new ResponseEntity<>(incidentService.getSimilarIncidents(companyId, id), HttpStatus.OK);
+    }
+
     /** Export PDF officiel de l'incident + son enquête (téléchargement). */
     @GetMapping("/{id}/export-pdf")
     public ResponseEntity<byte[]> exportPdf(

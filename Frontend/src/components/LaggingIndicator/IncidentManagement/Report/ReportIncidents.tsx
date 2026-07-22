@@ -102,6 +102,10 @@ const ReportIncidents = () => {
             witnesses: [],
             evidence: [],
             department: "",
+            // E3.2 : contexte terrain (engin/quart) + signalement confidentiel (facultatifs).
+            equipment: "",
+            shift: "",
+            confidential: false,
             incidentDetails: [
                 {
                     incidentCategoryId: '',

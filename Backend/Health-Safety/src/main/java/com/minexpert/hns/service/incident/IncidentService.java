@@ -34,4 +34,8 @@ public interface IncidentService {
     /** Enregistre la déclaration effective à l'autorité (arrête la minuterie). */
     void markNotifiedToAuthority(Long companyId, Long id) throws HSException;
 
+    /** Incidents similaires (même lieu/processus, même mine) — recherche de récurrence (E3.2). */
+    List<com.minexpert.hns.dto.response.SimilarIncidentDTO> getSimilarIncidents(Long companyId, Long id)
+            throws HSException;
+
 }

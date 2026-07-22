@@ -86,7 +86,9 @@ public class IncidentReportPdfService {
         row(b, "Date de découverte", inc.getDiscoveryTime() != null ? inc.getDiscoveryTime().format(DT) : "—");
         row(b, "Statut", inc.getStatus() != null ? inc.getStatus().name() : "—");
         row(b, "Origine", "AI".equalsIgnoreCase(inc.getSource()) ? "Assistée par IA" : "Déclaration manuelle");
-        row(b, "Déclarant", reporter);
+        row(b, "Déclarant", Boolean.TRUE.equals(inc.getConfidential()) ? "Confidentiel" : reporter);
+        row(b, "Engin / équipement", inc.getEquipment());
+        row(b, "Quart", inc.getShift());
         b.append("</table>");
 
         // Réglementaire

@@ -99,6 +99,11 @@ public class IncidentDTO {
     /** Modele IA utilise (ex: "claude-sonnet-4-5"). */
     private String aiModel;
 
+    // Finitions E3.2 : engin/équipement, quart, signalement confidentiel.
+    private String equipment;
+    private String shift;
+    private Boolean confidential;
+
     // Reporting réglementaire (E3.1) — LECTURE seule côté DTO : ces champs sont
     // gérés par les endpoints dédiés /regulatory et /mark-notified, JAMAIS écrits
     // par toIncident() (sinon une édition de contenu les effacerait). Exposés ici
@@ -133,6 +138,11 @@ public class IncidentDTO {
         // un pire scénario crédible >= 4/5 (grave à mortel) classe l'incident HPI,
         // qui impose alors une enquête approfondie même pour un simple presque-accident.
         incident.setHighPotential(potentialSeverity != null && potentialSeverity >= 4);
+        // E3.2 : contexte terrain + confidentialité (posés à la déclaration ;
+        // PRÉSERVÉS à l'édition de contenu, cf. updateIncident).
+        incident.setEquipment(equipment);
+        incident.setShift(shift);
+        incident.setConfidential(confidential);
         return incident;
     }
 

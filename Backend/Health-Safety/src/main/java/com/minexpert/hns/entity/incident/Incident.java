@@ -78,6 +78,17 @@ public class Incident {
         @Column(name = "high_potential")
         private Boolean highPotential;
 
+        // ── Finitions E3.2 (additif) : contexte terrain + signalement confidentiel ──
+        /** Engin / équipement impliqué (§ engin & quart). */
+        @Column(name = "equipment", length = 160)
+        private String equipment;
+        /** Quart de travail au moment de l'événement (ex. JOUR / NUIT / MATIN / APRES_MIDI). */
+        @Column(name = "shift", length = 32)
+        private String shift;
+        /** Signalement confidentiel (§5.4) : l'identité du déclarant est masquée à l'affichage. */
+        @Column(name = "confidential")
+        private Boolean confidential;
+
         // ── Reporting réglementaire (ISO 45001 §7.5.3 · E3.1) ──
         /** Incident NOTIFIABLE à l'autorité (inspection des mines) — déclenche la minuterie statutaire. */
         @Column(name = "notifiable")
@@ -114,6 +125,9 @@ public class Incident {
                 dto.setAiConfidence(aiConfidence);
                 dto.setAiModel(aiModel);
                 dto.setHighPotential(highPotential);
+                dto.setEquipment(equipment);
+                dto.setShift(shift);
+                dto.setConfidential(confidential);
                 dto.setNotifiable(notifiable);
                 dto.setRegulatoryDeadline(regulatoryDeadline);
                 dto.setNotifiedToAuthorityAt(notifiedToAuthorityAt);

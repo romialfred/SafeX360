@@ -74,8 +74,13 @@ const exportIncidentPdf = async (id: number): Promise<Blob> => {
         .then((response) => response.data as Blob);
 };
 
+/** Incidents similaires (même lieu/processus, même mine) — recherche de récurrence (E3.2). */
+const getSimilarIncidents = async (id: number) => {
+    return axiosInstance.get(`${url}/${id}/similar`).then((response) => response.data ?? []);
+};
+
 export {
     reportIncident, getAllIncidents, getIncidentById, updateIncident, getIncidentDetails,
     getYearlyClosureSummary, getDepartmentStatistics,
-    setRegulatoryStatus, markNotifiedToAuthority, exportIncidentPdf,
+    setRegulatoryStatus, markNotifiedToAuthority, exportIncidentPdf, getSimilarIncidents,
 }

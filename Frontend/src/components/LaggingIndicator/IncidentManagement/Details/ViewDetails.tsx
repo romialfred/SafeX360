@@ -28,6 +28,7 @@ import { hideOverlay, showOverlay } from '../../../../slices/OverlaySlice';
 
 import IncidentDetailsTab from './IncidentDetailsTab';
 import RegulatoryPanel from './RegulatoryPanel';
+import IncidentContextPanel from './IncidentContextPanel';
 import ImpactAnalysis from '../ImpactAnalysis';
 import Lesson from './Lesson';
 import { INCIDENT_STATUS_OPTIONS, incidentStatusLabel } from '../incidentLabels';
@@ -228,6 +229,7 @@ const ViewDetails = () => {
             icon: IconFileText,
             content: <div className="flex flex-col gap-6">
                 <RegulatoryPanel incident={incident} onChange={fetchIncident} canEdit={!locked.locked} />
+                <IncidentContextPanel incident={incident} />
                 <IncidentDetailsTab
                     incident={incident}
                     employees={employees}
