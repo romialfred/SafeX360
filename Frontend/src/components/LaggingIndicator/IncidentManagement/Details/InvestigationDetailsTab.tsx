@@ -12,6 +12,7 @@ import { validateInvestigation } from "../../../../services/InvestigationService
 import { successNotification } from "../../../../utility/NotificationUtility";
 import { notifyError } from "../../../../utility/notifyError";
 import ChangeHistory from "../../../UtilityComp/ChangeHistory";
+import InvestigationGovernancePanel from "../InvestigationReport/InvestigationGovernancePanel";
 
 const InvestigationDetailsTab = ({ investigation, processes, onValidated, canValidate = false, reviewerName }: any) => {
     const [opened, { open, close }] = useDisclosure(false);
@@ -359,6 +360,12 @@ const InvestigationDetailsTab = ({ investigation, processes, onValidated, canVal
                     ))}
                 </Carousel>
             </Modal>
+            {/* Gouvernance d'enquête (ISO 45001 §10.2) — frise ECFC + témoignages structurés. */}
+            {investigation?.id && (
+                <div className="mt-4">
+                    <InvestigationGovernancePanel investigationId={investigation.id} canEdit={canValidate} />
+                </div>
+            )}
             {/* Journal d'audit de l'enquête (ISO 45001 §7.5.3) — traçabilité champ-par-champ. */}
             {investigation?.id && (
                 <div className="mt-4">

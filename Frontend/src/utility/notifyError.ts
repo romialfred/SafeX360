@@ -90,6 +90,11 @@ const CODE_MESSAGES: Record<string, string> = {
     "L'enquête doit d'abord être validée par un pair avant de pouvoir clôturer cet incident (onglet Investigation).",
   HPI_REQUIRES_VALIDATED_INVESTIGATION:
     "Incident à Haut Potentiel (ICMM · ISO 45001 §6.1.2) : une enquête complète, validée par un pair, est obligatoire avant la clôture — même pour un presque-accident.",
+  // Gouvernance d'enquête — frise chronologique (ECFC) & témoignages (§10.2).
+  TIMELINE_DESCRIPTION_REQUIRED: "Décrivez le fait avant de l'ajouter à la frise chronologique.",
+  WITNESS_STATEMENT_REQUIRED: "Saisissez le contenu du témoignage avant de l'enregistrer.",
+  TIMELINE_EVENT_NOT_FOUND: "Ce fait de la frise est introuvable. Rechargez la page puis réessayez.",
+  WITNESS_STATEMENT_NOT_FOUND: "Ce témoignage est introuvable. Rechargez la page puis réessayez.",
   INVESTIGATION_ALREADY_VALIDATED: "Cette enquête a déjà été validée.",
   VALIDATOR_MUST_BE_INDEPENDENT:
     "La validation doit être réalisée par un pair indépendant : un membre de l'équipe d'enquête ne peut pas valider sa propre enquête.",
