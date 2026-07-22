@@ -100,6 +100,13 @@ const UpdateIncidents = () => {
 
             probability: '1',
             severity: '1',
+            // Risque APRÈS mesures (ISO 45001 §8.1.2) — facultatif tant que l'incident
+            // n'est pas prêt à clôturer ; vide = non ré-évalué.
+            postProbability: '',
+            postSeverity: '',
+            // Sévérité POTENTIELLE — pire scénario crédible (ICMM / §6.1.2).
+            potentialProbability: '',
+            potentialSeverity: '',
             existingControlMeasures: '',
             residualRiskAssessment: '',
         },
@@ -147,7 +154,7 @@ const UpdateIncidents = () => {
                     file
                 };
             });
-            form.setValues({ ...res, occurredAt: new Date(res.occurredAt), startDate: new Date(res.startDate), endDate: new Date(res.endDate), workAreaId: "" + res.workAreaId, workProcessId: "" + res.workProcessId, reporterId: "" + res.reporterId, probability: "" + res.probability, severity: "" + res.severity, discoveryTime: new Date(res.discoveryTime), incidentDetails: res.incidentDetails.map((x: any) => ({ ...x, incidentCategoryId: "" + x.incidentCategoryId, incidentTypeId: "" + x.incidentTypeId, severityLevelId: "" + x.severityLevelId, affectedBodyParts: x?.affectedBodyParts.map((y: any) => ("" + y)) })), locationId: "" + res.locationId, weatherConditions: res.weatherConditions?.map((x: any) => ("" + x)) ?? [], witnesses: res.witnesses.map((x: any) => ({ id: x })), involvedPersons: res.involvedPersons.map((x: any) => ({ id: x })), evidence: evidenceFiles });
+            form.setValues({ ...res, occurredAt: new Date(res.occurredAt), startDate: new Date(res.startDate), endDate: new Date(res.endDate), workAreaId: "" + res.workAreaId, workProcessId: "" + res.workProcessId, reporterId: "" + res.reporterId, probability: "" + res.probability, severity: "" + res.severity, postProbability: res.postProbability != null ? "" + res.postProbability : '', postSeverity: res.postSeverity != null ? "" + res.postSeverity : '', potentialProbability: res.potentialProbability != null ? "" + res.potentialProbability : '', potentialSeverity: res.potentialSeverity != null ? "" + res.potentialSeverity : '', discoveryTime: new Date(res.discoveryTime), incidentDetails: res.incidentDetails.map((x: any) => ({ ...x, incidentCategoryId: "" + x.incidentCategoryId, incidentTypeId: "" + x.incidentTypeId, severityLevelId: "" + x.severityLevelId, affectedBodyParts: x?.affectedBodyParts.map((y: any) => ("" + y)) })), locationId: "" + res.locationId, weatherConditions: res.weatherConditions?.map((x: any) => ("" + x)) ?? [], witnesses: res.witnesses.map((x: any) => ({ id: x })), involvedPersons: res.involvedPersons.map((x: any) => ({ id: x })), evidence: evidenceFiles });
             const statusUpper = String(res?.status || '').toUpperCase();
             if (['CLOSED', 'REJECTED'].includes(statusUpper)) {
                 setLockedInfo({ locked: true, status: statusUpper });
@@ -229,7 +236,19 @@ const UpdateIncidents = () => {
         setErrorMessage(null);
         const evidence = await convertFilesToBase64New(values.evidence);
         dispatch(showOverlay());
-        updateIncident({ ...values, departmentId: deptId, evidence: evidence, involvedPersons: values.involvedPersons?.map((x: any) => x.id), witnesses: values.witnesses?.map((x: any) => x.id) }).then((_res: any) => {
+        updateIncident({
+            ...values,
+            departmentId: deptId,
+            evidence: evidence,
+            // Risque post-mesures + sévérité potentielle : chaîne vide (Select non
+            // renseigné) → null, sinon un '' partirait au backend Integer (400 Jackson).
+            postProbability: values.postProbability ? Number(values.postProbability) : null,
+            postSeverity: values.postSeverity ? Number(values.postSeverity) : null,
+            potentialProbability: values.potentialProbability ? Number(values.potentialProbability) : null,
+            potentialSeverity: values.potentialSeverity ? Number(values.potentialSeverity) : null,
+            involvedPersons: values.involvedPersons?.map((x: any) => x.id),
+            witnesses: values.witnesses?.map((x: any) => x.id),
+        }).then((_res: any) => {
             successNotification("Incident mis à jour avec succès");
             navigate("/incidents");
         }

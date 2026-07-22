@@ -18,8 +18,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Analyse causale rattachee a un {@link ErrorEvent}. Porte la methode employee
- * (5 pourquoi, Ishikawa, arbre des causes, ICAM) et la synthese.
+ * Analyse causale rattachee a une SOURCE (evenement d'erreur OU incident) — modele
+ * de causes unifie ISO 45001 §10.2 a-b. Porte la methode employee (5 pourquoi,
+ * Ishikawa, arbre des causes, ICAM), la synthese, et N {@link Cause} hierarchisees.
+ *
+ * Rattachement par liens SOUPLES (Long nullable), comme CorrectiveAction : une
+ * analyse porte errorEventId XOR incidentId. C'est le meme modele partage — la
+ * meme table causal_analysis / error_cause sert les deux modules.
  */
 @Entity
 @Table(name = "causal_analysis")
@@ -33,6 +38,10 @@ public class CausalAnalysis {
 
     @Column(name = "error_event_id")
     private Long errorEventId;
+
+    /** Rattachement a un incident (module Investigation). Exclusif de errorEventId. */
+    @Column(name = "incident_id")
+    private Long incidentId;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 16)

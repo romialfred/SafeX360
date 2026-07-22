@@ -18,8 +18,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.minexpert.hns.dto.CorrectiveActionDTO;
+import com.minexpert.hns.dto.EffectivenessReviewDTO;
 import com.minexpert.hns.dto.ResponseDTO;
 import com.minexpert.hns.dto.response.CorrectiveActionResponse;
+import com.minexpert.hns.dto.response.EffectivenessDTO;
 import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.service.incident.CorrectiveActionService;
 
@@ -120,8 +122,30 @@ public class CorrectiveActionAPI {
 
     @GetMapping("/by-risk-control/{riskControlId}")
     public ResponseEntity<List<CorrectiveActionDTO>> getActionsByRiskControl(
-            @PathVariable Long riskControlId) throws HSException {
-        return new ResponseEntity<>(correctiveActionService.getByRiskControl(riskControlId), HttpStatus.OK);
+            @PathVariable Long riskControlId,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(correctiveActionService.getByRiskControl(companyId, riskControlId), HttpStatus.OK);
+    }
+
+    // ── ISO 45001 §10.2 e — Revue d'efficacité ──────────────────────────────
+
+    /** Enregistre la revue d'efficacité d'une action terminée (efficace → VERIFIED, inefficace → REOPENED). */
+    @PostMapping("/{id}/effectiveness")
+    public ResponseEntity<EffectivenessDTO> reviewEffectiveness(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long companyId,
+            @RequestParam(required = false) Long actorId,
+            @RequestBody EffectivenessReviewDTO reviewDTO) throws HSException {
+        return new ResponseEntity<>(
+                correctiveActionService.reviewEffectiveness(companyId, id, actorId, reviewDTO), HttpStatus.OK);
+    }
+
+    /** État courant de la revue d'efficacité d'une action. */
+    @GetMapping("/{id}/effectiveness")
+    public ResponseEntity<EffectivenessDTO> getEffectiveness(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(correctiveActionService.getEffectiveness(companyId, id), HttpStatus.OK);
     }
 
     @GetMapping("/get/{id}")

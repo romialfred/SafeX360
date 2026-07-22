@@ -8,15 +8,20 @@
 
 // ─── Statuts d'une action corrective ───────────────────────────────────────
 // Charte R7 : violet = en attente, amber = en cours, emerald = réalisé,
-// rose = annulé. L'ordre des entrées est significatif : il représente la
-// progression du cycle de vie (utilisé pour restreindre le Select de mise
-// à jour aux statuts atteignables).
+// rose = annulé. Depuis la mise en conformité ISO 45001 §10.2 (revue
+// d'efficacité), le cycle de vie ne s'arrête plus à « Réalisée » :
+//   • teal   = Vérifiée efficace (efficacité prouvée par un vérificateur)
+//   • orange = Rouverte (revue jugée inefficace → l'action repart)
+// Ces deux statuts ne se posent QUE via la revue d'efficacité (page Détail),
+// jamais via le Select de progression — d'où leur exclusion de CA_STATUS_OPTIONS.
 
 export const CA_STATUS_CONFIG: Record<string, { label: string; chip: string }> = {
     PENDING: { label: 'En attente', chip: 'bg-violet-50 text-violet-700 border-violet-200' },
     IN_PROGRESS: { label: 'En cours', chip: 'bg-amber-50 text-amber-700 border-amber-200' },
     CANCELLED: { label: 'Annulée', chip: 'bg-rose-50 text-rose-700 border-rose-200' },
     COMPLETED: { label: 'Réalisée', chip: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    VERIFIED: { label: 'Vérifiée efficace', chip: 'bg-teal-50 text-teal-700 border-teal-200' },
+    REOPENED: { label: 'Rouverte', chip: 'bg-orange-50 text-orange-700 border-orange-200' },
 };
 
 export const caStatusConfig = (status?: string | null) =>
@@ -26,13 +31,39 @@ export const caStatusConfig = (status?: string | null) =>
     };
 
 /**
+ * Statuts atteignables par la voie « avancement » (progression / ActionProcess).
+ * Ordre significatif : il représente la progression du cycle de vie et sert à
+ * restreindre le Select de mise à jour aux statuts en aval du statut courant.
+ * VERIFIED / REOPENED en sont volontairement exclus (voir CA_STATUS_CONFIG).
+ */
+export const CA_PROGRESS_STATUSES = ['PENDING', 'IN_PROGRESS', 'CANCELLED', 'COMPLETED'] as const;
+
+/**
  * Options prêtes pour <Select>, même ordre que le référentiel historique
  * actionStatuses (PENDING → IN_PROGRESS → CANCELLED → COMPLETED).
  */
-export const CA_STATUS_OPTIONS = Object.entries(CA_STATUS_CONFIG).map(([value, cfg]) => ({
+export const CA_STATUS_OPTIONS = CA_PROGRESS_STATUSES.map((value) => ({
     value,
-    label: cfg.label,
+    label: CA_STATUS_CONFIG[value].label,
 }));
+
+// ─── Revue d'efficacité (ISO 45001 §10.2 e) ─────────────────────────────────
+
+export const EFFECTIVENESS_VERDICT_CONFIG: Record<string, { label: string; chip: string }> = {
+    EFFECTIVE: { label: 'Efficace', chip: 'bg-teal-50 text-teal-700 border-teal-200' },
+    PARTIALLY_EFFECTIVE: { label: 'Partiellement efficace', chip: 'bg-amber-50 text-amber-700 border-amber-200' },
+    INEFFECTIVE: { label: 'Inefficace', chip: 'bg-rose-50 text-rose-700 border-rose-200' },
+};
+
+export const effectivenessVerdictConfig = (verdict?: string | null) =>
+    EFFECTIVENESS_VERDICT_CONFIG[(verdict ?? '').toUpperCase()] ?? {
+        label: verdict ?? '—',
+        chip: 'bg-slate-50 text-slate-600 border-slate-200',
+    };
+
+export const EFFECTIVENESS_VERDICT_OPTIONS = Object.entries(EFFECTIVENESS_VERDICT_CONFIG).map(
+    ([value, cfg]) => ({ value, label: cfg.label }),
+);
 
 // ─── Sources d'une action corrective ───────────────────────────────────────
 

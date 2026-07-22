@@ -34,7 +34,13 @@ public class ActionProcessServiceImpl implements ActionProcessService {
         private CorrectiveActionRepository correctiveActionRepository;
 
         @Autowired
+        private CorrectiveActionService correctiveActionService;
+
+        @Autowired
         private MediaService mediaService;
+
+        @Autowired
+        private com.minexpert.hns.service.audit.ChangeLogService changeLogService;
 
         @Override
         @Caching(evict = {
@@ -62,13 +68,44 @@ public class ActionProcessServiceImpl implements ActionProcessService {
                 if (companyId != null && !companyId.equals(correctiveAction.getCompanyId())) {
                         throw new HSException("CORRECTIVE_ACTION_NOT_FOUND");
                 }
+                // Etats terminaux : COMPLETED / CANCELLED / VERIFIED (efficacite
+                // prouvee §10.2) ne se font plus avancer par la voie progression.
                 if (correctiveAction.getStatus() == ActionStatus.COMPLETED
-                                || correctiveAction.getStatus() == ActionStatus.CANCELLED) {
+                                || correctiveAction.getStatus() == ActionStatus.CANCELLED
+                                || correctiveAction.getStatus() == ActionStatus.VERIFIED) {
                         throw new HSException("ACTION_ALREADY_CLOSED");
                 }
+                // Cette voie (avancement) doit respecter la MEME machine a etats que
+                // /update : on ne saute pas d'etat par la porte "progression".
+                ActionStatus current = correctiveAction.getStatus();
+                ActionStatus target = actionProcessDTO.getStatus();
+                if (target != null && target != current) {
+                        correctiveActionService.assertActionTransition(current, target);
+                        // Reprise d'une action ROUVERTE : le verdict d'inefficacite qui
+                        // l'avait rouverte ne s'applique plus a cette NOUVELLE tentative.
+                        // On efface la revue precedente pour qu'une re-completion exige une
+                        // revue d'efficacite fraiche (sinon getEffectiveness renverrait
+                        // toujours l'ancien verdict et bloquerait la nouvelle verification).
+                        if (current == ActionStatus.REOPENED) {
+                                correctiveAction.setEffectivenessVerdict(null);
+                                correctiveAction.setEffectivenessComment(null);
+                                correctiveAction.setEffectivenessReviewedBy(null);
+                                correctiveAction.setEffectivenessReviewedAt(null);
+                                correctiveAction.setResidualProbability(null);
+                                correctiveAction.setResidualSeverity(null);
+                        }
+                        correctiveAction.setStatus(target);
+                }
                 correctiveAction.setProgress(actionProcessDTO.getProgress());
-                correctiveAction.setStatus(actionProcessDTO.getStatus());
                 correctiveActionRepository.save(correctiveAction);
+                // Journal d'audit (ISO 45001 §7.5.3) : transition de statut par la voie
+                // avancement (acteur = utilisateur authentifie, derive dans le service).
+                if (target != null && target != current) {
+                        changeLogService.record(
+                                com.minexpert.hns.service.audit.ChangeLogService.CORRECTIVE_ACTION,
+                                correctiveAction.getId(), correctiveAction.getCompanyId(),
+                                "status", current != null ? current.name() : null, target.name());
+                }
                 ActionProcess actionProcess = actionProcessDTO.toEntity();
                 actionProcess.setDocs(mediaService.saveAllMedia(actionProcessDTO.getDocs()));
                 actionProcess.setCreatedAt(LocalDateTime.now());

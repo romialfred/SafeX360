@@ -37,4 +37,7 @@ public interface IncidentResponse {
 
     /** Confiance IA (0-1) si source=AI. */
     Double getAiConfidence();
+
+    /** Incident à Haut Potentiel (ICMM / §6.1.2) — pilote le triage/filtre de liste. */
+    Boolean getHighPotential();
 }

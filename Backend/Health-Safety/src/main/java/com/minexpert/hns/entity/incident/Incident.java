@@ -69,6 +69,14 @@ public class Incident {
         /** Modele IA utilise (ex: claude-sonnet-4-5) si source=AI. */
         @Column(name = "ai_model", length = 64)
         private String aiModel;
+        /**
+         * Incident à HAUT POTENTIEL (ICMM / ISO 45001 §6.1.2) : drapeau dérivé de la
+         * gravité POTENTIELLE (pire scénario crédible). Persisté sur l'incident pour
+         * un tri/filtre de liste efficace (sans join RiskAssessment). Un presque-accident
+         * à potentiel mortel est ainsi trié comme un événement grave.
+         */
+        @Column(name = "high_potential")
+        private Boolean highPotential;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
 
@@ -93,6 +101,7 @@ public class Incident {
                 dto.setSource(source != null ? source : "EMPLOYEE");
                 dto.setAiConfidence(aiConfidence);
                 dto.setAiModel(aiModel);
+                dto.setHighPotential(highPotential);
                 return dto;
         }
 

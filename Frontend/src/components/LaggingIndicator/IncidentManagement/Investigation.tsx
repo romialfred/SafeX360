@@ -6,6 +6,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import InvestigationDetails from "./InvestigationReport/InvestigationDetails";
 import InvestigationAnalysis from "./InvestigationReport/InvestigationAnalysis";
+import IncidentRcaPanel from "./InvestigationReport/IncidentRcaPanel";
 import InvestigationPlan from "./InvestigationReport/InvestigationPlan";
 import InvestigationReport from "./InvestigationReport/InvestigationReport";
 import { getIncidentDetails } from "../../../services/IncidentService";
@@ -269,6 +270,14 @@ const Investigation = () => {
 
                     <Stepper.Step label={t('investigation.step2Label')} description={t('investigation.step2Desc')}>
                         <InvestigationAnalysis form={form} />
+                        {/* Analyse causale STRUCTURÉE persistée (ISO 45001 §10.2 a-b) : en
+                            complément des buckets ICAM ci-dessus, chaque méthode devient
+                            une analyse portant des causes hiérarchisées reliables aux actions. */}
+                        {id && (
+                            <div className="mt-6 pt-5 border-t border-slate-200">
+                                <IncidentRcaPanel incidentId={Number(id)} canEdit={!lockedInfo.locked} />
+                            </div>
+                        )}
                     </Stepper.Step>
                     <Stepper.Step label={t('investigation.step3Label')} description={t('investigation.step3Desc')}>
                         <InvestigationPlan incident={incident} form={form} />

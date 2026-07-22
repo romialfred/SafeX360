@@ -59,6 +59,24 @@ const CODE_MESSAGES: Record<string, string> = {
   DATA_INTEGRITY_ERROR: "Les données saisies ne respectent pas une contrainte. Vérifiez le formulaire puis réessayez.",
   PPE_REQUEST_EMPTY: "Sélectionnez au moins un employé et un équipement (EPI) avant d'enregistrer la demande.",
   EXAMPLE_REQUIRED: "Aucun exemple fourni. Saisissez un exemple avant de l'ajouter.",
+  // Verrou de clôture d'incident (ISO 45001 §8.1.2 — ré-évaluation du risque).
+  RESIDUAL_RISK_REQUIRED_FOR_CLOSURE:
+    "Renseignez le risque APRÈS mesures (probabilité et gravité résiduelles) avant de clôturer cet incident.",
+  RISK_NOT_REDUCED:
+    "Le risque résiduel est supérieur au risque initial : la clôture exige une réduction du risque. Renforcez les mesures.",
+  // Revue d'efficacité des actions (ISO 45001 §10.2 e).
+  EFFECTIVENESS_REVIEW_REQUIRES_COMPLETED:
+    "La revue d'efficacité n'est possible qu'une fois l'action réalisée (100 %).",
+  EFFECTIVENESS_VERDICT_REQUIRED: "Sélectionnez un verdict d'efficacité avant d'enregistrer la revue.",
+  EFFECTIVENESS_STATUS_NOT_SETTABLE_HERE:
+    "Les statuts « Vérifiée » et « Rouverte » se posent uniquement via la revue d'efficacité.",
+  RISK_COMPONENT_OUT_OF_RANGE: "La probabilité et la gravité doivent être comprises entre 1 et 5.",
+  // Analyse causale structurée (ISO 45001 §10.2 a-b).
+  INCIDENT_LOCKED: "Cet incident est clôturé ou rejeté : son analyse causale n'est plus modifiable.",
+  CAUSAL_METHOD_REQUIRED: "Choisissez une méthode d'analyse (5 Pourquoi, Ishikawa, arbre…).",
+  CAUSE_LABEL_REQUIRED: "Décrivez la cause avant de l'ajouter.",
+  CAUSAL_ANALYSIS_NOT_FOUND: "L'analyse causale est introuvable. Rechargez la page puis réessayez.",
+  CAUSE_NOT_FOUND: "La cause est introuvable. Rechargez la page puis réessayez.",
 };
 
 export function notifyError(err: any, fallback = "Une erreur est survenue"): void {

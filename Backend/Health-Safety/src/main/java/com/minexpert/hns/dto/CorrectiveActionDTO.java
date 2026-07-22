@@ -36,26 +36,34 @@ public class CorrectiveActionDTO {
     private LocalDateTime updatedAt;
     // Lien federateur (souple) vers un controle du « Plan de maitrise » d'un risque.
     private Long riskControlId;
+    // Lien (souple) vers LA cause traitee par cette action (ISO 45001 §10.2 a-b).
+    private Long causeId;
 
     public CorrectiveAction toEntity() {
-        return new CorrectiveAction(
-                this.id,
-                this.actionName,
-                this.assignedEmployeeId,
-                this.departmentId,
-                this.ownerId,
-                this.deadline,
-                this.status,
-                this.description,
-                this.incidentId != null ? new Incident(incidentId) : null,
-                this.generalInspectionId != null ? new GeneralInspection(generalInspectionId) : null,
-                this.hsActivityId != null ? new HsActivity(hsActivityId) : null,
-                this.nonConformityId != null ? new NonConformity(nonConformityId) : null,
-                this.progress,
-                this.companyId,
-                this.createdAt,
-                this.updatedAt,
-                null,
-                this.riskControlId);
+        // Construction par setters (et non par le constructeur positionnel
+        // @AllArgsConstructor) : l'entite gagne des colonnes au fil des evolutions
+        // (revue d'efficacite ISO 45001 §10.2, risque residuel...) et un mapping
+        // positionnel casserait silencieusement a chaque ajout.
+        CorrectiveAction entity = new CorrectiveAction();
+        entity.setId(this.id);
+        entity.setActionName(this.actionName);
+        entity.setAssignedEmployeeId(this.assignedEmployeeId);
+        entity.setDepartmentId(this.departmentId);
+        entity.setOwnerId(this.ownerId);
+        entity.setDeadline(this.deadline);
+        entity.setStatus(this.status);
+        entity.setDescription(this.description);
+        entity.setIncident(this.incidentId != null ? new Incident(incidentId) : null);
+        entity.setGeneralInspection(
+                this.generalInspectionId != null ? new GeneralInspection(generalInspectionId) : null);
+        entity.setHsActivity(this.hsActivityId != null ? new HsActivity(hsActivityId) : null);
+        entity.setNonConformity(this.nonConformityId != null ? new NonConformity(nonConformityId) : null);
+        entity.setProgress(this.progress);
+        entity.setCompanyId(this.companyId);
+        entity.setCreatedAt(this.createdAt);
+        entity.setUpdatedAt(this.updatedAt);
+        entity.setRiskControlId(this.riskControlId);
+        entity.setCauseId(this.causeId);
+        return entity;
     }
 }

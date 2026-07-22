@@ -33,6 +33,8 @@ import { successNotification, errorNotification } from '../../../../utility/Noti
 import { notifyError } from '../../../../utility/notifyError';
 import CameraCaptureModal from './CameraCaptureModal';
 import { reportIncident } from '../../../../services/IncidentService';
+import { convertFileToBase64DTO } from '../../../../utility/DocumentUtility';
+import { useAppSelector } from '../../../../slices/hooks';
 import { getAllActiveLocations } from '../../../../services/LocationService';
 import { getAllActiveWorkArea } from '../../../../services/WorkAreaService';
 import { getAllActiveWorkProcess } from '../../../../services/WorkProcessService';
@@ -87,6 +89,9 @@ export default function AIIncidentDeclaration() {
     const navigate = useNavigate();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const cameraInputRef = useRef<HTMLInputElement>(null);
+    // Declarant (ISO 45001 §7.5) : l'utilisateur connecte est l'auteur de la
+    // declaration. La voie IA le laissait vide — un incident sans declarant.
+    const currentUser = useAppSelector((state: any) => state.user);
 
     const [step, setStep] = useState<Step>('UPLOAD');
     const [image, setImage] = useState<File | null>(null);
@@ -267,12 +272,18 @@ export default function AIIncidentDeclaration() {
             // LocalDateTime. À UTC+1, une déclaration faite à 00h30 était datée de la
             // veille — l'incident changeait de jour (ISO 45001 §9.1).
             const now = toIsoDateTimeLocal(new Date());
+            // Preuve (ISO 45001 §7.5) : la photo analysee par l'IA EST la piece
+            // justificative de l'incident. La voie IA la jetait ; on la conserve en
+            // evidence (memes MediaDTO base64 que le formulaire web classique).
+            const evidence = image ? [await convertFileToBase64DTO(image)] : [];
             const payload: any = {
                 title: editedTitle.trim(),
                 // source/aiConfidence/aiModel sont les NOUVEAUX champs persistes en BDD
                 source: 'AI',
                 aiConfidence: analysis.confidence,
                 aiModel: analysis.aiModel,
+                // Declarant reel (l'utilisateur connecte) — plus de declaration anonyme IA.
+                reporterId: currentUser?.id ?? null,
                 // Dates
                 occurredAt: now,
                 discoveryTime: now,
@@ -282,10 +293,12 @@ export default function AIIncidentDeclaration() {
                 locationId: defaultLocationId,
                 workAreaId: defaultWorkAreaId,
                 workProcessId: defaultWorkProcessId,
-                // Tableau vides — IncidentDetail/RiskAssessment seront crees vides mais valides
+                // Preuve conservee ; la classification (categorie/type/gravite) est
+                // derivee cote serveur a partir de la gravite IA (E1.3) — un incident
+                // IA n'apparait plus a gravite nulle dans les listes.
                 involvedPersons: [],
                 witnesses: [],
-                evidence: [],
+                evidence,
                 ppe: [],
                 weatherConditions: [],
                 // Analyse incident — agrege l'analyse IA dans factualDescription pour audit.

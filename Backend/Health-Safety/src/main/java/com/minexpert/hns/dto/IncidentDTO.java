@@ -77,6 +77,14 @@ public class IncidentDTO {
 
     private Integer probability;
     private Integer severity;
+    // Risque APRES mesures (ISO 45001 §8.1.2) — ré-évaluation structurée.
+    private Integer postProbability;
+    private Integer postSeverity;
+    // Sévérité POTENTIELLE — pire scénario crédible (ICMM / ISO 45001 §6.1.2).
+    private Integer potentialProbability;
+    private Integer potentialSeverity;
+    /** Incident à Haut Potentiel — dérivé serveur de la gravité potentielle. */
+    private Boolean highPotential;
     private String existingControlMeasures;
     private String residualRiskAssessment;
     private String departmentName;
@@ -113,6 +121,10 @@ public class IncidentDTO {
         incident.setSource(source != null && !source.isBlank() ? source.toUpperCase() : "EMPLOYEE");
         incident.setAiConfidence(aiConfidence);
         incident.setAiModel(aiModel);
+        // Haut Potentiel (ICMM / ISO 45001 §6.1.2) dérivé de la gravité POTENTIELLE :
+        // un pire scénario crédible >= 4/5 (grave à mortel) classe l'incident HPI,
+        // qui impose alors une enquête approfondie même pour un simple presque-accident.
+        incident.setHighPotential(potentialSeverity != null && potentialSeverity >= 4);
         return incident;
     }
 
@@ -123,7 +135,18 @@ public class IncidentDTO {
     }
 
     public RiskAssessment toRiskAssessment() {
-        return new RiskAssessment(null, probability, severity, existingControlMeasures, residualRiskAssessment, null,
-                null, null);
+        // Construction par setters (et non par le constructeur positionnel
+        // @AllArgsConstructor) : l'entité gagne des colonnes (risque post-mesures
+        // ISO 45001 §8.1.2...) et un mapping positionnel casserait à chaque ajout.
+        RiskAssessment ra = new RiskAssessment();
+        ra.setProbability(probability);
+        ra.setSeverity(severity);
+        ra.setPostProbability(postProbability);
+        ra.setPostSeverity(postSeverity);
+        ra.setPotentialProbability(potentialProbability);
+        ra.setPotentialSeverity(potentialSeverity);
+        ra.setExistingControlMeasures(existingControlMeasures);
+        ra.setResidualRiskAssessment(residualRiskAssessment);
+        return ra;
     }
 }

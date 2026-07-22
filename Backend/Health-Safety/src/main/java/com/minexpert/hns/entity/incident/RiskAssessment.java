@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import com.minexpert.hns.dto.IncidentDTO;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -26,6 +27,20 @@ public class RiskAssessment {
     private Long id;
     private Integer probability;
     private Integer severity;
+    // Risque APRES mesures (ISO 45001 §8.1.2) : ré-évaluation structurée
+    // probabilité×gravité, pendant dosé du risque initial (probability/severity).
+    // Colonnes additives (ddl-auto=update) ; complète le texte libre historique
+    // residualRiskAssessment sans le remplacer.
+    @Column(name = "post_probability")
+    private Integer postProbability;
+    @Column(name = "post_severity")
+    private Integer postSeverity;
+    // Sévérité/probabilité POTENTIELLES (ICMM / ISO 45001 §6.1.2) : pire scénario
+    // crédible de l'événement, distinct du réel. Pilote le triage Haut Potentiel.
+    @Column(name = "potential_probability")
+    private Integer potentialProbability;
+    @Column(name = "potential_severity")
+    private Integer potentialSeverity;
     @Lob
     private String existingControlMeasures;
     @Lob
@@ -43,6 +58,10 @@ public class RiskAssessment {
     public IncidentDTO toIncidentDTO(IncidentDTO incidentDTO) {
         incidentDTO.setProbability(probability);
         incidentDTO.setSeverity(severity);
+        incidentDTO.setPostProbability(postProbability);
+        incidentDTO.setPostSeverity(postSeverity);
+        incidentDTO.setPotentialProbability(potentialProbability);
+        incidentDTO.setPotentialSeverity(potentialSeverity);
         incidentDTO.setExistingControlMeasures(existingControlMeasures);
         incidentDTO.setResidualRiskAssessment(residualRiskAssessment);
         return incidentDTO;

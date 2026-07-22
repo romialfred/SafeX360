@@ -122,6 +122,10 @@ const ReportIncidents = () => {
 
             probability: '1',
             severity: '1',
+            // Sévérité POTENTIELLE — pire scénario crédible (ICMM / §6.1.2).
+            // Facultative ; si élevée (≥4), l'incident est classé Haut Potentiel.
+            potentialProbability: '',
+            potentialSeverity: '',
             existingControlMeasures: '',
             residualRiskAssessment: '',
 
@@ -238,6 +242,9 @@ const ReportIncidents = () => {
             // de la veille (ISO 45001 §9.1).
             occurredAt: toIsoDateTimeLocal(values.occurredAt),
             discoveryTime: toIsoDateTimeLocal(values.discoveryTime),
+            // Sévérité potentielle : '' (non renseignée) → null pour éviter un 400 Jackson.
+            potentialProbability: values.potentialProbability ? Number(values.potentialProbability) : null,
+            potentialSeverity: values.potentialSeverity ? Number(values.potentialSeverity) : null,
             involvedPersons: values.involvedPersons?.map((x: any) => x.id),
             witnesses: values.witnesses?.map((x: any) => x.id),
         }).then((_res: any) => {

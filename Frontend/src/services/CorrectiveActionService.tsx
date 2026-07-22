@@ -114,6 +114,35 @@ const cancelCorrectiveAction = async (id: number | string) => {
     return axiosInstance.put(`${url}/cancel/${id}`)
         .then((response) => response.data);
 }
+
+/**
+ * Revue d'efficacite (ISO 45001 §10.2 e). Verdict + risque residuel re-evalue :
+ *   • EFFECTIVE / PARTIALLY_EFFECTIVE → action VERIFIED (efficacite prouvee)
+ *   • INEFFECTIVE                     → action REOPENED (elle repart)
+ * companyId est auto-injecte par l'intercepteur ; actorId = verificateur.
+ */
+export interface EffectivenessReview {
+    verdict: string;
+    comment?: string;
+    residualProbability?: number | null;
+    residualSeverity?: number | null;
+}
+
+const reviewActionEffectiveness = async (
+    id: number | string,
+    review: EffectivenessReview,
+    actorId?: number | string | null,
+) => {
+    const params = actorId != null ? { actorId } : undefined;
+    return axiosInstance.post(`${url}/${id}/effectiveness`, review, { params })
+        .then((response) => response.data);
+}
+
+const getActionEffectiveness = async (id: number | string) => {
+    return axiosInstance.get(`${url}/${id}/effectiveness`)
+        .then((response) => response.data);
+}
+
 export {
     removeCorrectiveAction,
     getAllAdhoc,
@@ -131,5 +160,7 @@ export {
     getAllPending,
     approveCorrectiveAction,
     cancelCorrectiveAction,
-    getCorrectiveActionDescription
+    getCorrectiveActionDescription,
+    reviewActionEffectiveness,
+    getActionEffectiveness
 };

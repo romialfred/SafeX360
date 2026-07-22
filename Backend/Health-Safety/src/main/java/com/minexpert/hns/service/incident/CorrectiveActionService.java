@@ -3,7 +3,10 @@ package com.minexpert.hns.service.incident;
 import java.util.List;
 
 import com.minexpert.hns.dto.CorrectiveActionDTO;
+import com.minexpert.hns.dto.EffectivenessReviewDTO;
 import com.minexpert.hns.dto.response.CorrectiveActionResponse;
+import com.minexpert.hns.dto.response.EffectivenessDTO;
+import com.minexpert.hns.enums.ActionStatus;
 import com.minexpert.hns.exception.HSException;
 
 public interface CorrectiveActionService {
@@ -44,6 +47,24 @@ public interface CorrectiveActionService {
 
     void cancelAction(Long companyId, Long id) throws HSException;
 
-    List<CorrectiveActionDTO> getByRiskControl(Long riskControlId) throws HSException;
+    List<CorrectiveActionDTO> getByRiskControl(Long companyId, Long riskControlId) throws HSException;
+
+    /**
+     * Garde de transition de la machine à états des actions correctives, exposée
+     * pour que la voie « avancement » (ActionProcess) respecte les mêmes règles
+     * que /update (pas de saut d'état par la porte progression).
+     */
+    void assertActionTransition(ActionStatus current, ActionStatus target) throws HSException;
+
+    /**
+     * ISO 45001 §10.2 e — enregistre la revue d'efficacité d'une action TERMINÉE :
+     * verdict, vérificateur, date, risque résiduel. Efficace → VERIFIED ; inefficace
+     * → REOPENED (l'action repart).
+     */
+    EffectivenessDTO reviewEffectiveness(Long companyId, Long id, Long actorId, EffectivenessReviewDTO dto)
+            throws HSException;
+
+    /** État courant de la revue d'efficacité d'une action (peut être « non revue »). */
+    EffectivenessDTO getEffectiveness(Long companyId, Long id) throws HSException;
 
 }

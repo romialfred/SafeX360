@@ -16,6 +16,8 @@ import SafeHtml from "../../UtilityComp/SafeHtml";
 import { isValidRichText } from "../../../utility/OtherUtilities";
 import PageHeader from "../../UtilityComp/PageHeader";
 import { CA_STATUS_OPTIONS, caStatusConfig, SERIF } from "./correctiveLabels";
+import EffectivenessReview from "./EffectivenessReview";
+import ChangeHistory from "../../UtilityComp/ChangeHistory";
 
 const UpdateCorrectiveAction = () => {
   const { id } = useParams();
@@ -81,12 +83,34 @@ const UpdateCorrectiveAction = () => {
   }, [form.values.status, initialProgress]);
 
   const statusUpper = String(selectedRow?.status || '').toUpperCase();
-  const isCompleted = (selectedRow?.progress ?? 0) >= 100 || statusUpper === 'COMPLETED';
+  const isVerified = statusUpper === 'VERIFIED';
+  const isReopened = statusUpper === 'REOPENED';
+  const isCompleted = (selectedRow?.progress ?? 0) >= 100 || statusUpper === 'COMPLETED' || isVerified;
   const isCancelled = statusUpper === 'CANCELLED';
   const isPending = statusUpper === 'PENDING';
   const cannotUpdate = isCompleted || isCancelled || isPending;
+  // La revue d'efficacité (ISO 45001 §10.2) apparaît dès que l'action a atteint
+  // « Réalisée » au moins une fois — y compris après vérification (VERIFIED) ou
+  // réouverture (REOPENED, où elle rappelle pourquoi l'action est repartie).
+  const showEffectiveness = isCompleted || isReopened;
 
-  useEffect(() => {
+  // Options du Select de progression selon le statut courant.
+  // REOPENED est hors de la séquence linéaire CA_STATUS_OPTIONS (findIndex → -1,
+  // slice(-1) ne proposait que « Réalisée » — transition INVALIDE depuis REOPENED,
+  // d'où une action rouverte bloquée). On offre explicitement la reprise
+  // (En cours) puis la re-réalisation (Réalisée).
+  // REOPENED se lit sur le STATUT de l'action (autorité), jamais sur le dernier
+  // statut d'historique : aucun ActionProcess ne porte REOPENED (posé par la revue
+  // d'efficacité, sans ligne de progression), donc le dernier statut d'historique
+  // vaut COMPLETED — s'y fier rendait cette branche morte et n'offrait que « Réalisée ».
+  const latestStatus = String(
+    (actionHistory?.length > 0 ? actionHistory[actionHistory.length - 1]?.status : selectedRow?.status) || ''
+  ).toUpperCase();
+  const statusOptions = isReopened
+    ? CA_STATUS_OPTIONS.filter((o) => o.value === 'IN_PROGRESS' || o.value === 'COMPLETED')
+    : CA_STATUS_OPTIONS.slice(Math.max(0, CA_STATUS_OPTIONS.findIndex((item) => item.value === latestStatus)));
+
+  const loadAction = () => {
     if (!id) return;
     getActionById(Number(id))
       .then((res) => {
@@ -104,6 +128,11 @@ const UpdateCorrectiveAction = () => {
       }).catch((err) => {
         errorNotification(err.response?.data?.errorMessage || "Échec du chargement de l'action");
       });
+  };
+
+  useEffect(() => {
+    if (!id) return;
+    loadAction();
 
     getAllActionProcessByActionId(id)
       .then((res) => setActionHistory(res))
@@ -240,17 +269,18 @@ const UpdateCorrectiveAction = () => {
             </div>
           </div>
 
-          {cannotUpdate ? (
-            <Card shadow="xs" padding="md" radius="md" withBorder className={`${isCompleted ? 'bg-emerald-50 border-emerald-200' : isCancelled ? 'bg-rose-50 border-rose-200' : 'bg-violet-50 border-violet-200'}`}>
-              {isCompleted && (<Text size="sm" c="green">Cette action est déjà réalisée (100 % ou statut Réalisée). Aucune mise à jour possible.</Text>)}
+          {(isCancelled || isPending) && (
+            <Card shadow="xs" padding="md" radius="md" withBorder className={`${isCancelled ? 'bg-rose-50 border-rose-200' : 'bg-violet-50 border-violet-200'}`}>
               {isPending && (<Text size="sm" c="violet">Cette action est en attente de validation. Les mises à jour seront possibles après approbation.</Text>)}
               {isCancelled && (<Text size="sm" c="red">Cette action a été annulée. Aucune mise à jour possible.</Text>)}
             </Card>
-          ) : (
+          )}
+
+          {!cannotUpdate && (
             <form className='space-y-3' onSubmit={form.onSubmit(handleSubmit)}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <NumberInput size="sm" disabled={cannotUpdate} {...form.getInputProps('progress')} label="Progression (%)" max={100} clampBehavior="blur" min={selectedRow.progress} />
-                <Select size="sm" disabled={cannotUpdate} label="Statut" data={CA_STATUS_OPTIONS.slice(CA_STATUS_OPTIONS.findIndex((item) => item.value === (actionHistory?.length > 0 ? actionHistory[actionHistory.length - 1]?.status : selectedRow?.status)))} {...form.getInputProps('status')} />
+                <Select size="sm" disabled={cannotUpdate} label="Statut" data={statusOptions} {...form.getInputProps('status')} />
               </div>
               <TextEditor form={form} id="description" title="Description" withAsterisk />
               {!cannotUpdate && <FileDropzone form={form} id="docs" />}
@@ -260,6 +290,17 @@ const UpdateCorrectiveAction = () => {
               </div>
             </form>
           )}
+
+          {showEffectiveness && id && (
+            <>
+              <hr className="my-1 border-t border-slate-200" />
+              <EffectivenessReview actionId={id} actionStatus={selectedRow?.status} onReviewed={loadAction} />
+            </>
+          )}
+
+          {/* Journal d'audit de l'action (ISO 45001 §7.5.3) : verdict d'efficacité,
+              transitions de statut — qui, quoi, avant→après, quand. */}
+          {id && <ChangeHistory entityType="CORRECTIVE_ACTION" entityId={id} title="Journal d'audit de l'action" />}
         </div>
 
         {/* Colonne latérale : historique des mises à jour */}

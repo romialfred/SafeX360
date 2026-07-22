@@ -69,9 +69,15 @@ public class DashboardServiceImpl implements DashboardService {
      */
     private static final int SERIOUS_SEVERITY_MIN_LEVEL = 4;
 
-    /** Statuts terminaux : une action close ne peut pas être « en retard ». */
+    /**
+     * Statuts terminaux : une action close ne peut pas être « en retard ».
+     * VERIFIED (efficacité prouvée, ISO 45001 §10.2) est l'état LE PLUS fermé qui
+     * soit — l'omettre gonflait la charge « ouverte » et déclenchait de fausses
+     * alertes « en retard » pour des actions bouclées puis vérifiées. REOPENED,
+     * lui, reste HORS des clos : c'est du travail réellement rouvert.
+     */
     private static final List<ActionStatus> CLOSED_ACTION_STATUSES = List.of(ActionStatus.COMPLETED,
-            ActionStatus.CANCELLED);
+            ActionStatus.CANCELLED, ActionStatus.VERIFIED);
 
     /**
      * Statuts terminaux d'une inspection : rapport figé ou abandon. Inclut les

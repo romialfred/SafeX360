@@ -2,6 +2,7 @@
 import { Alert, Anchor, Badge, Breadcrumbs, Button, Modal, Select, Tabs, Text, Textarea, Tooltip } from '@mantine/core';
 import {
     IconCalendarEvent,
+    IconHistory,
     IconClock,
     IconBook,
     IconTrendingUp,
@@ -38,8 +39,10 @@ import { useDisclosure } from '@mantine/hooks';
 import { useForm } from '@mantine/form';
 import { DateInput } from '@mantine/dates';
 import { errorNotification, successNotification } from '../../../../utility/NotificationUtility';
+import { notifyError } from '../../../../utility/notifyError';
 import { addIncidentHistory, getIncidentHistoryByIncidentId } from '../../../../services/IncidentHistoryService';
 import IncidentHistory from './IncidentHistoryTab';
+import ChangeHistory from '../../../UtilityComp/ChangeHistory';
 import { getWeathersByIds } from '../../../../services/WeatherService';
 import { getAllInvestigationProcessByInvestigationId } from '../../../../services/InvestigationFileService';
 
@@ -183,7 +186,9 @@ const ViewDetails = () => {
             }));
             fetchHistory();
         }).catch((err) => {
-            errorNotification(err.response?.data?.errorMessage || "Une erreur est survenue");
+            // notifyError traduit les codes métier (RESIDUAL_RISK_REQUIRED_FOR_CLOSURE,
+            // RISK_NOT_REDUCED, INVALID_STATUS_TRANSITION…) en messages FR actionnables.
+            notifyError(err, "Une erreur est survenue lors du changement de statut.");
         }).finally(() => {
             dispatch(hideOverlay());
         });
@@ -239,6 +244,12 @@ const ViewDetails = () => {
             icon: IconCalendarEvent,
             content: <IncidentHistory incident={incident} history={history} />,
             hide: history.length === 0
+        },
+        journal: {
+            label: "Journal d'audit",
+            icon: IconHistory,
+            content: <ChangeHistory entityType="INCIDENT" entityId={incidentId} title="Journal d'audit de l'incident" />,
+            hide: false
         }
     };
 

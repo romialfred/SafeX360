@@ -386,10 +386,15 @@ public class ErrorEventServiceImpl implements ErrorEventService {
         }
         double ratio = accident > 0 ? (double) nearMiss / accident : (double) nearMiss;
 
+        // Statuts terminaux exclus du décompte « en retard » : COMPLETED, CANCELLED
+        // et VERIFIED (efficacité prouvée §10.2 — l'état le plus fermé). REOPENED
+        // reste compté comme travail ouvert.
+        // À GARDER EN PHASE avec DashboardServiceImpl.CLOSED_ACTION_STATUSES.
         long overdueCapa = correctiveActionRepository.countOverdueErrorCapa(
                 companyId, java.time.LocalDate.now(),
                 List.of(com.minexpert.hns.enums.ActionStatus.COMPLETED,
-                        com.minexpert.hns.enums.ActionStatus.CANCELLED));
+                        com.minexpert.hns.enums.ActionStatus.CANCELLED,
+                        com.minexpert.hns.enums.ActionStatus.VERIFIED));
 
         List<ErrorKpiDTO.RecurrentCause> recurrent = computeRecurrentCauses(events);
 

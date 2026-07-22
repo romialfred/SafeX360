@@ -15,11 +15,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.minexpert.hns.clients.HrmsClient;
+import com.minexpert.hns.service.audit.ChangeLogService;
 import com.minexpert.hns.dto.CorrectiveActionDTO;
+import com.minexpert.hns.dto.EffectivenessReviewDTO;
 import com.minexpert.hns.dto.request.EmployeeNameDTO;
 import com.minexpert.hns.dto.response.CorrectiveActionResponse;
+import com.minexpert.hns.dto.response.EffectivenessDTO;
 import com.minexpert.hns.entity.incident.CorrectiveAction;
 import com.minexpert.hns.enums.ActionStatus;
+import com.minexpert.hns.enums.EffectivenessVerdict;
 import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.repository.incident.CorrectiveActionRepository;
 
@@ -44,6 +48,9 @@ public class CorrectiveActionServiceImpl implements CorrectiveActionService {
 
     @Autowired
     private HrmsClient hrmsClient;
+
+    @Autowired
+    private ChangeLogService changeLogService;
 
     private void ensureCompanyIdProvided(Long companyId) throws HSException {
         if (companyId == null) {
@@ -304,9 +311,16 @@ public class CorrectiveActionServiceImpl implements CorrectiveActionService {
     public void updateCorrectiveAction(Long companyId, CorrectiveActionDTO correctiveActionDTO) throws HSException {
         CorrectiveAction correctiveAction = loadActionForCompany(companyId, correctiveActionDTO.getId());
 
-        if (correctiveActionDTO.getStatus() != null
-                && correctiveActionDTO.getStatus() != correctiveAction.getStatus()) {
-            assertActionTransition(correctiveAction.getStatus(), correctiveActionDTO.getStatus());
+        ActionStatus target = correctiveActionDTO.getStatus();
+        // VERIFIED / REOPENED ne se posent QUE via la revue d'efficacite (§10.2),
+        // qui enregistre verdict + verificateur + risque residuel. Les atteindre par
+        // /update laisserait une action « Verifiee efficace » SANS aucune preuve
+        // d'efficacite (etat incoherent : verdict null sur statut VERIFIED).
+        if (target == ActionStatus.VERIFIED || target == ActionStatus.REOPENED) {
+            throw new HSException("EFFECTIVENESS_STATUS_NOT_SETTABLE_HERE");
+        }
+        if (target != null && target != correctiveAction.getStatus()) {
+            assertActionTransition(correctiveAction.getStatus(), target);
         }
 
         correctiveAction.setActionName(correctiveActionDTO.getActionName());
@@ -315,10 +329,21 @@ public class CorrectiveActionServiceImpl implements CorrectiveActionService {
         correctiveAction.setDepartmentId(correctiveActionDTO.getDepartmentId());
         correctiveAction.setOwnerId(correctiveActionDTO.getOwnerId());
         correctiveAction.setDeadline(correctiveActionDTO.getDeadline());
-        correctiveAction.setStatus(correctiveActionDTO.getStatus());
+        // On ne pose le statut que s'il est FOURNI : un DTO a status=null (ex. edition
+        // de champs en lot) ecrivait sinon status=NULL, sortant l'action de la machine
+        // a etats. Absent => on preserve le statut courant.
+        ActionStatus previous = correctiveAction.getStatus();
+        if (target != null) {
+            correctiveAction.setStatus(target);
+        }
         correctiveAction.setUpdatedAt(LocalDateTime.now());
         correctiveAction.setCompanyId(companyId);
         correctiveActionRepository.save(correctiveAction);
+        // Journal d'audit : seule une VRAIE transition de statut est tracée.
+        if (target != null && target != previous) {
+            changeLogService.record(ChangeLogService.CORRECTIVE_ACTION, correctiveActionDTO.getId(), companyId,
+                    "status", previous != null ? previous.name() : null, target.name());
+        }
     }
 
     @Override
@@ -339,10 +364,13 @@ public class CorrectiveActionServiceImpl implements CorrectiveActionService {
     })
     public void approveAction(Long companyId, Long id) throws HSException {
         CorrectiveAction correctiveAction = loadActionForCompany(companyId, id);
-        assertActionTransition(correctiveAction.getStatus(), ActionStatus.IN_PROGRESS);
+        ActionStatus previous = correctiveAction.getStatus();
+        assertActionTransition(previous, ActionStatus.IN_PROGRESS);
         correctiveAction.setStatus(ActionStatus.IN_PROGRESS);
         correctiveAction.setUpdatedAt(LocalDateTime.now());
         correctiveActionRepository.save(correctiveAction);
+        changeLogService.record(ChangeLogService.CORRECTIVE_ACTION, id, correctiveAction.getCompanyId(),
+                "status", previous != null ? previous.name() : null, ActionStatus.IN_PROGRESS.name());
     }
 
     @Override
@@ -363,22 +391,41 @@ public class CorrectiveActionServiceImpl implements CorrectiveActionService {
     })
     public void cancelAction(Long companyId, Long id) throws HSException {
         CorrectiveAction correctiveAction = loadActionForCompany(companyId, id);
-        assertActionTransition(correctiveAction.getStatus(), ActionStatus.CANCELLED);
+        ActionStatus previous = correctiveAction.getStatus();
+        assertActionTransition(previous, ActionStatus.CANCELLED);
         correctiveAction.setStatus(ActionStatus.CANCELLED);
         correctiveAction.setUpdatedAt(LocalDateTime.now());
         correctiveActionRepository.save(correctiveAction);
+        changeLogService.record(ChangeLogService.CORRECTIVE_ACTION, id, correctiveAction.getCompanyId(),
+                "status", previous != null ? previous.name() : null, ActionStatus.CANCELLED.name());
     }
 
     private static final Map<ActionStatus, Set<ActionStatus>> ACTION_TRANSITIONS = Map.of(
             ActionStatus.PENDING, Set.of(ActionStatus.IN_PROGRESS, ActionStatus.CANCELLED),
             ActionStatus.IN_PROGRESS, Set.of(ActionStatus.COMPLETED, ActionStatus.CANCELLED),
-            ActionStatus.COMPLETED, Set.of(),
+            // ISO 45001 10.2 e : apres COMPLETED, la revue d'efficacite tranche
+            // VERIFIED (efficace) ou REOPENED (inefficace -> a reprendre).
+            ActionStatus.COMPLETED, Set.of(ActionStatus.VERIFIED, ActionStatus.REOPENED),
+            // Action rouverte : elle repart. On autorise la reprise (IN_PROGRESS) ET
+            // la re-terminaison directe (COMPLETED, via la voie avancement qui pose
+            // statut+progression en un appel) — sans quoi une action rouverte serait
+            // une impasse, ne pouvant jamais etre re-terminee ni re-verifiee.
+            ActionStatus.REOPENED, Set.of(ActionStatus.IN_PROGRESS, ActionStatus.COMPLETED, ActionStatus.CANCELLED),
+            ActionStatus.VERIFIED, Set.of(),
             ActionStatus.CANCELLED, Set.of()
     );
 
-    private void assertActionTransition(ActionStatus current, ActionStatus target) throws HSException {
+    @Override
+    public void assertActionTransition(ActionStatus current, ActionStatus target) throws HSException {
         if (!ACTION_TRANSITIONS.getOrDefault(current, Set.of()).contains(target)) {
             throw new HSException("INVALID_STATUS_TRANSITION");
+        }
+    }
+
+    /** Composante d'une matrice de risque 5×5 : nulle (non renseignee) ou 1..5. */
+    private void assertRiskComponentInRange(Integer value) throws HSException {
+        if (value != null && (value < 1 || value > 5)) {
+            throw new HSException("RISK_COMPONENT_OUT_OF_RANGE");
         }
     }
 
@@ -474,9 +521,108 @@ public class CorrectiveActionServiceImpl implements CorrectiveActionService {
     }
 
     @Override
-    public List<CorrectiveActionDTO> getByRiskControl(Long riskControlId) throws HSException {
-        List<CorrectiveAction> actions = correctiveActionRepository.findByRiskControlId(riskControlId);
+    public List<CorrectiveActionDTO> getByRiskControl(Long companyId, Long riskControlId) throws HSException {
+        List<CorrectiveAction> actions = correctiveActionRepository.findByRiskControlId(companyId, riskControlId);
         return actions.stream().map(CorrectiveAction::toDTO).toList();
+    }
+
+    // ── ISO 45001 §10.2 e — Revue d'efficacité ──────────────────────────────
+
+    @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CACHE_CORRECTIVE_ACTION_BY_ID, key = "#companyId != null ? (#companyId + '-' + #id) : 'ALL-' + #id"),
+            @CacheEvict(cacheNames = {
+                    CACHE_CORRECTIVE_ACTION_DTOS_BY_INCIDENT,
+                    CACHE_CORRECTIVE_ACTION_RESPONSES_BY_INCIDENT,
+                    CACHE_CORRECTIVE_ACTIONS_BY_INSPECTION,
+                    CACHE_CORRECTIVE_ACTIONS_BY_ACTIVITY,
+                    CACHE_CORRECTIVE_ACTIONS_BY_DEPARTMENT,
+                    CACHE_CORRECTIVE_ACTIONS_BY_NON_CONFORMITY,
+                    CACHE_CORRECTIVE_ACTIONS_ALL,
+                    CACHE_CORRECTIVE_ACTIONS_ADHOC_ALL,
+                    CACHE_CORRECTIVE_ACTIONS_ADHOC_PENDING,
+                    CACHE_CORRECTIVE_ACTIONS_PENDING
+            }, allEntries = true)
+    })
+    public EffectivenessDTO reviewEffectiveness(Long companyId, Long id, Long actorId, EffectivenessReviewDTO dto)
+            throws HSException {
+        CorrectiveAction action = loadActionForCompany(companyId, id);
+        if (action.getStatus() != ActionStatus.COMPLETED) {
+            // On ne juge l'efficacite que d'une action terminee (l'action n'a pas
+            // encore ete « faite », on ne peut donc pas verifier qu'elle « marche »).
+            throw new HSException("EFFECTIVENESS_REVIEW_REQUIRES_COMPLETED");
+        }
+        if (dto == null || dto.getVerdict() == null) {
+            throw new HSException("EFFECTIVENESS_VERDICT_REQUIRED");
+        }
+        // Borne serveur du risque residuel (le front clampe deja, mais un appel
+        // direct pourrait stocker une valeur hors 1..5 -> bande de risque aberrante).
+        assertRiskComponentInRange(dto.getResidualProbability());
+        assertRiskComponentInRange(dto.getResidualSeverity());
+        // Seul INEFFECTIVE rouvre l'action. EFFECTIVE **et** PARTIALLY_EFFECTIVE la
+        // passent VERIFIED (terminal) : « partiellement efficace » clôt l'action mais
+        // le verdict et le risque résiduel restent tracés/affichés (chip amber). Une
+        // relance formelle d'une action partielle relève d'une action LIÉE (Phase 2).
+        ActionStatus target = dto.getVerdict() == EffectivenessVerdict.INEFFECTIVE
+                ? ActionStatus.REOPENED : ActionStatus.VERIFIED;
+        assertActionTransition(action.getStatus(), target);
+        ActionStatus previousStatus = action.getStatus();
+
+        action.setEffectivenessVerdict(dto.getVerdict());
+        action.setEffectivenessComment(dto.getComment());
+        action.setResidualProbability(dto.getResidualProbability());
+        action.setResidualSeverity(dto.getResidualSeverity());
+        // Verificateur non repudiable : l'utilisateur AUTHENTIFIE prime sur le param
+        // client (repli sur actorId pour un eventuel appel systeme sans SecurityContext).
+        Long authActor = com.minexpert.hns.utility.AuthUtils.currentActorId();
+        action.setEffectivenessReviewedBy(authActor != null ? authActor : actorId);
+        action.setEffectivenessReviewedAt(LocalDateTime.now());
+        action.setStatus(target);
+        if (target == ActionStatus.REOPENED) {
+            // Action jugee inefficace : elle repart, la progression est remise a zero.
+            action.setProgress(0);
+        }
+        action.setUpdatedAt(LocalDateTime.now());
+        correctiveActionRepository.save(action);
+        // Journal d'audit (ISO 45001 §7.5.3 / §10.2 e) : verdict d'efficacité + transition.
+        changeLogService.record(ChangeLogService.CORRECTIVE_ACTION, id, action.getCompanyId(),
+                "effectivenessVerdict", null, dto.getVerdict() != null ? dto.getVerdict().name() : null);
+        changeLogService.record(ChangeLogService.CORRECTIVE_ACTION, id, action.getCompanyId(),
+                "status", previousStatus != null ? previousStatus.name() : null, target.name());
+        return toEffectivenessDTO(action);
+    }
+
+    @Override
+    public EffectivenessDTO getEffectiveness(Long companyId, Long id) throws HSException {
+        CorrectiveAction action = loadActionForCompany(companyId, id);
+        return toEffectivenessDTO(action);
+    }
+
+    private EffectivenessDTO toEffectivenessDTO(CorrectiveAction a) {
+        String name = null;
+        if (a.getEffectivenessReviewedBy() != null) {
+            try {
+                List<EmployeeNameDTO> ns = hrmsClient
+                        .getEmployeeNameByIds(java.util.List.of(a.getEffectivenessReviewedBy()));
+                if (ns != null && !ns.isEmpty()) {
+                    name = ns.get(0).getName();
+                }
+            } catch (Exception ignore) {
+                // resolution du nom best-effort — ne bloque jamais la revue.
+            }
+        }
+        return EffectivenessDTO.builder()
+                .correctiveActionId(a.getId())
+                .status(a.getStatus())
+                .verdict(a.getEffectivenessVerdict())
+                .reviewedBy(a.getEffectivenessReviewedBy())
+                .reviewedByName(name)
+                .reviewedAt(a.getEffectivenessReviewedAt())
+                .comment(a.getEffectivenessComment())
+                .residualProbability(a.getResidualProbability())
+                .residualSeverity(a.getResidualSeverity())
+                .reviewed(a.getEffectivenessVerdict() != null)
+                .build();
     }
 
 }

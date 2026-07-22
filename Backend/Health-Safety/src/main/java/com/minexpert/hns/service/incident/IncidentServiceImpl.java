@@ -41,6 +41,11 @@ import com.minexpert.hns.repository.incident.IncidentRepository;
 import com.minexpert.hns.repository.incident.InvestigationRepository;
 import com.minexpert.hns.repository.incident.RiskAssessmentRepository;
 import com.minexpert.hns.repository.incident.projection.MonthlyClosureSummary;
+import com.minexpert.hns.repository.parameters.IncidentTypeRepository;
+import com.minexpert.hns.service.audit.ChangeLogService;
+import com.minexpert.hns.dto.IncidentDetailDTO;
+import com.minexpert.hns.dto.response.IncidentTypeDetails;
+import com.minexpert.hns.enums.Status;
 import com.minexpert.hns.service.MediaService;
 
 @Service
@@ -79,6 +84,12 @@ public class IncidentServiceImpl implements IncidentService {
 
     @Autowired
     private InvestigationRepository investigationRepository;
+
+    @Autowired
+    private IncidentTypeRepository incidentTypeRepository;
+
+    @Autowired
+    private ChangeLogService changeLogService;
 
     @Override
     @Caching(evict = {
@@ -124,21 +135,77 @@ public class IncidentServiceImpl implements IncidentService {
         incidentAnalysis.setUpdatedAt(LocalDateTime.now());
         incidentAnalysisRepository.save(incidentAnalysis);
 
-        // incident Detail
-        if (incidentDTO.getIncidentDetails() != null) {
-            incidentDTO.getIncidentDetails().forEach(incidentDetailDTO -> {
-                incidentDetailDTO.setIncidentId(savedIncident.getId());
-                incidentDetailDTO.setCreatedAt(LocalDateTime.now());
-                incidentDetailDTO.setUpdatedAt(LocalDateTime.now());
-                incidentDetailRepository.save(incidentDetailDTO.toEntity());
-            });
+        // incident Detail — CLASSIFICATION (ISO 45001 §9.1)
+        // Integrite inter-voies (E1.3) : le formulaire web classique fournit une
+        // classification (categorie/type/gravite) choisie par l'utilisateur ; les
+        // voies IA et mobile, non. Sans au moins une ligne de classification,
+        // l'incident sort a GRAVITE NULLE des listes (findAllIncidentsWithMaxSeverity)
+        // et fausse tous les KPI. Plutot que de faire reconstruire ce triplet par
+        // chaque ecran (fragile, duplique), le SERVEUR derive ici une classification
+        // minimale valide a partir des referentiels de la mine + la gravite declaree.
+        List<IncidentDetailDTO> details = incidentDTO.getIncidentDetails();
+        if (details == null || details.isEmpty()) {
+            IncidentDetailDTO derived = deriveDefaultClassification(companyId, incidentDTO.getSeverity());
+            details = derived != null ? java.util.List.of(derived) : java.util.Collections.emptyList();
         }
+        details.forEach(incidentDetailDTO -> {
+            incidentDetailDTO.setIncidentId(savedIncident.getId());
+            incidentDetailDTO.setCreatedAt(LocalDateTime.now());
+            incidentDetailDTO.setUpdatedAt(LocalDateTime.now());
+            incidentDetailRepository.save(incidentDetailDTO.toEntity());
+        });
         // RiskAssement
         RiskAssessment riskAssessment = incidentDTO.toRiskAssessment();
         riskAssessment.setIncident(savedIncident);
         riskAssessment.setCreatedAt(LocalDateTime.now());
         riskAssessment.setUpdatedAt(LocalDateTime.now());
         riskAssessmentRepository.save(riskAssessment);
+    }
+
+    /**
+     * Derive une classification minimale VALIDE pour une declaration qui n'en
+     * porte pas (voies IA / mobile). Un {@code IncidentType} de la mine encapsule
+     * deja un triplet coherent : categorie (FK non-null) + niveau de gravite
+     * (JOIN interne). On choisit le type actif dont le niveau de gravite est le
+     * plus proche de la gravite declaree ({@code severity} 1..5), afin que la
+     * classification reflete au mieux l'evenement plutot qu'un simple defaut.
+     *
+     * Best-effort : si la mine n'a aucun type actif configure, on renvoie null et
+     * l'incident est persiste sans detail — une declaration ne se bloque JAMAIS
+     * (ISO 45001 §10.2), la classification restant rattrapable a l'edition.
+     */
+    private IncidentDetailDTO deriveDefaultClassification(Long companyId, Integer declaredSeverity) {
+        List<IncidentTypeDetails> types;
+        try {
+            types = incidentTypeRepository.findAllByStatus(companyId, Status.ACTIVE);
+        } catch (Exception e) {
+            return null;
+        }
+        if (types == null || types.isEmpty()) {
+            return null;
+        }
+        IncidentTypeDetails chosen = types.get(0);
+        if (declaredSeverity != null) {
+            int best = Integer.MAX_VALUE;
+            for (IncidentTypeDetails t : types) {
+                Integer level = t.getSeverityLevel();
+                int dist = level != null ? Math.abs(level - declaredSeverity) : Integer.MAX_VALUE;
+                if (dist < best) {
+                    best = dist;
+                    chosen = t;
+                }
+            }
+        }
+        // Le type actif garantit des FK non-null (categorie + gravite via JOIN
+        // interne) — l'invariant de IncidentDetail (3 colonnes NOT NULL) est tenu.
+        if (chosen.getIncidentCategoryId() == null || chosen.getSeverityLevelId() == null) {
+            return null;
+        }
+        IncidentDetailDTO detail = new IncidentDetailDTO();
+        detail.setIncidentCategoryId(chosen.getIncidentCategoryId());
+        detail.setIncidentTypeId(chosen.getId());
+        detail.setSeverityLevelId(chosen.getSeverityLevelId());
+        return detail;
     }
 
     @Override
@@ -168,6 +235,10 @@ public class IncidentServiceImpl implements IncidentService {
         Incident updatedIncident = incidentDTO.toIncident();
         updatedIncident.setStatus(incident.getStatus());
         updatedIncident.setCreatedAt(incident.getCreatedAt());
+        // number est unique et attribue par le SERVEUR (generateIncidentNumber) : on
+        // le preserve depuis l'entite chargee comme status/createdAt, jamais depuis le
+        // corps client — sinon un DTO qui l'omet/l'altere casserait la contrainte unique.
+        updatedIncident.setNumber(incident.getNumber());
         updatedIncident.setUpdatedAt(LocalDateTime.now());
         updatedIncident.setEvidence(mediaService.saveAllMedia(incidentDTO.getEvidence()));
         incidentRepository.save(updatedIncident);
@@ -209,7 +280,11 @@ public class IncidentServiceImpl implements IncidentService {
         RiskAssessment riskAssessment = incidentDTO.toRiskAssessment();
         riskAssessment.setIncident(new Incident(incidentDTO.getId()));
         riskAssessment.setUpdatedAt(LocalDateTime.now());
-        Optional<RiskAssessment> riskAssessmentOptional = riskAssessmentRepository.findById(incidentDTO.getId());
+        // Lookup PAR incident_id (et non findById(incidentId) : le PK auto-genere
+        // de RiskAssessment ne coincide avec l'incident_id que par hasard — le
+        // findById historique lisait/ecrasait souvent l'evaluation d'un AUTRE incident).
+        Optional<RiskAssessment> riskAssessmentOptional = riskAssessmentRepository
+                .findFirstByIncident_IdOrderByIdDesc(incidentDTO.getId());
         if (riskAssessmentOptional.isPresent()) {
             riskAssessment.setId(riskAssessmentOptional.get().getId());
             riskAssessment.setCreatedAt(riskAssessmentOptional.get().getCreatedAt());
@@ -240,7 +315,7 @@ public class IncidentServiceImpl implements IncidentService {
         incidentDTO.setIncidentDetails(incidentDetails.stream()
                 .map(IncidentDetail::toDTO)
                 .toList());
-        RiskAssessment riskAssessment = riskAssessmentRepository.findById(id)
+        RiskAssessment riskAssessment = riskAssessmentRepository.findFirstByIncident_IdOrderByIdDesc(id)
                 .orElse(null);
         if (riskAssessment != null) {
             incidentDTO = riskAssessment.toIncidentDTO(incidentDTO);
@@ -266,10 +341,50 @@ public class IncidentServiceImpl implements IncidentService {
     public void updateIncidentStatus(Long companyId, Long id, IncidentStatus status) throws HSException {
         Incident incident = incidentRepository.findByIdWithCompanyContext(id, companyId)
                 .orElseThrow(() -> new HSException("INCIDENT_NOT_FOUND"));
-        assertIncidentTransition(incident.getStatus(), status);
+        IncidentStatus previous = incident.getStatus();
+        assertIncidentTransition(previous, status);
+        if (status == IncidentStatus.CLOSED) {
+            assertRiskReducedForClosure(previous, id);
+        }
         incident.setStatus(status);
         incident.setUpdatedAt(LocalDateTime.now());
         incidentRepository.save(incident);
+        // Journal d'audit (ISO 45001 §7.5.3) : l'acteur est l'utilisateur authentifié
+        // (dérivé dans ChangeLogService), pas le « responsable » déclaratif du formulaire.
+        changeLogService.record(ChangeLogService.INCIDENT, id, incident.getCompanyId(),
+                "status", previous != null ? previous.name() : null, status != null ? status.name() : null);
+    }
+
+    /**
+     * Verrou de clôture (ISO 45001 §8.1.2) : un incident ayant fait l'objet d'un
+     * traitement (investigation + actions correctives) ne se clôt qu'après une
+     * ré-évaluation du risque montrant qu'il n'a PAS augmenté.
+     *
+     * On ne l'impose QUE lorsque la clôture suit un vrai traitement
+     * (INVESTIGATION_COMPLETED ou CORRECTIVE_ACTIONS) : les incidents mineurs
+     * clos directement depuis REPORTED ne sont pas freinés (ISO n'exige pas
+     * d'enquête pour tout). L'égalité est tolérée (un risque initial déjà minimal
+     * ne peut plus décroître) ; seule une augmentation bloque.
+     */
+    private void assertRiskReducedForClosure(IncidentStatus current, Long incidentId) throws HSException {
+        boolean followsTreatment = current == IncidentStatus.INVESTIGATION_COMPLETED
+                || current == IncidentStatus.CORRECTIVE_ACTIONS;
+        if (!followsTreatment) {
+            return;
+        }
+        RiskAssessment ra = riskAssessmentRepository.findFirstByIncident_IdOrderByIdDesc(incidentId).orElse(null);
+        if (ra == null || ra.getProbability() == null || ra.getSeverity() == null) {
+            // Pas de risque initial chiffré : rien à comparer, on n'invente pas de blocage.
+            return;
+        }
+        if (ra.getPostProbability() == null || ra.getPostSeverity() == null) {
+            throw new HSException("RESIDUAL_RISK_REQUIRED_FOR_CLOSURE");
+        }
+        int initialScore = ra.getProbability() * ra.getSeverity();
+        int postScore = ra.getPostProbability() * ra.getPostSeverity();
+        if (postScore > initialScore) {
+            throw new HSException("RISK_NOT_REDUCED");
+        }
     }
 
     private static final Map<IncidentStatus, Set<IncidentStatus>> INCIDENT_TRANSITIONS = Map.of(
@@ -346,12 +461,12 @@ public class IncidentServiceImpl implements IncidentService {
                 ? correctiveActionRepository.countByIncident_CompanyIdAndDepartmentIdAndStatusInAndDeadlineBetween(
                         companyId,
                         departmentId,
-                        List.of(ActionStatus.PENDING, ActionStatus.IN_PROGRESS),
+                        List.of(ActionStatus.PENDING, ActionStatus.IN_PROGRESS, ActionStatus.REOPENED),
                         deadlineStart,
                         today)
                 : correctiveActionRepository.countByDepartmentIdAndStatusInAndDeadlineBetween(
                         departmentId,
-                        List.of(ActionStatus.PENDING, ActionStatus.IN_PROGRESS),
+                        List.of(ActionStatus.PENDING, ActionStatus.IN_PROGRESS, ActionStatus.REOPENED),
                         deadlineStart,
                         today);
 

@@ -379,7 +379,8 @@ public interface CorrectiveActionRepository extends CrudRepository<CorrectiveAct
     // ─── Module Gestion des Risques : CAPA rattachees a un controle du Plan de maitrise ───
 
     /** CAPA liees a un controle du Plan de maitrise d'un risque (lien federateur). */
-    List<CorrectiveAction> findByRiskControlId(Long riskControlId);
+    @Query("SELECT c FROM CorrectiveAction c WHERE c.riskControlId = :riskControlId AND (:companyId IS NULL OR c.companyId = :companyId)")
+    List<CorrectiveAction> findByRiskControlId(@Param("companyId") Long companyId, @Param("riskControlId") Long riskControlId);
 
     long countByIncident_CompanyIdAndDepartmentIdAndStatusInAndDeadlineBetween(Long companyId, Long departmentId,
             List<ActionStatus> statuses,

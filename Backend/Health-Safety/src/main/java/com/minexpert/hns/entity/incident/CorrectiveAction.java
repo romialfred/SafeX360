@@ -8,6 +8,7 @@ import com.minexpert.hns.entity.GeneralInspection;
 import com.minexpert.hns.entity.activities.HsActivity;
 import com.minexpert.hns.entity.nonConformity.NonConformity;
 import com.minexpert.hns.enums.ActionStatus;
+import com.minexpert.hns.enums.EffectivenessVerdict;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -74,6 +75,37 @@ public class CorrectiveAction {
     @Column(name = "risk_control_id")
     private Long riskControlId;
 
+    // Lien (souple) vers LA cause traitée par cette action (ISO 45001 §10.2 a-b) —
+    // modèle de causes unifié (table error_cause). Rend la traçabilité cause→action
+    // requêtable ; un même patron Long nullable que errorEventId/riskControlId.
+    @Column(name = "cause_id")
+    private Long causeId;
+
+    // ── Revue d'efficacité (ISO 45001 §10.2 e) : l'action ne s'arrête plus à
+    // « Terminé » ; on prouve qu'elle a fonctionné (verdict + vérificateur + date
+    // + risque résiduel ré-évalué). Colonnes additives (ddl-auto=update).
+    @Enumerated(EnumType.STRING)
+    @Column(name = "effectiveness_verdict", length = 24)
+    private EffectivenessVerdict effectivenessVerdict;
+
+    @Column(name = "effectiveness_reviewed_by")
+    private Long effectivenessReviewedBy;
+
+    @Column(name = "effectiveness_reviewed_at")
+    private LocalDateTime effectivenessReviewedAt;
+
+    @Lob
+    @Column(name = "effectiveness_comment")
+    private String effectivenessComment;
+
+    /** Risque résiduel après mesures : probabilité 1..5. */
+    @Column(name = "residual_probability")
+    private Integer residualProbability;
+
+    /** Risque résiduel après mesures : gravité 1..5. */
+    @Column(name = "residual_severity")
+    private Integer residualSeverity;
+
     public CorrectiveAction(Long id) {
         this.id = id;
     }
@@ -96,7 +128,8 @@ public class CorrectiveAction {
                 null,
                 this.createdAt,
                 this.updatedAt,
-                this.riskControlId);
+                this.riskControlId,
+                this.causeId);
     }
 
     // Add logic to ensure only one FK is set

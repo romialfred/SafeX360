@@ -15,13 +15,15 @@ import lombok.NoArgsConstructor;
 public class CausalAnalysisDTO {
     private Long id;
     private Long errorEventId;
+    /** Rattachement incident (module Investigation) — exclusif de errorEventId. */
+    private Long incidentId;
     private CausalMethod method;
     private String summary;
     private Long conductedBy;
     private LocalDateTime conductedAt;
 
     public static CausalAnalysisDTO fromEntity(CausalAnalysis a) {
-        return new CausalAnalysisDTO(a.getId(), a.getErrorEventId(), a.getMethod(), a.getSummary(),
+        return new CausalAnalysisDTO(a.getId(), a.getErrorEventId(), a.getIncidentId(), a.getMethod(), a.getSummary(),
                 a.getConductedBy(), a.getConductedAt());
     }
 }

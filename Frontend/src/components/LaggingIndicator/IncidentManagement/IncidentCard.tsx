@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+    IconAlertTriangle,
     IconArrowUpRight,
     IconBook,
     IconCalendarEvent,
@@ -26,6 +27,8 @@ interface IncidentData {
     description: string;
     incidentDate: string;
     reporterId: number;
+    /** Incident à Haut Potentiel (ICMM / §6.1.2) — pire scénario crédible grave. */
+    highPotential?: boolean;
 }
 
 /** Métadonnées visuelles par niveau de gravité (1 → 5). */
@@ -98,6 +101,11 @@ const IncidentCard = ({ incidentData, emps }: { incidentData: IncidentData; emps
                         <span className="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] text-slate-600">
                             {incidentData.incidentCategoryName || '—'}
                         </span>
+                        {incidentData.highPotential && (
+                            <span className="inline-flex items-center gap-0.5 rounded border border-red-300 bg-red-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-red-800" title="Incident à Haut Potentiel (ICMM / §6.1.2)">
+                                <IconAlertTriangle size={11} /> HPI
+                            </span>
+                        )}
                         <span className={`ml-auto inline-flex items-center rounded border px-2 py-0.5 text-[10.5px] uppercase tracking-wide ${statusChip}`}>
                             {tStatus(incidentData.status)}
                         </span>
