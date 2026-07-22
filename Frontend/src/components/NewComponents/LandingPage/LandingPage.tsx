@@ -1,3988 +1,491 @@
 /**
- * LandingPage v6 — Vitrine éditoriale style album photo.
+ * LandingPage v7 — Vitrine corporate claire (fond clair, navy + ambre en accents).
  *
- * Retours utilisateur :
- *  - Palette : VERT + NOIR (pas rouge sauf urgences sémantiques)
- *  - Stats : tuiles plus grandes, icônes colorées
- *  - 8 modules clés mis en avant : SOS, Évacuation, Blasting, Inspection
- *    + Incidents, Risques, Audits, Communication
- *  - Section "Voici à quoi ça ressemble" : album photo magazine
- *    (inspiration kutunga.org — galerie éditoriale)
+ * Direction validee (2026-07-22) : homepage SaaS structuree
+ *  - Hero clair, photo d'equipe terrain + cartes indicateurs flottantes
+ *  - Secteurs, section « probleme », modules, workflow 8 etapes, features, formulaire de demo
+ *  - Photos reelles d'equipes (aucune capture d'ecran produit)
+ *  - Vrai logo SafeX (public/safex-logo-dark.png clair, public/safex-logo.png fonce)
+ *  - Carte d'Afrique avec Burkina Faso / Mali / Niger mis en avant
+ *
+ * Garde-fou AUD-GOV-001 (PublicClaimsPolicy.test) : aucune allegation de certification
+ * ou de performance non demontree ; on parle de workflows « conçus pour soutenir » les
+ * demarches normatives, jamais d'attestation delivree par un organisme tiers.
  */
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
-import {
-    IconShieldCheck,
-    IconChartBar,
-    IconAlertTriangle,
-    IconUsers,
-    IconClipboardCheck,
-    IconBolt,
-    IconArrowRight,
-    IconCheck,
-    IconCertificate,
-    IconChevronDown,
-    IconChevronLeft,
-    IconChevronRight,
-    IconBuildingFactory,
-    IconGlobe,
-    IconMail,
-    IconPhone,
-    IconClock,
-    IconSparkles,
-    IconLockSquare,
-    IconCloudUpload,
-    IconHelmet,
-    IconTrendingUp,
-    IconPlayerPlayFilled,
-    IconRun,
-    IconBomb,
-    IconBinoculars,
-    IconBellRinging,
-    IconArrowUpRight,
-    IconX,
-    IconSend,
-    IconLoader2,
-} from '@tabler/icons-react';
-import IsoBadge from '../../UtilityComp/IsoBadge';
 
-// ───────────────────────────────────────────────────────────────────────
-// PALETTE — vert teal + noir + accents sémantiques
-// ───────────────────────────────────────────────────────────────────────
+const LOGO_LIGHT = '/safex-logo-dark.png'; // « SafeX » teal — pour fond clair
+const LOGO_DARK = '/safex-logo.png';       // « SafeX » blanc — pour fond fonce
+const PHOTO_HERO = '/hero/training-team.png';
+const PHOTO_FIELD = '/hero/workers-loto.png';
 
-const C = {
-    // Couleurs primaires plateforme
-    dark: '#0F172A',
-    darker: '#0A0F1C',
-    green: '#0F766E',
-    greenLight: '#14B8A6',
-    greenSoft: '#5EEAD4',
-    greenBg: '#F0FDFA',
-    // Cream / fond clair
-    cream: '#FAF9F5',
-    paper: '#FFFFFF',
-    // Accents sémantiques (uniquement pour modules urgence/sécurité)
-    emergency: '#DC2626',  // SOS / urgences
-    blasting: '#EA580C',   // dynamitage
-    audit: '#7C3AED',      // audits
-    inspection: '#0EA5E9', // inspections
-};
-
-// ───────────────────────────────────────────────────────────────────────
-// 8 MODULES PHARES (avec accent sur SOS, Évacuation, Blasting, Inspection)
-// ───────────────────────────────────────────────────────────────────────
-
-const FEATURES = [
-    {
-        id: 'sos',
-        icon: IconBellRinging,
-        title: 'SOS instantané',
-        highlight: true,
-        description: 'Le travailleur déclenche un SOS. La plateforme transmet l\'alerte, la position disponible et les informations utiles aux destinataires configurés.',
-        bullets: ['Transmission multi-canal', 'Position disponible', 'Escalade configurable'],
-        color: C.emergency,
-        bgLight: '#FEF2F2',
-        ring: '#FCA5A5',
-    },
-    {
-        id: 'evacuation',
-        icon: IconRun,
-        title: 'Évacuation guidée',
-        highlight: true,
-        description: 'Alerte générale du site, annonce vocale TTS dans toutes les langues, head-count automatique au point de rassemblement. Carte des évacués en temps réel.',
-        bullets: ['Sirène + TTS multi-langues', 'Head-count auto', 'Carte évacués live'],
-        color: C.emergency,
-        bgLight: '#FEF2F2',
-        ring: '#FCA5A5',
-    },
-    {
-        id: 'blasting',
-        icon: IconBomb,
-        title: 'Gestion des dynamitages',
-        highlight: true,
-        description: 'Planification, validation hiérarchique, notification multi-canal, périmètre de sécurité et journalisation des étapes du tir.',
-        bullets: ['Workflow validation', 'Périmètre sécurité', 'Notifications J-1 / J / J+1'],
-        color: C.blasting,
-        bgLight: '#FFF7ED',
-        ring: '#FDBA74',
-    },
-    {
-        id: 'inspection',
-        icon: IconBinoculars,
-        title: 'Inspections terrain',
-        highlight: true,
-        description: 'Checklists mobiles, photos contextuelles, signatures multiples et génération de rapports PDF.',
-        bullets: ['Checklists configurables', 'Photos & signatures', 'Rapport PDF auto'],
-        color: C.inspection,
-        bgLight: '#F0F9FF',
-        ring: '#7DD3FC',
-    },
-    {
-        id: 'incidents',
-        icon: IconAlertTriangle,
-        title: 'Déclaration d’incident guidée',
-        description: 'Le chef de poste sort son téléphone, choisit le type, prend une photo. C\'est tout. Le préventeur reçoit l\'info en temps réel.',
-        bullets: ['Marche hors-réseau au fond', 'GPS automatique', 'Photos & témoins'],
-        color: C.green,
-        bgLight: C.greenBg,
-        ring: C.greenSoft,
-    },
-    {
-        id: 'risks',
-        icon: IconShieldCheck,
-        title: 'Risques avant l\'accident',
-        description: 'Matrice probabilité × gravité visuelle. Heat-map par zone. Plus de tableur Excel à mettre à jour le vendredi.',
-        bullets: ['Matrice 5×5 ajustable', 'Heat-map par site', 'Plans d\'action liés'],
-        color: C.green,
-        bgLight: C.greenBg,
-        ring: C.greenSoft,
-    },
-    {
-        id: 'audits',
-        icon: IconClipboardCheck,
-        title: 'Audits et preuves structurés',
-        description: 'Le module rassemble le programme, les constats, les preuves et le suivi des actions dans un même workflow.',
-        bullets: ['Conçu pour soutenir ISO 19011', 'Rapport PDF', 'CAPA intégré'],
-        color: C.audit,
-        bgLight: '#F3E8FF',
-        ring: '#C4B5FD',
-    },
-    {
-        id: 'comm',
-        icon: IconUsers,
-        title: 'Communication HSE',
-        description: 'Diffusion ciblée par mine, département, poste. Lecture vérifiée. Plus rien ne se perd dans WhatsApp.',
-        bullets: ['Mail / SMS / app mobile', 'Statistiques de lecture', 'Bibliothèque centralisée'],
-        color: C.green,
-        bgLight: C.greenBg,
-        ring: C.greenSoft,
-    },
+type Problem = { icon: string; bg: string; color: string; title: string; desc: string; stat: string; cap: string };
+const PROBLEMS: Problem[] = [
+    { icon: '📄', bg: 'rgba(37,99,235,.1)', color: 'var(--blue)', title: 'Informations fragmentées', desc: 'Registres papier, fichiers Excel et données isolées.', stat: '60%', cap: 'des données HSE non centralisées' },
+    { icon: '⏱', bg: 'rgba(245,166,35,.16)', color: 'var(--amber-d)', title: 'Réactivité insuffisante', desc: 'Alertes tardives et actions correctives difficiles à suivre.', stat: '35%', cap: 'des actions traitées en retard' },
+    { icon: '👁', bg: 'rgba(15,158,142,.12)', color: 'var(--teal)', title: 'Visibilité limitée', desc: 'Absence de vision consolidée entre les sites et les opérations.', stat: '40%', cap: 'des incidents sans analyse globale' },
+    { icon: '📋', bg: 'rgba(124,58,237,.1)', color: '#7C3AED', title: 'Conformité complexe', desc: 'Difficile de documenter les audits, preuves et responsabilités.', stat: '30%', cap: 'de temps perdu en préparation d’audit' },
 ];
 
-// ───────────────────────────────────────────────────────────────────────
-// STATS — cards larges avec icônes
-// ───────────────────────────────────────────────────────────────────────
-
-const STATS = [
-    { value: '21+', label: 'modules métier', icon: IconClipboardCheck, color: C.green, bg: C.greenBg, ring: C.greenSoft },
-    { value: '5', label: 'référentiels pris en compte', icon: IconCertificate, color: C.audit, bg: '#F3E8FF', ring: '#C4B5FD' },
-    { value: 'SOS', label: 'workflow d’alerte configurable', icon: IconBolt, color: C.emergency, bg: '#FEF2F2', ring: '#FCA5A5' },
-    { value: 'Multi', label: 'organisation et sites', icon: IconBuildingFactory, color: C.inspection, bg: '#F0F9FF', ring: '#7DD3FC' },
+type Module = { icon: string; color: string; title: string; desc: string };
+const MODULES: Module[] = [
+    { icon: '🚨', color: '#E5484D', title: 'Incidents & Accidents', desc: 'Déclarez, analysez et suivez les incidents et accidents en temps réel.' },
+    { icon: '🔍', color: '#0EA5E9', title: 'Inspections Terrain', desc: 'Réalisez des inspections mobiles avec des checklists dynamiques.' },
+    { icon: '⚠️', color: '#F59E0B', title: 'Gestion des risques', desc: 'Évaluez, hiérarchisez et maîtrisez vos risques opérationnels.' },
+    { icon: '📋', color: '#7C3AED', title: 'Audits & Conformité', desc: 'Planifiez vos audits et suivez vos démarches vers les référentiels.' },
+    { icon: '✅', color: '#12A150', title: 'Plans d’action', desc: 'Affectez, suivez et clôturez les actions correctives et préventives.' },
+    { icon: '❤️', color: '#EC4899', title: 'Santé au travail', desc: 'Suivez les visites médicales, expositions et indicateurs de santé.' },
+    { icon: '🌱', color: '#16A34A', title: 'Environnement', desc: 'Maîtrisez vos impacts environnementaux et vos engagements.' },
+    { icon: '📈', color: '#2563EB', title: 'Reporting & Décisionnel', desc: 'Pilotez avec des tableaux de bord et des rapports personnalisés.' },
 ];
 
-const USE_CASES = [
-    {
-        quote: 'Déclarer un événement, documenter l’analyse et suivre les actions associées dans un dossier partagé.',
-        author: 'Gestion des incidents',
-        role: 'Scénario fonctionnel',
-        company: 'Illustration SafeX',
-        avatarBg: `linear-gradient(135deg, ${C.green} 0%, ${C.greenLight} 100%)`,
-    },
-    {
-        quote: 'Préparer un audit, relier les constats aux preuves et piloter les mesures correctives jusqu’à leur vérification.',
-        author: 'Gestion des audits',
-        role: 'Scénario fonctionnel',
-        company: 'Illustration SafeX',
-        avatarBg: `linear-gradient(135deg, ${C.audit} 0%, #A855F7 100%)`,
-    },
-    {
-        quote: 'Déclencher une alerte, appliquer l’escalade configurée et conserver la chronologie des traitements et accusés.',
-        author: 'Gestion des urgences',
-        role: 'Scénario fonctionnel',
-        company: 'Illustration SafeX',
-        avatarBg: `linear-gradient(135deg, ${C.emergency} 0%, ${C.blasting} 100%)`,
-    },
+const STEPS: [string, string][] = [
+    ['Observer', 'Le terrain identifie un risque ou un événement.'],
+    ['Déclarer', 'Saisie mobile avec preuves, en temps réel.'],
+    ['Alerter', 'Les bonnes personnes sont notifiées.'],
+    ['Analyser', 'Les causes profondes sont identifiées.'],
+    ['Corriger', 'Actions définies et mises en œuvre.'],
+    ['Planifier', 'Suivi de l’efficacité dans le temps.'],
+    ['Contrôler', 'Vérification et clôture contrôlée.'],
+    ['Décider', 'Données fiables et consolidées pour la direction.'],
 ];
 
-// Repères visuels des référentiels pris en compte par certains modules.
-// Leur affichage ne représente pas un label délivré à SafeX.
-const ISO_BADGES = [
-    { code: '9001', title: 'Management qualité', year: '2015', color: '#1D4ED8', colorDeep: '#1E40AF', bg: '#EFF6FF' },     // Bleu royal qualite
-    { code: '14001', title: 'Environnement', year: '2026', color: '#15803D', colorDeep: '#166534', bg: '#F0FDF4' },         // Vert foret environnement
-    { code: '19011', title: 'Audits des systèmes', year: '2026', color: '#6D28D9', colorDeep: '#5B21B6', bg: '#F5F3FF' },   // Violet indigo audits
-    { code: '45001', title: 'Santé & Sécurité', year: '2018', color: '#0F766E', colorDeep: '#115E59', bg: '#F0FDFA' },      // Teal sante/securite
-    { code: '31000', title: 'Gestion des risques', year: '2018', color: '#C2410C', colorDeep: '#9A3412', bg: '#FFF7ED' },   // Orange risques
-];
+const SECTORS = ['⛏ Exploitation minière', '⛰ Carrières', '⚡ Énergie', '🏗 BTP', '🏭 Industrie', '🚚 Logistique'];
 
-// Identités visuelles des clients du ruban : chaque marque a son monogramme,
-// sa forme d'emblème et son dégradé propre — comme de vrais logos d'entreprise.
-interface ClientLogo {
-    name: string;
-    sub: string;
-    initials: string;
-    from: string;
-    to: string;
-    shape: 'circle' | 'squircle' | 'hexagon' | 'diamond' | 'shield';
-}
+const CSS = `
+  .lp{--ink:#12233D;--navy:#0B1E3A;--muted:#5B6a7d;--faint:#93A0AF;--bg:#FFFFFF;--bg2:#F4F8FC;
+    --line:#E2EAF2;--card:#FFFFFF;--amber:#F5A623;--amber-d:#DE8E0C;--blue:#2563EB;--teal:#0F9E8E;
+    --good:#12A150;--sans:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    --sh:0 12px 30px -18px rgba(18,35,61,.35);
+    background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  .lp *{box-sizing:border-box}
+  .lp .wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+  .lp h1,.lp h2,.lp h3,.lp h4{margin:0;font-weight:800;letter-spacing:-.02em;line-height:1.12;text-wrap:balance}
+  .lp p{margin:0}
+  .lp a{text-decoration:none;color:inherit}
+  .lp .over{font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:800;color:var(--blue)}
+  .lp .btn{display:inline-flex;align-items:center;gap:8px;border-radius:9px;font-weight:700;font-size:14px;padding:12px 20px;border:0;cursor:pointer;transition:transform .12s,box-shadow .2s,background .2s;font-family:inherit}
+  .lp .btn-a{background:var(--amber);color:#3a2600;box-shadow:0 10px 22px -10px var(--amber)}
+  .lp .btn-a:hover{background:var(--amber-d);transform:translateY(-1px)}
+  .lp .btn-o{background:#fff;border:1.6px solid var(--line);color:var(--ink)}
+  .lp .btn-o:hover{border-color:var(--ink)}
+  .lp .btn-b{background:var(--blue);color:#fff}
 
-const CLIENTS: ClientLogo[] = [
-    { name: 'Sahelor', sub: "Mine d'or · Sénégal", initials: 'S', from: '#F59E0B', to: '#B45309', shape: 'hexagon' },
-    { name: 'Kéniéba Mining', sub: 'Exploitation · Mali', initials: 'KM', from: '#38BDF8', to: '#0369A1', shape: 'circle' },
-    { name: 'Katanga Ressources', sub: 'Site · RDC', initials: 'KR', from: '#34D399', to: '#047857', shape: 'squircle' },
-    { name: 'Faso Minerals', sub: 'Mining · Burkina', initials: 'FM', from: '#FB7185', to: '#BE123C', shape: 'diamond' },
-    { name: 'Ébrié Industries', sub: "Côte d'Ivoire", initials: 'ÉI', from: '#A78BFA', to: '#6D28D9', shape: 'squircle' },
-    { name: 'Nimba Société Minière', sub: 'Guinée', initials: 'N', from: '#FB923C', to: '#C2410C', shape: 'circle' },
-    { name: 'Ténéré Compagnie', sub: 'Niger', initials: 'TC', from: '#22D3EE', to: '#0E7490', shape: 'hexagon' },
-    { name: 'Tasiast Holding', sub: 'Mauritanie', initials: 'TH', from: '#818CF8', to: '#4338CA', shape: 'shield' },
-];
+  .lp .nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .lp .nav .wrap{display:flex;align-items:center;gap:20px;height:66px}
+  .lp .logo{display:flex;align-items:center;gap:10px}
+  .lp .logo-img{height:30px;width:auto;display:block}
+  .lp .logo-sub{font-size:9px;letter-spacing:.13em;color:var(--faint);font-weight:800;text-transform:uppercase;border-left:1px solid var(--line);padding-left:10px}
+  .lp .menu{display:flex;gap:22px;margin-left:14px;font-size:14px;font-weight:600;color:var(--muted)}
+  .lp .menu a{cursor:pointer}
+  .lp .menu a:hover{color:var(--ink)}
+  .lp .navr{margin-left:auto;display:flex;align-items:center;gap:12px}
+  .lp .lang{font-size:13px;font-weight:700;color:var(--muted);border:1px solid var(--line);border-radius:7px;padding:6px 10px}
+  .lp .link-b{font-size:14px;font-weight:700;color:var(--ink);cursor:pointer}
+  @media(max-width:560px){.lp .logo-sub{display:none}}
+  @media(max-width:960px){.lp .menu,.lp .link-b,.lp .lang{display:none}}
 
-// ───────────────────────────────────────────────────────────────────────
-// HOOKS
-// ───────────────────────────────────────────────────────────────────────
+  .lp .hero{background:linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%);border-bottom:1px solid var(--line)}
+  .lp .hero .wrap{display:grid;grid-template-columns:1.02fr .98fr;gap:48px;align-items:center;padding:64px 22px 72px}
+  .lp .badge{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--amber-d);background:#FDF3E1;border:1px solid #F6DFB3;padding:7px 13px;border-radius:999px}
+  .lp .hero h1{font-size:clamp(32px,4.5vw,54px);margin-top:20px;color:var(--ink)}
+  .lp .hero h1 .y{color:var(--amber-d)}
+  .lp .hero .sub{margin-top:20px;font-size:17px;line-height:1.6;color:var(--muted);max-width:46ch}
+  .lp .hero .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+  .lp .pills{display:flex;gap:9px 16px;flex-wrap:wrap;margin-top:26px}
+  .lp .pill{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--muted)}
+  .lp .hero-art{position:relative}
+  .lp .hero-art .photo{border-radius:18px;overflow:hidden;box-shadow:var(--sh);aspect-ratio:4/3}
+  .lp .hero-art .photo img{width:100%;height:100%;object-fit:cover;display:block}
+  .lp .fc1,.lp .fc2{position:absolute;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 30px -16px rgba(18,35,61,.4);padding:12px 14px}
+  .lp .fc1{top:18px;left:-16px}.lp .fc2{bottom:18px;right:-16px}
+  .lp .fc1 .t,.lp .fc2 .t{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
+  .lp .fc1 .n{font-size:24px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+  .lp .fc1 .d{font-size:11px;font-weight:800;color:var(--good)}
+  .lp .fc2 .row{display:flex;align-items:center;gap:9px}
+  .lp .fc2 .dot{width:9px;height:9px;border-radius:50%;background:#ff6b6b;box-shadow:0 0 0 4px rgba(255,107,107,.18)}
+  .lp .fc2 .lab{font-size:12.5px;font-weight:700;color:var(--ink)}
+  @media(max-width:960px){.lp .hero .wrap{grid-template-columns:1fr;gap:52px}.lp .fc1{left:8px}.lp .fc2{right:8px}}
 
-function useReveal<T extends HTMLElement>(options?: IntersectionObserverInit) {
-    const ref = useRef<T | null>(null);
-    const [revealed, setRevealed] = useState(false);
-    useEffect(() => {
-        const el = ref.current;
-        if (!el) return;
-        const obs = new IntersectionObserver(
-            ([e]) => { if (e.isIntersecting) { setRevealed(true); obs.unobserve(e.target); } },
-            { threshold: 0.15, rootMargin: '0px 0px -80px 0px', ...options },
-        );
-        obs.observe(el);
-        return () => obs.disconnect();
-    }, []);
-    return { ref, revealed };
-}
+  .lp .sectors{background:var(--bg);border-bottom:1px solid var(--line);padding:26px 0}
+  .lp .sectors .lbl{text-align:center;font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;color:var(--faint)}
+  .lp .tabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+  .lp .tab{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:700;color:var(--muted);padding:10px 16px;border-radius:9px;border:1px solid transparent;cursor:pointer}
+  .lp .tab.on{color:var(--navy);background:var(--bg2);border-color:var(--line)}
 
-function Reveal({
-    children, delay = 0, className = '', as: As = 'div',
-}: { children: React.ReactNode; delay?: number; className?: string; as?: any }) {
-    const { ref, revealed } = useReveal<HTMLDivElement>();
-    return (
-        <As
-            ref={ref as any}
-            className={className}
-            style={{
-                opacity: revealed ? 1 : 0,
-                transform: revealed ? 'translateY(0)' : 'translateY(28px)',
-                transition: `opacity 700ms cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms, transform 700ms cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms`,
-            }}
-        >
-            {children}
-        </As>
-    );
-}
+  .lp section{padding:80px 0}
+  .lp .sh{text-align:center;max-width:720px;margin:0 auto}
+  .lp .sh h2{font-size:clamp(24px,3.2vw,38px)}
+  .lp .sh p{color:var(--muted);margin-top:14px;font-size:16px;line-height:1.6}
+  .lp .alt{background:var(--bg2)}
 
-function useCountUp(target: number, duration = 1600, decimals = 0) {
-    const ref = useRef<HTMLDivElement | null>(null);
-    const [val, setVal] = useState(0);
-    const started = useRef(false);
-    useEffect(() => {
-        const el = ref.current;
-        if (!el) return;
-        const obs = new IntersectionObserver(([entry]) => {
-            if (entry.isIntersecting && !started.current) {
-                started.current = true;
-                const start = performance.now();
-                const tick = (now: number) => {
-                    const elapsed = now - start;
-                    const t = Math.min(elapsed / duration, 1);
-                    const eased = 1 - Math.pow(1 - t, 3);
-                    setVal(target * eased);
-                    if (t < 1) requestAnimationFrame(tick);
-                };
-                requestAnimationFrame(tick);
-            }
-        }, { threshold: 0.4 });
-        obs.observe(el);
-        return () => obs.disconnect();
-    }, [target, duration]);
-    return { ref, val: decimals > 0 ? val.toFixed(decimals) : Math.round(val).toString() };
-}
+  .lp .prob{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:48px}
+  .lp .pc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px 22px;box-shadow:var(--sh)}
+  .lp .pc .ic{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;font-size:20px}
+  .lp .pc h4{font-size:16px}
+  .lp .pc p{color:var(--muted);font-size:13.5px;margin-top:8px;line-height:1.5}
+  .lp .pc .stat{font-size:34px;font-weight:800;margin-top:16px;font-variant-numeric:tabular-nums}
+  .lp .pc .cap{font-size:12px;color:var(--faint);font-weight:600}
+  @media(max-width:900px){.lp .prob{grid-template-columns:1fr 1fr}}
+  @media(max-width:520px){.lp .prob{grid-template-columns:1fr}}
 
-// ═══════════════════════════════════════════════════════════════════════
-// COMPOSANT PRINCIPAL
-// ═══════════════════════════════════════════════════════════════════════
+  .lp .field .fgrid{display:grid;grid-template-columns:1fr 1.1fr;gap:52px;align-items:center;margin-top:8px}
+  .lp .field h2{font-size:clamp(24px,3vw,34px)}
+  .lp .field .intro{color:var(--muted);font-size:15.5px;line-height:1.6;margin:14px 0 22px;max-width:46ch}
+  .lp .field ul{list-style:none;padding:0;margin:0 0 24px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .lp .field li{display:flex;gap:10px;align-items:center;font-size:14px;font-weight:600}
+  .lp .field .photo{position:relative;border-radius:18px;overflow:hidden;box-shadow:var(--sh);aspect-ratio:4/3}
+  .lp .field .photo img{width:100%;height:100%;object-fit:cover;display:block}
+  .lp .field .photo .cap{position:absolute;left:14px;bottom:14px;font-size:11px;font-weight:700;color:#fff;background:rgba(11,30,58,.55);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.25);padding:6px 12px;border-radius:999px}
+  @media(max-width:900px){.lp .field .fgrid{grid-template-columns:1fr;gap:30px}.lp .field ul{grid-template-columns:1fr}}
+
+  .lp .mgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:44px}
+  .lp .mc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px;transition:transform .2s,box-shadow .2s}
+  .lp .mc:hover{transform:translateY(-3px);box-shadow:var(--sh)}
+  .lp .mc .ic{width:46px;height:46px;border-radius:11px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;font-size:20px}
+  .lp .mc h4{font-size:15.5px}
+  .lp .mc p{font-size:12.5px;color:var(--muted);margin-top:7px;line-height:1.45}
+  .lp .mc .more{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;color:var(--blue);margin-top:14px}
+  @media(max-width:980px){.lp .mgrid{grid-template-columns:1fr 1fr}}
+  @media(max-width:520px){.lp .mgrid{grid-template-columns:1fr}}
+
+  .lp .flow{display:grid;grid-template-columns:.8fr 2.2fr;gap:36px;align-items:center;margin-top:8px}
+  .lp .flow-l h2{font-size:clamp(22px,2.8vw,30px)}
+  .lp .flow-l p{color:var(--muted);margin-top:14px;font-size:15px;line-height:1.6}
+  .lp .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:22px 14px}
+  .lp .step{text-align:center}
+  .lp .step .n{width:42px;height:42px;margin:0 auto;border-radius:50%;background:#fff;border:2px solid var(--teal);color:var(--teal);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;box-shadow:0 6px 16px -8px rgba(15,158,142,.5)}
+  .lp .step h4{font-size:14px;margin-top:12px}
+  .lp .step p{font-size:11.5px;color:var(--muted);margin-top:5px;line-height:1.4}
+  @media(max-width:900px){.lp .flow{grid-template-columns:1fr}.lp .steps{grid-template-columns:1fr 1fr}}
+
+  .lp .fgrid2{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:44px}
+  .lp .fc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px;box-shadow:var(--sh)}
+  .lp .fc .ic{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;font-size:19px}
+  .lp .fc h4{font-size:16px}
+  .lp .fc .fl{color:var(--muted);font-size:13px;margin-top:8px;line-height:1.5}
+  .lp .fc ul{list-style:none;padding:0;margin:12px 0 0;display:flex;flex-direction:column;gap:8px}
+  .lp .fc li{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--muted);line-height:1.4}
+  .lp .fc .more{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;color:var(--blue);margin-top:14px;cursor:pointer}
+  .lp .fc.map .africa{width:100%;height:170px;margin-top:8px;display:block}
+  .lp .fc.map .cont{fill:#DCE6F1;stroke:#C3D2E2;stroke-width:1}
+  .lp .fc.map .sahel{fill:rgba(245,166,35,.22);stroke:var(--amber-d);stroke-width:1.2;stroke-linejoin:round}
+  .lp .fc.map .plabel{font:800 9px var(--sans);fill:var(--ink)}
+  .lp .fc.map .mlegend{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+  .lp .fc.map .mlegend span{font-size:11px;font-weight:800;color:var(--ink);background:#FDF3E1;border:1px solid #F3DCAF;border-radius:999px;padding:4px 10px;display:inline-flex;align-items:center;gap:6px}
+  .lp .fc.map .mlegend i{width:8px;height:8px;border-radius:50%;display:block}
+  .lp .fc.vid .play{width:100%;height:110px;border-radius:10px;margin-top:12px;background:linear-gradient(135deg,#DDEAF9,#EAF2FB);display:flex;align-items:center;justify-content:center;border:1px solid var(--line)}
+  .lp .fc.vid .pb{width:48px;height:48px;border-radius:50%;background:var(--amber);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 18px -6px var(--amber)}
+  @media(max-width:900px){.lp .fgrid2{grid-template-columns:1fr 1fr}}
+  @media(max-width:560px){.lp .fgrid2{grid-template-columns:1fr}}
+
+  .lp .conv{background:linear-gradient(135deg,#FDF6EA 0%,var(--bg2) 60%)}
+  .lp .conv .wrap{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center;padding:70px 22px}
+  .lp .conv h2{font-size:clamp(24px,3.2vw,36px)}
+  .lp .conv .sub{color:var(--muted);margin-top:16px;font-size:15.5px;line-height:1.6;max-width:42ch}
+  .lp .kpis{display:flex;gap:30px;margin-top:28px;flex-wrap:wrap}
+  .lp .kpi .n{font-size:30px;font-weight:800;color:var(--amber-d);font-variant-numeric:tabular-nums}
+  .lp .kpi .l{font-size:12px;color:var(--muted);font-weight:600}
+  .lp .form{background:#fff;border:1px solid var(--line);border-radius:16px;padding:26px;box-shadow:0 26px 50px -30px rgba(18,35,61,.45)}
+  .lp .form h3{font-size:18px}
+  .lp .fg{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+  .lp .form input,.lp .form select{width:100%;font-family:inherit;font-size:13.5px;padding:11px 12px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink)}
+  .lp .form input:focus,.lp .form select:focus{outline:2px solid var(--amber);outline-offset:1px;border-color:transparent}
+  .lp .form .btn-a{width:100%;justify-content:center;margin-top:14px;padding:13px}
+  .lp .form .note{font-size:11px;color:var(--faint);margin-top:10px;text-align:center}
+  @media(max-width:900px){.lp .conv .wrap{grid-template-columns:1fr;gap:30px}.lp .fg{grid-template-columns:1fr}}
+
+  .lp footer{background:var(--navy);color:rgba(255,255,255,.75);padding:52px 0 26px}
+  .lp .fcols{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1.2fr;gap:28px}
+  .lp footer h5{color:#fff;font-size:12px;letter-spacing:.12em;text-transform:uppercase;margin:0 0 14px}
+  .lp footer ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:9px;font-size:13px}
+  .lp footer li a{cursor:pointer}
+  .lp footer li a:hover{color:#fff}
+  .lp footer .desc{font-size:13px;line-height:1.6;max-width:34ch;margin-top:12px}
+  .lp footer .contact{font-size:12.5px;line-height:1.7}
+  .lp .fbar{border-top:1px solid rgba(255,255,255,.12);margin-top:38px;padding-top:20px;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:12px;color:rgba(255,255,255,.6)}
+  .lp .oper{display:inline-flex;align-items:center;gap:7px;color:#7ee0a3;font-weight:700}
+  .lp .oper .dot{width:8px;height:8px;border-radius:50%;background:#3ddc84;box-shadow:0 0 0 4px rgba(61,220,132,.2)}
+  @media(max-width:900px){.lp .fcols{grid-template-columns:1fr 1fr}}
+
+  .lp .reveal{opacity:0;transform:translateY(22px);transition:opacity .6s ease,transform .6s ease}
+  .lp .reveal.in{opacity:1;transform:none}
+  @media(prefers-reduced-motion:reduce){.lp .reveal{opacity:1;transform:none;transition:none}}
+`;
 
 export default function LandingPage() {
     const navigate = useNavigate();
     const { user } = useAuth();
-    const [scrolled, setScrolled] = useState(false);
-    const [contactOpen, setContactOpen] = useState(false);
-    // LOT — Lightbox album photo pour la galerie : index ou null si ferme
-    const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+    const rootRef = useRef<HTMLDivElement | null>(null);
 
+    // Utilisateur connecte : RootGate sert le dashboard sur « / ».
     useEffect(() => {
-        // « /home » n'existe pas — RootGate sert le dashboard sur « / ».
         if (user) navigate('/', { replace: true });
     }, [user, navigate]);
 
+    // Reveal au scroll.
     useEffect(() => {
-        const onScroll = () => setScrolled(window.scrollY > 30);
-        window.addEventListener('scroll', onScroll, { passive: true });
-        return () => window.removeEventListener('scroll', onScroll);
+        const root = rootRef.current;
+        if (!root) return;
+        const els = Array.from(root.querySelectorAll('.reveal'));
+        const io = new IntersectionObserver(
+            (entries) => entries.forEach((e) => {
+                if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+            }),
+            { threshold: 0.1, rootMargin: '0px 0px -50px 0px' },
+        );
+        els.forEach((el) => io.observe(el));
+        return () => io.disconnect();
     }, []);
 
-    return (
-        <div className="min-h-screen bg-white text-slate-900 overflow-x-hidden antialiased">
-            <GlobalStyles />
-            <ContactModal opened={contactOpen} onClose={() => setContactOpen(false)} />
-
-            {/* LOT — Lightbox plein ecran pour parcourir la galerie comme un album */}
-            <GalleryLightbox
-                index={lightboxIdx}
-                onClose={() => setLightboxIdx(null)}
-                onNext={() => setLightboxIdx((i) => (i === null ? 0 : (i + 1) % GALLERY.length))}
-                onPrev={() => setLightboxIdx((i) => (i === null ? 0 : (i - 1 + GALLERY.length) % GALLERY.length))}
-                onSelect={(i) => setLightboxIdx(i)}
-            />
-
-            {/* ═══ NAVBAR ═══ */}
-            <nav
-                className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
-                    scrolled
-                        ? 'bg-white/95 backdrop-blur-xl border-b border-slate-200 py-3 shadow-sm'
-                        : 'bg-white/80 backdrop-blur-sm py-4'
-                }`}
-            >
-                <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-                    <a href="#hero" className="flex items-center gap-3 cursor-pointer">
-                        <SafeXLogo size={40} />
-                        <span
-                            className="flex items-baseline"
-                            style={{
-                                fontFamily: "'Source Serif 4', Georgia, serif",
-                                fontWeight: 600,
-                                fontSize: 22,
-                                letterSpacing: '-0.02em',
-                                color: C.dark,
-                            }}
-                        >
-                            <span>Safe</span>
-                            <span style={{ color: C.green }}>X</span>
-                            <span style={{ color: C.dark, marginLeft: 6 }}>360</span>
-                        </span>
-                    </a>
-
-                    <div className="hidden lg:flex items-center gap-9">
-                        {[
-                            { label: 'Produit', href: '#features' },
-                            { label: 'Plateforme', href: '#gallery' },
-                            { label: 'Résultats', href: '#benefits' },
-                            { label: 'Référentiels', href: '#referentiels' },
-                            { label: 'Contact', href: '#contact' },
-                        ].map((item) => (
-                            <a
-                                key={item.href}
-                                href={item.href}
-                                className="text-[14px] text-slate-700 hover:text-slate-900 transition-colors cursor-pointer font-medium"
-                            >
-                                {item.label}
-                            </a>
-                        ))}
-                    </div>
-
-                    <button
-                        onClick={() => navigate('/login')}
-                        className="cursor-pointer group flex items-center gap-2 px-5 py-2.5 rounded-full transition-all text-[14px] font-semibold"
-                        style={{
-                            background: `linear-gradient(135deg, ${C.green} 0%, ${C.greenLight} 100%)`,
-                            color: 'white',
-                            boxShadow: `0 4px 14px ${C.green}55`,
-                        }}
-                    >
-                        Connexion
-                        <IconArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
-                    </button>
-                </div>
-            </nav>
-
-            <main>
-            {/* ═══ HERO CINEMATIC — Carousel premium avec effets Ken Burns, sweep, parallax ═══ */}
-            <CinematicHero onLogin={() => navigate('/login')} />
-
-            {/* ═══ HERO LEGACY (desactive — conserve pour rollback rapide si besoin) ═══ */}
-            <section
-                id="hero-legacy"
-                className="hidden"
-                style={{
-                    background:
-                        `linear-gradient(135deg, ${C.paper} 0%, ${C.cream} 60%, ${C.greenBg} 100%)`,
-                }}
-            >
-                <div
-                    className="absolute top-0 right-0 w-[600px] h-[600px] opacity-30 pointer-events-none"
-                    style={{
-                        background: `radial-gradient(circle, ${C.greenLight}50 0%, transparent 70%)`,
-                        transform: 'translate(20%, -30%)',
-                    }}
-                />
-                <div
-                    className="absolute bottom-0 left-0 w-[500px] h-[500px] opacity-25 pointer-events-none"
-                    style={{
-                        background: `radial-gradient(circle, ${C.green}40 0%, transparent 70%)`,
-                        transform: 'translate(-30%, 30%)',
-                    }}
-                />
-
-                <div className="relative max-w-7xl mx-auto px-6 grid lg:grid-cols-12 gap-12 items-center">
-                    <div className="lg:col-span-7">
-                        <Reveal>
-                            <div className="inline-flex items-center gap-3 mb-7">
-                                <span aria-hidden="true" className="block h-px w-10" style={{ background: C.green, opacity: 0.55 }} />
-                                <span className="text-[11.5px] tracking-[0.24em] uppercase font-semibold" style={{ color: C.green }}>
-                                    Fait pour les mines d'Afrique de l'Ouest
-                                </span>
-                            </div>
-                        </Reveal>
-
-                        <Reveal delay={100}>
-                            <h1
-                                style={{
-                                    fontFamily: "'Source Serif 4', Georgia, serif",
-                                    fontWeight: 600,
-                                    fontSize: 'clamp(40px, 6vw, 84px)',
-                                    letterSpacing: '-0.028em',
-                                    lineHeight: 1.01,
-                                    color: C.dark,
-                                }}
-                            >
-                                Chaque équipe<br />
-                                rentre chez elle{' '}
-                                <span style={{
-                                    background: `linear-gradient(110deg, ${C.green} 0%, ${C.greenLight} 60%, ${C.dark} 100%)`,
-                                    WebkitBackgroundClip: 'text',
-                                    WebkitTextFillColor: 'transparent',
-                                    backgroundClip: 'text',
-                                    fontStyle: 'italic',
-                                    display: 'inline-block',
-                                }}>
-                                    entière.
-                                </span>
-                            </h1>
-                        </Reveal>
-
-                        <Reveal delay={200}>
-                            <p
-                                className="mt-7 max-w-2xl"
-                                style={{ fontSize: 'clamp(16px, 1.35vw, 19px)', lineHeight: 1.6, color: '#475569' }}
-                            >
-                                SafeX 360 outille les préventeurs HSE des mines africaines.{' '}
-                                <strong style={{ color: C.dark, fontWeight: 700 }}>21 modules métier</strong>,
-                                une app mobile pour le terrain et des workflows conçus pour soutenir
-                                votre système de management HSE.
-                            </p>
-                        </Reveal>
-
-                        <Reveal delay={300}>
-                            <div className="mt-9 flex flex-wrap items-center gap-3">
-                                <button
-                                    onClick={() => navigate('/login')}
-                                    className="cursor-pointer group inline-flex items-center gap-2.5 px-7 py-4 rounded-full transition-all text-[15px] font-semibold hover:scale-[1.02]"
-                                    style={{
-                                        background: `linear-gradient(135deg, ${C.green} 0%, ${C.greenLight} 100%)`,
-                                        color: 'white',
-                                        boxShadow: `0 12px 30px -8px ${C.green}80`,
-                                    }}
-                                >
-                                    J'accède à la plateforme
-                                    <IconArrowRight size={17} className="transition-transform group-hover:translate-x-1" />
-                                </button>
-                                <a
-                                    href="#features"
-                                    className="cursor-pointer group inline-flex items-center gap-2 px-6 py-4 rounded-full bg-white hover:bg-slate-50 transition-all text-[14.5px] font-semibold"
-                                    style={{ border: `2px solid ${C.dark}`, color: C.dark }}
-                                >
-                                    <IconPlayerPlayFilled size={13} />
-                                    Voir comment ça marche
-                                </a>
-                            </div>
-                        </Reveal>
-
-                        <Reveal delay={400}>
-                            <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-2.5">
-                                {['Accès contrôlé', 'Actions journalisées', 'Configuration par organisation', 'Assistance sur horaires convenus'].map((t) => (
-                                    <div key={t} className="flex items-center gap-1.5 text-[13px] text-slate-700 font-medium">
-                                        <span
-                                            className="inline-flex items-center justify-center w-5 h-5 rounded-full"
-                                            style={{ background: C.greenBg, border: `1px solid ${C.greenSoft}` }}
-                                        >
-                                            <IconCheck size={11} style={{ color: C.green }} stroke={3} />
-                                        </span>
-                                        {t}
-                                    </div>
-                                ))}
-                            </div>
-                        </Reveal>
-                    </div>
-
-                    <div className="lg:col-span-5 hidden lg:block">
-                        <Reveal delay={300}><HeroVisual /></Reveal>
-                    </div>
-                </div>
-
-                <a
-                    href="#features"
-                    className="cursor-pointer absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1 text-slate-500 hover:text-slate-700 transition-colors"
-                >
-                    <span className="text-[10px] uppercase tracking-[0.22em] font-bold">Explorer</span>
-                    <IconChevronDown size={18} className="animate-bounce" />
-                </a>
-            </section>
-
-            {/* ═══ CLIENTS ═══ */}
-            <section className="bg-[#FAF9F5] border-y border-slate-100 py-12 overflow-hidden">
-                <p className="text-center text-[11px] uppercase tracking-[0.24em] text-slate-500 mb-7 font-bold">
-                    Ils utilisent SafeX 360 au quotidien
-                </p>
-                <ClientsMarquee />
-            </section>
-
-            {/* ═══ STATS — cards XL avec icônes en couleur ═══ */}
-            <section className="bg-white py-24 px-6">
-                <div className="max-w-7xl mx-auto">
-                    <Reveal>
-                        <div className="text-center max-w-3xl mx-auto mb-14">
-                            <SectionEyebrow color={C.green}>Périmètre fonctionnel</SectionEyebrow>
-                            <h2
-                                className="mt-4"
-                                style={{
-                                    fontFamily: "'Source Serif 4', Georgia, serif",
-                                    fontWeight: 600,
-                                    fontSize: 'clamp(30px, 4vw, 50px)',
-                                    letterSpacing: '-0.025em',
-                                    lineHeight: 1.08,
-                                    color: C.dark,
-                                }}
-                            >
-                                Structuré pour{' '}
-                                <span style={{
-                                    background: `linear-gradient(120deg, ${C.green} 0%, ${C.greenLight} 100%)`,
-                                    WebkitBackgroundClip: 'text',
-                                    WebkitTextFillColor: 'transparent',
-                                    backgroundClip: 'text',
-                                    fontStyle: 'italic',
-                                }}>les métiers HSE.</span>
-                            </h2>
-                        </div>
-                    </Reveal>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {STATS.map((s, i) => (
-                            <Reveal key={i} delay={i * 80}>
-                                <StatCard {...s} />
-                            </Reveal>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* ═══ FEATURES — 8 modules, grid responsive ═══ */}
-            <section id="features" className="bg-[#FAF9F5] py-28 px-6">
-                <div className="max-w-7xl mx-auto">
-                    <Reveal>
-                        <div className="max-w-3xl mb-14">
-                            <SectionEyebrow color={C.dark}>Modules</SectionEyebrow>
-                            <h2
-                                className="mt-4"
-                                style={{
-                                    fontFamily: "'Source Serif 4', Georgia, serif",
-                                    fontWeight: 600,
-                                    fontSize: 'clamp(32px, 4.5vw, 56px)',
-                                    letterSpacing: '-0.025em',
-                                    lineHeight: 1.06,
-                                    color: C.dark,
-                                }}
-                            >
-                                8 modules métier{' '}
-                                <span style={{
-                                    background: `linear-gradient(120deg, ${C.green} 0%, ${C.dark} 100%)`,
-                                    WebkitBackgroundClip: 'text',
-                                    WebkitTextFillColor: 'transparent',
-                                    backgroundClip: 'text',
-                                    fontStyle: 'italic',
-                                }}>opérationnels.</span>
-                            </h2>
-                            <p className="mt-5 text-[16.5px] leading-relaxed max-w-2xl" style={{ color: '#475569' }}>
-                                Quatre modules font tourner la sécurité au quotidien sur un site minier :
-                                <strong style={{ color: C.dark }}> SOS, Évacuation, Dynamitages et Inspections.</strong> Incidents, Risques, Audits et Communication complètent le pilotage opérationnel.
-                            </p>
-                        </div>
-                    </Reveal>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-                        {FEATURES.map((f, i) => (
-                            <Reveal key={f.id} delay={i * 60}>
-                                <FeatureCard feature={f} />
-                            </Reveal>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* ═══ GALERIE PLATEFORME — style album photo magazine ═══ */}
-            <section id="gallery" className="bg-white py-32 px-6">
-                <div className="max-w-7xl mx-auto">
-                    <Reveal>
-                        <div className="text-center max-w-3xl mx-auto mb-16">
-                            <SectionEyebrow color={C.green}>Plateforme</SectionEyebrow>
-                            <h2
-                                className="mt-4"
-                                style={{
-                                    fontFamily: "'Source Serif 4', Georgia, serif",
-                                    fontWeight: 600,
-                                    fontSize: 'clamp(32px, 4.5vw, 60px)',
-                                    letterSpacing: '-0.028em',
-                                    lineHeight: 1.04,
-                                    color: C.dark,
-                                }}
-                            >
-                                Six écrans,<br />
-                                <span style={{ fontStyle: 'italic', color: C.green }}>six moments HSE.</span>
-                            </h2>
-                            <p className="mt-5 text-[16.5px] leading-relaxed" style={{ color: '#475569' }}>
-                                Du tableau de bord du matin jusqu'au SOS terrain, voici à quoi ressemble la journée d'un préventeur HSE sur SafeX 360.
-                            </p>
-                        </div>
-                    </Reveal>
-
-                    <GalleryAlbum onOpen={setLightboxIdx} />
-
-                    {/* Indication album navigable */}
-                    <div className="mt-10 text-center">
-                        <span
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-[12px] uppercase tracking-[0.16em] font-semibold"
-                            style={{ background: C.greenBg, color: C.green, border: `1.5px solid ${C.greenSoft}` }}
-                        >
-                            <IconSparkles size={12} />
-                            Cliquez sur un écran pour l'ouvrir en grand et naviguer dans l'album
-                        </span>
-                    </div>
-                </div>
-            </section>
-
-            {/* ═══ AI SHOWCASE — Innovation IA mise en avant (3 piliers) ═══ */}
-            <AIShowcase />
-
-            {/* ═══ CYCLES FONCTIONNELS — aucune promesse de résultat ═══ */}
-            <BenefitsDynamic />
-
-            {/* Les résultats et gains ne sont publiés qu'après validation de leurs preuves. */}
-            <section className="bg-white py-20 px-6" aria-labelledby="public-capabilities-title">
-                <div className="max-w-5xl mx-auto text-center">
-                    <SectionEyebrow color={C.green}>Démarche HSE</SectionEyebrow>
-                    <h2
-                        id="public-capabilities-title"
-                        className="mt-4"
-                        style={{
-                            fontFamily: "'Source Serif 4', Georgia, serif",
-                            fontWeight: 600,
-                            fontSize: 'clamp(30px, 4vw, 50px)',
-                            letterSpacing: '-0.025em',
-                            color: C.dark,
-                        }}
-                    >
-                        Des capacités conçues pour soutenir votre organisation
-                    </h2>
-                    <p className="mt-5 text-[16px] leading-relaxed text-slate-600 max-w-3xl mx-auto">
-                        SafeX centralise les données, responsabilités, preuves et actions. Les résultats dépendent du
-                        paramétrage, des processus et de l’utilisation propres à chaque organisation.
-                    </p>
-                </div>
-            </section>
-
-            {/* ═══ ISO ═══ */}
-            <section id="referentiels" className="bg-white py-28 px-6">
-                <div className="max-w-7xl mx-auto">
-                    <Reveal>
-                        <div className="text-center max-w-3xl mx-auto mb-14">
-                            <SectionEyebrow color={C.green}>Référentiels</SectionEyebrow>
-                            <h2
-                                className="mt-4"
-                                style={{
-                                    fontFamily: "'Source Serif 4', Georgia, serif",
-                                    fontWeight: 600,
-                                    fontSize: 'clamp(32px, 4.5vw, 56px)',
-                                    letterSpacing: '-0.025em',
-                                    lineHeight: 1.06,
-                                    color: C.dark,
-                                }}
-                            >
-                                Des workflows conçus pour soutenir<br />
-                                <span style={{ fontStyle: 'italic', color: C.green }}>vos démarches de management.</span>
-                            </h2>
-                            <p className="mt-5 text-[14px] leading-relaxed text-slate-600">
-                                Les références affichées décrivent des cadres de travail pris en compte par les modules.
-                                Elles ne constituent pas une attestation délivrée par un organisme tiers.
-                            </p>
-                        </div>
-                    </Reveal>
-
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                        {ISO_BADGES.map((iso, i) => (
-                            <Reveal key={i} delay={i * 80}>
-                                <ISOMedallion iso={iso} />
-                            </Reveal>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* ═══ SCÉNARIOS D'USAGE — exemples fonctionnels, sans témoignage attribué ═══ */}
-            <section className="bg-[#FAF9F5] py-28 px-6">
-                <div className="max-w-7xl mx-auto">
-                    <Reveal>
-                        <div className="text-center max-w-3xl mx-auto mb-14">
-                            <SectionEyebrow color={C.green}>Scénarios d’usage</SectionEyebrow>
-                            <h2
-                                className="mt-4"
-                                style={{
-                                    fontFamily: "'Source Serif 4', Georgia, serif",
-                                    fontWeight: 600,
-                                    fontSize: 'clamp(32px, 4.5vw, 56px)',
-                                    letterSpacing: '-0.025em',
-                                    lineHeight: 1.06,
-                                    color: C.dark,
-                                }}
-                            >
-                                Trois workflows illustrés,<br />
-                                <span style={{ fontStyle: 'italic', color: C.green }}>sans résultat préjugé.</span>
-                            </h2>
-                        </div>
-                    </Reveal>
-
-                    <div className="grid lg:grid-cols-3 gap-6">
-                        {USE_CASES.map((t, i) => (
-                            <Reveal key={i} delay={i * 120}>
-                                <div className="p-8 rounded-2xl bg-white border-2 border-slate-200 hover:shadow-2xl hover:border-slate-300 hover:-translate-y-1 transition-all h-full">
-                                    <div className="inline-flex items-center gap-2 mb-5 rounded-full bg-teal-50 border border-teal-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-teal-800">
-                                        <IconClipboardCheck size={14} /> Exemple fonctionnel
-                                    </div>
-                                    <p
-                                        className="text-[15.5px] leading-relaxed mb-7"
-                                        style={{
-                                            fontFamily: "'Source Serif 4', Georgia, serif",
-                                            fontStyle: 'italic',
-                                            color: '#1E293B',
-                                        }}
-                                    >
-                                        {t.quote}
-                                    </p>
-                                    <div className="flex items-center gap-3 pt-5 border-t border-slate-100">
-                                        <div
-                                            className="w-11 h-11 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md"
-                                            style={{ background: t.avatarBg }}
-                                        >
-                                            {t.author.charAt(0)}
-                                        </div>
-                                        <div>
-                                            <div className="text-[14px] text-slate-900 font-bold">{t.author}</div>
-                                            <div className="text-[12px] text-slate-600">{t.role} · {t.company}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </Reveal>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* ═══ CTA FINAL ═══ */}
-            <section
-                id="contact"
-                className="relative py-32 px-6 overflow-hidden"
-                style={{ background: `linear-gradient(135deg, ${C.green} 0%, ${C.greenLight} 50%, ${C.dark} 100%)` }}
-            >
-                <div
-                    className="absolute inset-0 opacity-30 pointer-events-none"
-                    style={{ background: 'radial-gradient(circle at 70% 30%, rgba(255,255,255,0.4) 0%, transparent 60%)' }}
-                />
-
-                <div className="relative max-w-4xl mx-auto text-center">
-                    <Reveal>
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-7 bg-white/25 backdrop-blur-sm border border-white/40">
-                            <IconSparkles size={13} className="text-white" />
-                            <span className="text-[11.5px] uppercase tracking-[0.18em] text-white font-bold">
-                                Démo gratuite · 30 min
-                            </span>
-                        </div>
-
-                        <h2
-                            className="mb-7"
-                            style={{
-                                fontFamily: "'Source Serif 4', Georgia, serif",
-                                fontWeight: 600,
-                                fontSize: 'clamp(34px, 5.5vw, 72px)',
-                                letterSpacing: '-0.028em',
-                                lineHeight: 1.02,
-                                color: '#FFFFFF',
-                            }}
-                        >
-                            Parlez à un<br />
-                            <span style={{ fontStyle: 'italic' }}>vrai préventeur HSE.</span>
-                        </h2>
-
-                        <p className="max-w-2xl mx-auto text-[17px] leading-relaxed mb-10" style={{ color: 'rgba(255,255,255,0.95)' }}>
-                            Pas de commercial. Un HSE qui a fait du terrain. On regarde votre situation,
-                            on vous montre la plateforme, on vous dit franchement si ça vous convient.
-                        </p>
-
-                        <div className="flex flex-wrap items-center justify-center gap-3 mb-10">
-                            <button
-                                onClick={() => navigate('/login')}
-                                className="cursor-pointer group inline-flex items-center gap-2 px-8 py-4 rounded-full bg-white hover:bg-slate-50 transition-all text-[15px] font-bold shadow-2xl hover:scale-[1.03]"
-                                style={{ color: C.dark }}
-                            >
-                                Accéder à la plateforme
-                                <IconArrowRight size={17} className="transition-transform group-hover:translate-x-1" />
-                            </button>
-                            <button
-                                onClick={() => setContactOpen(true)}
-                                className="cursor-pointer inline-flex items-center gap-2 px-7 py-4 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-md border-2 border-white text-white transition-all text-[14.5px] font-semibold"
-                            >
-                                <IconMail size={15} />
-                                Demander une démo
-                            </button>
-                        </div>
-
-                        <div
-                            className="flex flex-wrap items-center justify-center gap-x-7 gap-y-3 text-[12.5px] font-semibold"
-                            style={{ color: 'rgba(255,255,255,0.95)' }}
-                        >
-                            <span className="flex items-center gap-1.5"><IconPhone size={12} /> +226 77 96 35 25</span>
-                            <span className="flex items-center gap-1.5"><IconClock size={12} /> Lun–Ven · 9h–18h GMT</span>
-                            <button
-                                onClick={() => setContactOpen(true)}
-                                className="cursor-pointer flex items-center gap-1.5 hover:text-white/100 transition-colors underline-offset-4 hover:underline"
-                            >
-                                <IconMail size={12} /> Formulaire de contact
-                            </button>
-                        </div>
-                    </Reveal>
-                </div>
-            </section>
-
-            </main>
-
-            {/* ═══ FOOTER ═══ */}
-            <footer className="bg-stone-50 py-14 px-6 border-t border-slate-200">
-                <div className="max-w-7xl mx-auto">
-                    <div className="grid md:grid-cols-4 gap-10 mb-10">
-                        <div className="md:col-span-2">
-                            <div className="flex items-center gap-3 mb-4">
-                                <SafeXLogo size={38} />
-                                <span style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600, fontSize: 22, color: C.dark }}>
-                                    Safe<span style={{ color: C.green }}>X</span> <span style={{ color: C.dark, marginLeft: 4 }}>360</span>
-                                </span>
-                            </div>
-                            <p className="text-[13.5px] leading-relaxed max-w-md" style={{ color: '#475569' }}>
-                                Plateforme HSE intégrée pour l'industrie minière ouest-africaine.
-                                Conçue et éditée au Burkina Faso par Data Universe.
-                            </p>
-                            <a
-                                href="https://datauniverse.bf/"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="cursor-pointer mt-5 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 hover:border-slate-300 text-[12px] text-slate-700 transition-colors"
-                            >
-                                <IconGlobe size={13} />
-                                datauniverse.bf
-                            </a>
-                        </div>
-
-                        <div>
-                            <h5 className="text-[11px] uppercase tracking-[0.18em] text-slate-500 mb-4 font-bold">Produit</h5>
-                            <ul className="space-y-2.5 text-[13.5px]">
-                                <li><a href="#features" className="text-slate-700 hover:text-slate-900 cursor-pointer">Modules</a></li>
-                                <li><a href="#gallery" className="text-slate-700 hover:text-slate-900 cursor-pointer">Plateforme</a></li>
-                                <li><a href="#benefits" className="text-slate-700 hover:text-slate-900 cursor-pointer">Résultats</a></li>
-                                <li><a href="#referentiels" className="text-slate-700 hover:text-slate-900 cursor-pointer">Référentiels</a></li>
-                            </ul>
-                        </div>
-
-                        <div>
-                            <h5 className="text-[11px] uppercase tracking-[0.18em] text-slate-500 mb-4 font-bold">Contact</h5>
-                            <ul className="space-y-2.5 text-[13.5px]">
-                                <li><button onClick={() => setContactOpen(true)} className="cursor-pointer text-slate-700 hover:text-slate-900 text-left">Demander une démo</button></li>
-                                <li><button onClick={() => setContactOpen(true)} className="cursor-pointer text-slate-700 hover:text-slate-900 text-left">Nous écrire</button></li>
-                                <li className="flex items-center gap-1.5 text-slate-700"><IconPhone size={12} /> +226 77 96 35 25</li>
-                                <li><button onClick={() => navigate('/login')} className="cursor-pointer text-slate-700 hover:text-slate-900 text-left">Espace client</button></li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <div className="pt-7 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
-                        <p className="text-[11.5px] text-slate-500">
-                            © {new Date().getFullYear()} Data Universe · Tous droits réservés
-                        </p>
-                        <div className="flex flex-wrap items-center gap-4 text-[11px] text-slate-600 font-medium">
-                            <span className="flex items-center gap-1.5"><IconLockSquare size={12} /> Accès contrôlé</span>
-                            <span className="flex items-center gap-1.5"><IconCloudUpload size={12} /> Sauvegarde configurable</span>
-                            <span className="flex items-center gap-1.5"><IconHelmet size={12} /> Conçu au Burkina Faso</span>
-                        </div>
-                    </div>
-                </div>
-            </footer>
-        </div>
-    );
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// HELPERS
-// ═══════════════════════════════════════════════════════════════════════
-
-/**
- * Kicker de section éditorial : filet fin + petites capitales espacées,
- * sans pastille ni puce — façon revue imprimée.
- */
-function SectionEyebrow({ children, color }: { children: React.ReactNode; color: string }) {
-    return (
-        <div className="inline-flex items-center gap-3">
-            <span aria-hidden="true" className="block h-px w-8" style={{ background: color, opacity: 0.5 }} />
-            <span className="text-[11.5px] uppercase tracking-[0.26em] font-semibold" style={{ color }}>
-                {children}
-            </span>
-            <span aria-hidden="true" className="block h-px w-8" style={{ background: color, opacity: 0.5 }} />
-        </div>
-    );
-}
-
-function SafeXLogo({ size = 40 }: { size?: number }) {
-    return (
-        <svg width={size} height={size} viewBox="0 0 64 64" aria-label="SafeX 360"
-            style={{ filter: `drop-shadow(0 4px 14px ${C.green}50)` }}
-        >
-            <defs>
-                <linearGradient id="sx-grad-v6" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor={C.greenSoft} />
-                    <stop offset="55%" stopColor={C.green} />
-                    <stop offset="100%" stopColor={C.dark} />
-                </linearGradient>
-            </defs>
-            <path d="M32 3 L56 11 C56.5 11.2, 57 11.6, 57 12.3 L57 30 C57 44, 36 60, 32.7 61.6 C32.3 61.8, 31.7 61.8, 31.3 61.6 C28 60, 7 44, 7 30 L7 12.3 C7 11.6, 7.5 11.2, 8 11 Z"
-                fill="url(#sx-grad-v6)" stroke="rgba(255,255,255,0.4)" strokeWidth="0.8" />
-            <path d="M 20 31 L 29 40 L 45 21" stroke="white" strokeWidth="5"
-                strokeLinecap="round" strokeLinejoin="round" fill="none" />
-        </svg>
-    );
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// STAT CARD — large + icône colorée
-// ═══════════════════════════════════════════════════════════════════════
-
-function StatCard({ value, label, icon: Icon, color, bg, ring }: {
-    value: string; label: string; icon: any; color: string; bg: string; ring: string;
-}) {
-    return (
-        <div
-            className="bg-white rounded-2xl px-6 py-5 transition-[box-shadow] hover:shadow-lg"
-            style={{
-                border: `1.5px solid ${ring}`,
-                boxShadow: `0 6px 22px -12px ${color}25`,
-            }}
-        >
-            {/* Icône et valeur sur la même ligne : tuile compacte */}
-            <div className="flex items-center gap-4">
-                <div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: bg, border: `1px solid ${ring}` }}
-                >
-                    <Icon size={21} stroke={1.8} style={{ color }} />
-                </div>
-                <div
-                    style={{
-                        fontFamily: "'Source Serif 4', Georgia, serif",
-                        fontWeight: 600,
-                        fontSize: 'clamp(30px, 2.8vw, 40px)',
-                        letterSpacing: '-0.025em',
-                        lineHeight: 1,
-                        color,
-                    }}
-                >
-                    {value}
-                </div>
-            </div>
-
-            {/* Label */}
-            <div className="mt-3 text-[11.5px] uppercase tracking-[0.16em] font-semibold" style={{ color: '#475569' }}>
-                {label}
-            </div>
-        </div>
-    );
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// FEATURE CARD — 8 modules, accent sur 4 signatures
-// ═══════════════════════════════════════════════════════════════════════
-
-function FeatureCard({ feature }: { feature: typeof FEATURES[0] }) {
-    const Icon = feature.icon;
-    return (
-        <div
-            className={`group relative bg-white rounded-3xl p-7 transition-all hover:-translate-y-1 hover:shadow-2xl h-full flex flex-col ${
-                feature.highlight ? 'ring-2 ring-offset-2' : ''
-            }`}
-            style={{
-                border: `2px solid ${feature.highlight ? feature.color : '#E2E8F0'}`,
-                boxShadow: feature.highlight
-                    ? `0 12px 30px -10px ${feature.color}40`
-                    : '0 1px 3px rgba(0,0,0,0.05)',
-                ...(feature.highlight ? { ['--tw-ring-color' as any]: feature.color + '20' } : {}),
-            }}
-        >
-            {/* Badge "Signature" pour les modules en couleur */}
-            {feature.highlight && (
-                <div
-                    className="absolute -top-2 right-4 text-[9.5px] uppercase tracking-[0.16em] font-bold px-2 py-0.5 rounded-full"
-                    style={{ background: feature.color, color: 'white', letterSpacing: '0.12em' }}
-                >
-                    Signature
-                </div>
-            )}
-
-            {/* Icône en pastille de couleur */}
-            <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 transition-transform group-hover:scale-110"
-                style={{
-                    background: feature.bgLight,
-                    border: `1.5px solid ${feature.ring}`,
-                }}
-            >
-                <Icon size={26} stroke={1.8} style={{ color: feature.color }} />
-            </div>
-
-            <h3
-                className="mb-3"
-                style={{
-                    fontFamily: "'Source Serif 4', Georgia, serif",
-                    fontWeight: 600,
-                    fontSize: 18,
-                    letterSpacing: '-0.015em',
-                    color: C.dark,
-                    lineHeight: 1.2,
-                }}
-            >
-                {feature.title}
-            </h3>
-
-            <p className="text-[13px] leading-relaxed mb-5 flex-1" style={{ color: '#475569' }}>
-                {feature.description}
-            </p>
-
-            <ul className="space-y-1.5 pt-4 border-t border-slate-100">
-                {feature.bullets.map((b, j) => (
-                    <li key={j} className="flex items-center gap-2 text-[12px] font-medium" style={{ color: '#334155' }}>
-                        <IconCheck size={12} style={{ color: feature.color }} stroke={3} />
-                        {b}
-                    </li>
-                ))}
-            </ul>
-        </div>
-    );
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// GALLERY LIGHTBOX — Album photo plein écran navigable
-// ═══════════════════════════════════════════════════════════════════════
-
-interface GalleryLightboxProps {
-    index: number | null;
-    onClose: () => void;
-    onNext: () => void;
-    onPrev: () => void;
-    onSelect: (i: number) => void;
-}
-
-function GalleryLightbox({ index, onClose, onNext, onPrev, onSelect }: GalleryLightboxProps) {
-    // Gestion clavier : Esc / ← / →
-    useEffect(() => {
-        if (index === null) return;
-        const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose();
-            else if (e.key === 'ArrowRight') onNext();
-            else if (e.key === 'ArrowLeft') onPrev();
-        };
-        window.addEventListener('keydown', onKey);
-        // Lock body scroll
-        const prevOverflow = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-        return () => {
-            window.removeEventListener('keydown', onKey);
-            document.body.style.overflow = prevOverflow;
-        };
-    }, [index, onClose, onNext, onPrev]);
-
-    if (index === null) return null;
-    const item = GALLERY[index];
-    const isRealCapture = item.label !== 'App mobile terrain'; // PreviewMobile reste un mockup
+    const login = () => navigate('/login');
+    const goTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
 
     return (
-        <div
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-8"
-            style={{
-                background: 'rgba(8, 14, 26, 0.92)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
-                animation: 'hero-caption-slide 250ms ease-out',
-            }}
-            onClick={onClose}
-        >
-            {/* Bouton fermer */}
-            <button
-                type="button"
-                onClick={onClose}
-                aria-label="Fermer"
-                className="cursor-pointer fixed top-5 right-5 z-10 w-11 h-11 rounded-full flex items-center justify-center transition-all hover:scale-110"
-                style={{
-                    background: 'rgba(255,255,255,0.10)',
-                    border: '1.5px solid rgba(255,255,255,0.35)',
-                    backdropFilter: 'blur(10px)',
-                }}
-            >
-                <IconX size={20} stroke={2.2} color="white" />
-            </button>
+        <div className="lp" ref={rootRef}>
+            <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
-            {/* Compteur + label */}
-            <div className="fixed top-5 left-5 z-10 flex items-center gap-3">
-                <div
-                    className="px-3 py-1.5 rounded-full text-[11px] uppercase tracking-[0.18em] font-bold"
-                    style={{
-                        background: 'rgba(255,255,255,0.10)',
-                        border: '1.5px solid rgba(255,255,255,0.30)',
-                        color: 'white',
-                        backdropFilter: 'blur(10px)',
-                    }}
-                >
-                    {String(index + 1).padStart(2, '0')} / {String(GALLERY.length).padStart(2, '0')}
+            {/* NAV */}
+            <nav className="nav"><div className="wrap">
+                <div className="logo">
+                    <img className="logo-img" src={LOGO_LIGHT} alt="SafeX 360" />
+                    <span className="logo-sub">Digital HSE Platform</span>
                 </div>
-                <div
-                    className="px-3 py-1.5 rounded-full text-[11px] uppercase tracking-[0.16em] font-bold"
-                    style={{
-                        background: `${item.color}30`,
-                        border: `1.5px solid ${item.color}80`,
-                        color: 'white',
-                        backdropFilter: 'blur(10px)',
-                    }}
-                >
-                    {item.label}
+                <div className="menu">
+                    <a onClick={() => goTo('modules')}>Solution</a>
+                    <a onClick={() => goTo('modules')}>Modules</a>
+                    <a onClick={() => goTo('secteurs')}>Secteurs</a>
+                    <a onClick={() => goTo('features')}>Fonctionnalités</a>
+                    <a onClick={() => goTo('features')}>Conformité</a>
+                    <a onClick={() => goTo('demo')}>À propos</a>
                 </div>
-            </div>
-
-            {/* Navigation gauche */}
-            <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); onPrev(); }}
-                aria-label="Précédent"
-                className="cursor-pointer hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full items-center justify-center transition-all hover:scale-110 hover:bg-white/20"
-                style={{ background: 'rgba(255,255,255,0.10)', border: '1.5px solid rgba(255,255,255,0.30)' }}
-            >
-                <IconChevronLeft size={22} color="white" />
-            </button>
-
-            {/* Navigation droite */}
-            <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); onNext(); }}
-                aria-label="Suivant"
-                className="cursor-pointer hidden sm:flex absolute right-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full items-center justify-center transition-all hover:scale-110 hover:bg-white/20"
-                style={{ background: 'rgba(255,255,255,0.10)', border: '1.5px solid rgba(255,255,255,0.30)' }}
-            >
-                <IconChevronRight size={22} color="white" />
-            </button>
-
-            {/* Contenu principal — Image + caption */}
-            <div
-                className="relative max-w-6xl w-full flex flex-col items-center gap-4"
-                onClick={(e) => e.stopPropagation()}
-                style={{ maxHeight: '85vh' }}
-            >
-                {/* Image */}
-                <div
-                    key={`lb-img-${index}`}
-                    className="relative rounded-2xl overflow-hidden w-full"
-                    style={{
-                        background: item.bg,
-                        boxShadow: `0 30px 80px -20px ${item.color}60, 0 0 0 1px rgba(255,255,255,0.10) inset`,
-                        maxHeight: '70vh',
-                        aspectRatio: '16/9',
-                        animation: 'hero-reveal-up 400ms cubic-bezier(0.16, 1, 0.3, 1)',
-                    }}
-                >
-                    {isRealCapture ? (
-                        <img
-                            src={(() => {
-                                // Mapping label → fichier (sync avec GALLERY[].Preview)
-                                const map: Record<string, string> = {
-                                    'Tableau de bord': '/screenshots/dashboard.png',
-                                    'SOS déclenché': '/screenshots/alerte-declenchee.png',
-                                    'Alerte générale': '/screenshots/alerte-generale.png',
-                                    'Déclaration incident': '/screenshots/formulaire-incident.png',
-                                    'Non-conformité & Near-miss': '/screenshots/non-conformite.png',
-                                };
-                                return map[item.label] || '';
-                            })()}
-                            alt={item.title}
-                            className="absolute inset-0 w-full h-full object-contain"
-                            style={{ background: '#0F172A' }}
-                        />
-                    ) : (
-                        <item.Preview />
-                    )}
+                <div className="navr">
+                    <span className="lang">FR</span>
+                    <a className="link-b" onClick={login}>Se connecter</a>
+                    <button className="btn btn-a" onClick={() => goTo('demo')}>Demander une démonstration</button>
                 </div>
+            </div></nav>
 
-                {/* Caption sous l'image */}
-                <div
-                    key={`lb-cap-${index}`}
-                    className="text-center px-4 max-w-3xl"
-                    style={{ animation: 'hero-reveal-up 500ms 100ms cubic-bezier(0.16, 1, 0.3, 1) both' }}
-                >
-                    <h3
-                        style={{
-                            fontFamily: "'Source Serif 4', Georgia, serif",
-                            fontWeight: 600,
-                            fontSize: 'clamp(22px, 2.5vw, 32px)',
-                            letterSpacing: '-0.020em',
-                            color: 'white',
-                            marginBottom: 8,
-                        }}
-                    >
-                        {item.title}
-                    </h3>
-                    <p className="text-[14.5px] leading-relaxed" style={{ color: 'rgba(255,255,255,0.78)' }}>
-                        {item.description}
-                    </p>
-                </div>
-
-                {/* Strip de thumbnails — navigation rapide */}
-                <div className="flex items-center gap-2 mt-2 flex-wrap justify-center">
-                    {GALLERY.map((g, i) => (
-                        <button
-                            key={i}
-                            type="button"
-                            onClick={() => onSelect(i)}
-                            aria-label={`Voir ${g.label}`}
-                            className="cursor-pointer relative rounded-md overflow-hidden transition-all"
-                            style={{
-                                width: i === index ? 56 : 44,
-                                height: i === index ? 40 : 32,
-                                border: i === index ? `2px solid ${g.color}` : '1.5px solid rgba(255,255,255,0.25)',
-                                boxShadow: i === index ? `0 0 0 3px ${g.color}30` : 'none',
-                                background: g.bg,
-                                opacity: i === index ? 1 : 0.65,
-                            }}
-                        >
-                            <span
-                                className="absolute inset-0 flex items-center justify-center text-[8px] uppercase tracking-wider font-bold text-center px-1"
-                                style={{ color: i === index ? 'white' : g.color }}
-                            >
-                                {String(i + 1).padStart(2, '0')}
-                            </span>
-                        </button>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// AI SHOWCASE — Section dédiée à l'innovation IA (3 piliers)
-// ═══════════════════════════════════════════════════════════════════════
-
-interface AIPillar {
-    icon: React.ReactNode;
-    eyebrow: string;
-    title: string;
-    description: string;
-    highlights: string[];
-    accent: string;
-    image?: string;
-    mockTag: string;
-}
-
-const AI_PILLARS: AIPillar[] = [
-    {
-        icon: <IconSparkles size={26} stroke={1.8} />,
-        eyebrow: '01 · Vision',
-        title: 'Déclaration assistée par IA',
-        description: 'Le chef de poste ajoute une photo. L’assistant peut proposer une catégorie, des dangers à vérifier et une première trame d’actions, toujours soumise à validation humaine.',
-        highlights: [
-            'Suggère les dangers à contrôler sur la photo',
-            'Conserve la décision de l’utilisateur responsable',
-            'Propose une trame d’actions correctives',
-        ],
-        accent: '#8B5CF6',
-        image: '/screenshots/formulaire-incident.png',
-        mockTag: 'Assistance visuelle · Validation humaine',
-    },
-    {
-        icon: <IconClipboardCheck size={26} stroke={1.8} />,
-        eyebrow: '02 · Terrain',
-        title: 'Inspections assistées par IA',
-        description: 'Pendant les tournées, l’assistant peut signaler des éléments à examiner et proposer des actions. L’inspecteur confirme, modifie ou rejette chaque suggestion.',
-        highlights: [
-            'Repérage assisté d’éléments visibles sur les photos',
-            'Suggestions contextuelles selon le type d\'inspection',
-            'Décision finale conservée sous la responsabilité de l’inspecteur',
-        ],
-        accent: '#06B6D4',
-        image: '/screenshots/non-conformite.png',
-        mockTag: 'Suggestions contrôlées',
-    },
-    {
-        icon: <IconBolt size={26} stroke={1.8} />,
-        eyebrow: '03 · Copilote',
-        title: 'Assistant IA pour la plateforme',
-        description: 'L’assistant aide à rechercher des informations et à préparer des synthèses. Les sources et actions doivent rester visibles pour vérification avant utilisation.',
-        highlights: [
-            'Recherche dans les données autorisées',
-            'Préparation de synthèses avec sources',
-            'Journalisation des actions administratives',
-        ],
-        accent: '#0EA5E9',
-        image: '/screenshots/dashboard.png',
-        mockTag: 'Copilote SafeX · Bientôt',
-    },
-];
-
-function AIShowcase() {
-    const [activePillar, setActivePillar] = useState(0);
-
-    return (
-        <section
-            id="ai"
-            className="relative py-32 px-6 overflow-hidden"
-            style={{
-                background: `
-                    radial-gradient(circle at 20% 30%, rgba(139, 92, 246, 0.20) 0%, transparent 50%),
-                    radial-gradient(circle at 80% 70%, rgba(6, 182, 212, 0.18) 0%, transparent 55%),
-                    linear-gradient(180deg, #0B1120 0%, #0F172A 50%, #1E1B4B 100%)
-                `,
-            }}
-        >
-            {/* Grille décorative */}
-            <div
-                className="absolute inset-0 opacity-[0.07] pointer-events-none"
-                style={{
-                    backgroundImage:
-                        'linear-gradient(rgba(139,92,246,0.5) 1px, transparent 1px), linear-gradient(to right, rgba(6,182,212,0.5) 1px, transparent 1px)',
-                    backgroundSize: '80px 80px',
-                }}
-            />
-
-            {/* Halo lumineux animé */}
-            <div
-                className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] opacity-20 pointer-events-none rounded-full"
-                style={{
-                    background: 'radial-gradient(circle, rgba(139, 92, 246, 0.6) 0%, transparent 70%)',
-                    animation: 'blob-1 18s ease-in-out infinite',
-                    filter: 'blur(60px)',
-                }}
-            />
-
-            <div className="relative max-w-7xl mx-auto">
-                {/* Header */}
-                <Reveal>
-                    <div className="text-center max-w-3xl mx-auto mb-16">
-                        {/* Eyebrow IA — filet éditorial violet */}
-                        <div className="inline-flex items-center gap-3 mb-7">
-                            <span aria-hidden="true" className="block h-px w-10 bg-violet-400/70" />
-                            <IconSparkles size={14} className="text-violet-300" />
-                            <span className="text-[11.5px] uppercase tracking-[0.24em] font-bold text-white">
-                                Assistance IA · Contrôle humain requis
-                            </span>
-                            <span aria-hidden="true" className="block h-px w-10 bg-violet-400/70" />
-                        </div>
-
-                        <h2
-                            style={{
-                                fontFamily: "'Source Serif 4', Georgia, serif",
-                                fontWeight: 600,
-                                fontSize: 'clamp(36px, 5.5vw, 68px)',
-                                letterSpacing: '-0.028em',
-                                lineHeight: 1.02,
-                                color: 'white',
-                            }}
-                        >
-                            L'intelligence artificielle{' '}
-                            <span
-                                style={{
-                                    background: 'linear-gradient(110deg, #C4B5FD 0%, #67E8F9 50%, #FFFFFF 100%)',
-                                    WebkitBackgroundClip: 'text',
-                                    WebkitTextFillColor: 'transparent',
-                                    backgroundClip: 'text',
-                                    fontStyle: 'italic',
-                                    display: 'inline-block',
-                                }}
-                            >
-                                au service de la sécurité.
-                            </span>
-                        </h2>
-
-                        <p
-                            className="mt-7"
-                            style={{
-                                fontSize: 'clamp(16px, 1.4vw, 19px)',
-                                lineHeight: 1.6,
-                                color: 'rgba(248, 250, 252, 0.78)',
-                            }}
-                        >
-                            SafeX 360 propose des fonctions d’assistance sur trois axes du métier. Les suggestions ne remplacent ni l’analyse du préventeur, ni les validations prévues par l’organisation.
-                        </p>
+            {/* HERO */}
+            <header className="hero"><div className="wrap">
+                <div className="reveal">
+                    <span className="badge">● Solution HSE intelligente pour l’industrie minière</span>
+                    <h1>Anticipez les risques.<br />Protégez vos équipes.<br />Pilotez votre <span className="y">performance HSE.</span></h1>
+                    <p className="sub">SafeX 360 digitalise l’ensemble de vos processus Santé, Sécurité et Environnement, du terrain jusqu’au pilotage stratégique.</p>
+                    <div className="cta">
+                        <button className="btn btn-a" onClick={() => goTo('demo')}>Demander une démonstration &nbsp;→</button>
+                        <button className="btn btn-o" onClick={() => goTo('modules')}>Découvrir la plateforme</button>
                     </div>
-                </Reveal>
-
-                {/* 3 piliers en cards */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {AI_PILLARS.map((pillar, i) => {
-                        const isActive = i === activePillar;
-                        return (
-                            <Reveal key={i} delay={i * 120}>
-                                <button
-                                    type="button"
-                                    onClick={() => setActivePillar(i)}
-                                    onMouseEnter={() => setActivePillar(i)}
-                                    className="cursor-pointer group relative h-full w-full text-left rounded-3xl p-7 overflow-hidden transition-all"
-                                    style={{
-                                        background: isActive
-                                            ? `linear-gradient(155deg, ${pillar.accent}22 0%, ${pillar.accent}08 100%)`
-                                            : 'rgba(255, 255, 255, 0.03)',
-                                        border: `1.5px solid ${isActive ? pillar.accent + '80' : 'rgba(255,255,255,0.10)'}`,
-                                        backdropFilter: 'blur(20px)',
-                                        WebkitBackdropFilter: 'blur(20px)',
-                                        transform: isActive ? 'translateY(-6px)' : 'translateY(0)',
-                                        boxShadow: isActive ? `0 25px 60px -15px ${pillar.accent}50` : 'none',
-                                    }}
-                                >
-                                    {/* Glow halo derriere icone */}
-                                    <div
-                                        className="absolute top-0 left-0 w-40 h-40 pointer-events-none opacity-60"
-                                        style={{
-                                            background: `radial-gradient(circle, ${pillar.accent}50 0%, transparent 70%)`,
-                                            filter: 'blur(40px)',
-                                            transform: 'translate(-30%, -30%)',
-                                        }}
-                                    />
-
-                                    {/* Header card */}
-                                    <div className="relative flex items-start justify-between mb-5">
-                                        <div
-                                            className="w-14 h-14 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110"
-                                            style={{
-                                                background: `linear-gradient(135deg, ${pillar.accent} 0%, ${pillar.accent}80 100%)`,
-                                                color: 'white',
-                                                boxShadow: `0 12px 30px -8px ${pillar.accent}80`,
-                                            }}
-                                        >
-                                            {pillar.icon}
-                                        </div>
-                                        <span
-                                            className="inline-flex items-center gap-2 text-[10.5px] uppercase tracking-[0.2em] font-bold"
-                                            style={{ color: pillar.accent }}
-                                        >
-                                            <span aria-hidden="true" className="block h-px w-6" style={{ background: pillar.accent, opacity: 0.6 }} />
-                                            {pillar.eyebrow}
-                                        </span>
-                                    </div>
-
-                                    {/* Titre */}
-                                    <h3
-                                        className="relative mb-3"
-                                        style={{
-                                            fontFamily: "'Source Serif 4', Georgia, serif",
-                                            fontWeight: 600,
-                                            fontSize: 'clamp(22px, 2vw, 28px)',
-                                            letterSpacing: '-0.020em',
-                                            color: 'white',
-                                            lineHeight: 1.15,
-                                        }}
-                                    >
-                                        {pillar.title}
-                                    </h3>
-
-                                    {/* Description */}
-                                    <p className="relative text-[14px] leading-relaxed mb-5" style={{ color: 'rgba(248, 250, 252, 0.74)' }}>
-                                        {pillar.description}
-                                    </p>
-
-                                    {/* Highlights */}
-                                    <ul className="relative space-y-2 mb-6">
-                                        {pillar.highlights.map((h, j) => (
-                                            <li key={j} className="flex items-start gap-2 text-[13px]" style={{ color: 'rgba(248, 250, 252, 0.82)' }}>
-                                                <span
-                                                    className="mt-1 inline-flex items-center justify-center w-3.5 h-3.5 rounded-full flex-shrink-0"
-                                                    style={{ background: `${pillar.accent}40`, border: `1px solid ${pillar.accent}80` }}
-                                                >
-                                                    <IconCheck size={9} stroke={3.5} style={{ color: pillar.accent }} />
-                                                </span>
-                                                <span>{h}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-
-                                    {/* Footer card */}
-                                    <div
-                                        className="relative pt-4 flex items-center justify-between"
-                                        style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
-                                    >
-                                        <span
-                                            className="flex items-center gap-1.5 text-[10.5px] uppercase tracking-wider font-bold"
-                                            style={{ color: pillar.accent }}
-                                        >
-                                            <IconSparkles size={12} />
-                                            {pillar.mockTag}
-                                        </span>
-                                        <span
-                                            className="text-[11px] font-semibold opacity-70 group-hover:opacity-100 transition-opacity flex items-center gap-1"
-                                            style={{ color: 'white' }}
-                                        >
-                                            Voir
-                                            <IconArrowUpRight size={12} stroke={2.5} />
-                                        </span>
-                                    </div>
-                                </button>
-                            </Reveal>
-                        );
-                    })}
-                </div>
-
-                {/* Bandeau stats IA en bas */}
-                <Reveal delay={400}>
-                    <div
-                        className="mt-14 rounded-2xl p-6 grid grid-cols-2 md:grid-cols-4 gap-4"
-                        style={{
-                            background: 'rgba(255, 255, 255, 0.04)',
-                            border: '1px solid rgba(255, 255, 255, 0.10)',
-                            backdropFilter: 'blur(20px)',
-                        }}
-                    >
-                        {[
-                            { value: 'Humain', label: 'validation obligatoire' },
-                            { value: 'Sources', label: 'à vérifier avant usage' },
-                            { value: 'Journal', label: 'actions administratives tracées' },
-                            { value: 'Droits', label: 'accès selon les autorisations' },
-                        ].map((s, i) => (
-                            <div key={i} className="flex flex-col items-center sm:items-start text-center sm:text-left">
-                                <span
-                                    style={{
-                                        fontFamily: "'Source Serif 4', Georgia, serif",
-                                        fontSize: 'clamp(28px, 3.2vw, 42px)',
-                                        fontWeight: 600,
-                                        background: 'linear-gradient(110deg, #C4B5FD 0%, #67E8F9 100%)',
-                                        WebkitBackgroundClip: 'text',
-                                        WebkitTextFillColor: 'transparent',
-                                        backgroundClip: 'text',
-                                        letterSpacing: '-0.020em',
-                                    }}
-                                >
-                                    {s.value}
-                                </span>
-                                <span className="text-[11.5px] uppercase tracking-[0.14em] font-semibold" style={{ color: 'rgba(255,255,255,0.65)' }}>
-                                    {s.label}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                </Reveal>
-            </div>
-        </section>
-    );
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// CINEMATIC HERO — Carousel premium avec Ken Burns, sweep, parallax
-// ═══════════════════════════════════════════════════════════════════════
-
-interface HeroSlide {
-    src: string;
-    eyebrow: string;
-    title: React.ReactNode;
-    subtitle: string;
-    keyword: string;
-    accent: string;
-    burnsClass: string;
-    /**
-     * Focal point CSS pour `object-position` : controle quel point de l'image
-     * reste centre meme avec le Ken Burns. Ex: '50% 30%' garde le visage haut
-     * du sujet visible. Important : sans ca, `object-cover` coupe les visages
-     * sur certaines photos verticales.
-     */
-    focal: string;
-}
-
-const HERO_SLIDES: HeroSlide[] = [
-    {
-        src: '/hero/mine-aerial.jpg',
-        eyebrow: "Mines à ciel ouvert · Afrique de l'Ouest",
-        title: <>Chaque équipe<br />rentre chez elle{' '}<em>entière.</em></>,
-        subtitle: 'On a construit SafeX 360 avec les préventeurs HSE des plus grandes mines du continent.',
-        keyword: 'Vision 360°',
-        accent: '#0F766E',
-        burnsClass: 'ken-burns-1',
-        // Vue aerienne : focal centre-haut pour garder les terrasses visibles
-        focal: '50% 35%',
-    },
-    {
-        src: '/hero/sos-platform.png',
-        eyebrow: 'Plateforme SOS · Alertes en temps réel',
-        title: <>Alerte critique,<br /><em>réaction immédiate.</em></>,
-        subtitle: 'Incendie, éboulement, fuite de gaz — le SOS part en un clic, la localisation GPS s\'affiche, les secours sont guidés jusqu\'au point exact.',
-        keyword: 'SOS instantané',
-        accent: '#DC2626',
-        burnsClass: 'ken-burns-2',
-        focal: '50% 40%',
-    },
-    {
-        src: '/hero/alerte-evacuation-platform.png',
-        eyebrow: 'Évacuation · Centre de commande',
-        title: <>Évacuation guidée,<br /><em>personne oublié.</em></>,
-        subtitle: 'Tableau de bord temps réel, points de rassemblement balisés, head-count automatique. Le préventeur sait où est chaque personne sur le site.',
-        keyword: 'Plateforme évacuation',
-        accent: '#DC2626',
-        burnsClass: 'ken-burns-3',
-        focal: '50% 45%',
-    },
-    {
-        src: '/hero/mine-excavator.jpg',
-        eyebrow: 'Opérations minières · Engins lourds',
-        title: <>La sécurité<br /><em>au cœur des opérations.</em></>,
-        subtitle: 'Engins en mouvement, piétons qui croisent, énergies dangereuses partout. Tout se trace en temps réel.',
-        keyword: 'Vue opérations',
-        accent: '#C2410C',
-        burnsClass: 'ken-burns-2',
-        focal: '40% 50%',
-    },
-    {
-        src: '/hero/blast-detonation.png',
-        eyebrow: 'Dynamitages · Tir contrôlé',
-        title: <>Aucun tir<br /><em>sans validation.</em></>,
-        subtitle: 'Plan de tir, périmètre tracé, panneaux installés, signaux sonores prêts, rubans de sécurité en place. Le boutefeu donne le feu vert à chaque étape, et pas avant.',
-        keyword: 'Workflow Blasting',
-        accent: '#EF4444',
-        burnsClass: 'ken-burns-1',
-        // Boutefeu a gauche + explosion centrale → focal a 45% horizontal
-        focal: '45% 50%',
-    },
-    {
-        src: '/hero/training-team.png',
-        eyebrow: 'Culture HSE · Formations terrain',
-        title: <>La culture<br /><em>qui se construit.</em></>,
-        subtitle: 'Règles d\'or, exercices réguliers, communications de proximité. Petit à petit, le préventeur HSE prend sa place de coach sur le terrain.',
-        keyword: 'Culture de prévention',
-        accent: '#0F766E',
-        burnsClass: 'ken-burns-3',
-        // Preventeur debout au centre : focal a 50% 25% pour garder le visage visible
-        // meme avec le Ken Burns zoom + texte a gauche
-        focal: '70% 30%',
-    },
-    {
-        src: '/hero/workers-loto.png',
-        eyebrow: 'Énergies dangereuses · Consignation LOTO',
-        title: <>Consignation,<br /><em>étapes tracées.</em></>,
-        subtitle: 'Chaque étape LOTO laisse une trace, les EPI sont vérifiés, le registre des consignations reste à jour en permanence.',
-        keyword: 'LOTO documenté',
-        accent: '#0F766E',
-        burnsClass: 'ken-burns-1',
-        // 3 travailleurs : focal centre pour les garder ensemble
-        focal: '55% 45%',
-    },
-    {
-        src: '/hero/incident-scene.png',
-        eyebrow: 'Investigation · Apprentissage continu',
-        title: <>Chaque incident,<br /><em>une leçon apprise.</em></>,
-        subtitle: 'La déclaration guide les informations utiles. L’investigation et le plan d’actions sont ensuite suivis étape par étape.',
-        keyword: 'Retour d’expérience',
-        accent: '#C2410C',
-        burnsClass: 'ken-burns-2',
-        // Scene action complexe : focal centre-bas pour cadrer le chariot
-        focal: '50% 55%',
-    },
-    {
-        src: '/hero/first-aid.png',
-        eyebrow: 'Secourisme · Premiers gestes',
-        title: <>Quand chaque<br /><em>seconde compte.</em></>,
-        subtitle: 'Les SST sont identifiés, la mallette de premiers secours est géolocalisée, le point de rassemblement est balisé. Personne ne cherche, tout le monde sait où aller.',
-        keyword: 'Réponse SST',
-        accent: '#0F766E',
-        burnsClass: 'ken-burns-3',
-        // Secouriste agenouille au centre + victime au sol : focal centre-bas
-        focal: '50% 55%',
-    },
-];
-
-interface CinematicHeroProps {
-    onLogin: () => void;
-}
-
-function CinematicHero({ onLogin }: CinematicHeroProps) {
-    const [active, setActive] = useState(0);
-    const [scrollY, setScrollY] = useState(0);
-    const [paused, setPaused] = useState(false);
-
-    // Auto-advance toutes les 7 secondes
-    useEffect(() => {
-        if (paused) return;
-        const id = setInterval(() => {
-            setActive((prev) => (prev + 1) % HERO_SLIDES.length);
-        }, 7000);
-        return () => clearInterval(id);
-    }, [paused]);
-
-    // Parallax leger au scroll
-    useEffect(() => {
-        const onScroll = () => setScrollY(window.scrollY);
-        window.addEventListener('scroll', onScroll, { passive: true });
-        return () => window.removeEventListener('scroll', onScroll);
-    }, []);
-
-    const slide = HERO_SLIDES[active];
-    const parallaxOffset = Math.min(scrollY * 0.35, 200);
-
-    return (
-        <section
-            id="hero"
-            className="relative overflow-hidden w-full"
-            style={{
-                // LOT — Hero a 2/3 de l'ecran + 75px : la marge supplementaire
-                // garantit que les CTA et le badge restent au-dessus du bandeau
-                // de statistiques sans jamais etre rognes.
-                height: 'calc(66vh + 75px)',
-                minHeight: '600px',
-                background: '#0F172A',
-            }}
-            onMouseEnter={() => setPaused(true)}
-            onMouseLeave={() => setPaused(false)}
-        >
-            {/* ─── COUCHE 1 : Images carousel avec Ken Burns ─── */}
-            <div className="absolute inset-0 z-0">
-                {HERO_SLIDES.map((s, i) => (
-                    <div
-                        key={i}
-                        className="absolute inset-0 transition-opacity"
-                        style={{
-                            opacity: i === active ? 1 : 0,
-                            transitionDuration: '1800ms',
-                            transitionTimingFunction: 'cubic-bezier(0.65, 0, 0.35, 1)',
-                            transform: `translateY(${parallaxOffset}px)`,
-                        }}
-                    >
-                        <img
-                            src={s.src}
-                            alt=""
-                            aria-hidden="true"
-                            className="absolute inset-0 w-full h-full object-cover"
-                            style={{
-                                // Focal point par slide pour eviter de couper visages/sujets
-                                objectPosition: s.focal,
-                                animation: i === active ? `${s.burnsClass} 9s ease-out forwards` : 'none',
-                                transformOrigin: s.focal,
-                            }}
-                            loading={i === 0 ? 'eager' : 'lazy'}
-                        />
-                    </div>
-                ))}
-            </div>
-
-            {/* ─── COUCHE 2 : Voile dark gradient pour lisibilite ─── */}
-            <div
-                className="absolute inset-0 z-10 pointer-events-none"
-                style={{
-                    background: `
-                        linear-gradient(105deg,
-                            rgba(15, 23, 42, 0.92) 0%,
-                            rgba(15, 23, 42, 0.75) 35%,
-                            rgba(15, 118, 110, 0.35) 70%,
-                            rgba(15, 23, 42, 0.55) 100%
-                        )
-                    `,
-                }}
-            />
-
-            {/* ─── COUCHE 3 : Effet sweep diagonal (relance a chaque slide change) ─── */}
-            <div
-                key={`sweep-${active}`}
-                className="absolute inset-0 z-20 pointer-events-none overflow-hidden"
-            >
-                <div
-                    className="absolute top-0 bottom-0 w-1/3"
-                    style={{
-                        background: 'linear-gradient(105deg, transparent 0%, rgba(255,255,255,0.20) 50%, transparent 100%)',
-                        animation: 'hero-sweep 2s ease-out',
-                        animationDelay: '0.3s',
-                    }}
-                />
-            </div>
-
-            {/* ─── COUCHE 4 : Grille decorative subtile ─── */}
-            <div
-                className="absolute inset-0 z-20 pointer-events-none opacity-[0.08]"
-                style={{
-                    backgroundImage:
-                        'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(to right, rgba(255,255,255,0.5) 1px, transparent 1px)',
-                    backgroundSize: '80px 80px',
-                }}
-            />
-
-            {/* ─── COUCHE 5 : Contenu principal ─── */}
-            <div className="relative z-30 max-w-7xl mx-auto px-6 pt-20 pb-32 flex flex-col justify-center h-full">
-                {/* Eyebrow dynamique — filet éditorial à l'accent du slide */}
-                <div
-                    key={`eb-${active}`}
-                    className="inline-flex items-center gap-3 mb-7 self-start"
-                    style={{ animation: 'hero-caption-slide 700ms ease-out' }}
-                >
-                    <span aria-hidden="true" className="block h-px w-10" style={{ background: slide.accent }} />
-                    <span className="text-[11px] tracking-[0.24em] uppercase font-bold" style={{ color: 'rgba(255,255,255,0.92)' }}>
-                        {slide.eyebrow}
-                    </span>
-                </div>
-
-                {/* Titre principal — change avec le slide */}
-                <h1
-                    key={`title-${active}`}
-                    style={{
-                        fontFamily: "'Source Serif 4', Georgia, serif",
-                        fontWeight: 600,
-                        fontSize: 'clamp(36px, 5.5vw, 72px)',
-                        letterSpacing: '-0.028em',
-                        lineHeight: 1.0,
-                        color: 'white',
-                        maxWidth: '900px',
-                        animation: 'hero-reveal-up 900ms cubic-bezier(0.16, 1, 0.3, 1)',
-                        textShadow: '0 4px 30px rgba(0,0,0,0.4)',
-                    }}
-                >
-                    {(() => {
-                        // Extract em-italic from JSX title for accent styling
-                        return slide.title;
-                    })()}
-                </h1>
-
-                <style>{`
-                    #hero h1 em {
-                        background: linear-gradient(110deg, #5EEAD4 0%, #99F6E4 60%, #FFFFFF 100%);
-                        -webkit-background-clip: text;
-                        -webkit-text-fill-color: transparent;
-                        background-clip: text;
-                        font-style: italic;
-                        display: inline-block;
-                    }
-                `}</style>
-
-                {/* Description */}
-                <p
-                    key={`desc-${active}`}
-                    className="mt-5 max-w-2xl"
-                    style={{
-                        fontSize: 'clamp(14.5px, 1.2vw, 18px)',
-                        lineHeight: 1.55,
-                        color: 'rgba(248, 250, 252, 0.92)',
-                        animation: 'hero-reveal-up 1000ms cubic-bezier(0.16, 1, 0.3, 1)',
-                        animationDelay: '150ms',
-                        animationFillMode: 'backwards',
-                        textShadow: '0 2px 12px rgba(0,0,0,0.35)',
-                    }}
-                >
-                    {slide.subtitle}{' '}
-                    <strong style={{ color: 'white', fontWeight: 700 }}>21 modules métier</strong>,
-                    une app mobile pour le terrain et des workflows conçus pour soutenir le système de management HSE.
-                </p>
-
-                {/* CTAs */}
-                <div
-                    className="mt-7 flex flex-wrap items-center gap-3"
-                    style={{
-                        animation: 'hero-reveal-up 1000ms cubic-bezier(0.16, 1, 0.3, 1)',
-                        animationDelay: '300ms',
-                        animationFillMode: 'backwards',
-                    }}
-                >
-                    <button
-                        onClick={onLogin}
-                        className="cursor-pointer group inline-flex items-center justify-center gap-2.5 h-[52px] px-8 rounded-full transition-[box-shadow,filter] text-[15px] font-semibold hover:brightness-110"
-                        style={{
-                            background: `linear-gradient(135deg, #14B8A6 0%, #0F766E 100%)`,
-                            color: 'white',
-                            boxShadow: `0 14px 36px -10px rgba(15, 118, 110, 0.6), 0 0 0 1px rgba(255,255,255,0.12) inset`,
-                        }}
-                    >
-                        J'accède à la plateforme
-                        <IconArrowRight size={17} className="transition-transform group-hover:translate-x-1.5" />
-                    </button>
-                    <a
-                        href="#features"
-                        className="cursor-pointer group inline-flex items-center justify-center gap-2.5 h-[52px] px-7 rounded-full transition-[background-color,border-color] text-[14.5px] font-semibold hover:bg-white/15"
-                        style={{
-                            background: 'rgba(255,255,255,0.08)',
-                            backdropFilter: 'blur(12px)',
-                            WebkitBackdropFilter: 'blur(12px)',
-                            border: '1px solid rgba(255,255,255,0.4)',
-                            color: 'white',
-                        }}
-                    >
-                        <span
-                            className="inline-flex items-center justify-center w-7 h-7 rounded-full flex-shrink-0"
-                            style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.3)' }}
-                        >
-                            <IconPlayerPlayFilled size={11} />
-                        </span>
-                        Voir comment ça marche
-                    </a>
-
-                    {/* Badge keyword dynamique */}
-                    <div
-                        key={`kw-${active}`}
-                        className="inline-flex items-center justify-center gap-1.5 h-[40px] px-4 rounded-full"
-                        style={{
-                            background: `${slide.accent}28`,
-                            border: `1px solid ${slide.accent}70`,
-                            color: 'white',
-                            backdropFilter: 'blur(10px)',
-                            WebkitBackdropFilter: 'blur(10px)',
-                            animation: 'hero-caption-slide 800ms ease-out',
-                        }}
-                    >
-                        <IconSparkles size={13} style={{ color: slide.accent }} />
-                        <span className="text-[11.5px] font-bold uppercase tracking-wider">
-                            {slide.keyword}
-                        </span>
+                    <div className="pills">
+                        <span className="pill">◉ Multi-sites</span>
+                        <span className="pill">⏱ Temps réel</span>
+                        <span className="pill">📱 Mobile &amp; Tablette</span>
+                        <span className="pill">🔒 Sécurisé</span>
+                        <span className="pill">✔ Conforme</span>
                     </div>
                 </div>
+                <div className="hero-art reveal">
+                    <div className="photo"><img src={PHOTO_HERO} alt="Équipe HSE sur site minier" /></div>
+                    <div className="fc1"><div className="t">Incidents ce mois</div><div className="n">128</div><div className="d">↓ 13%</div></div>
+                    <div className="fc2"><div className="row"><span className="dot" /><span className="lab">Équipe au complet · 243 pointés</span></div></div>
+                </div>
+            </div></header>
 
-                {/* Trust signals */}
-                <div
-                    className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2"
-                    style={{
-                        animation: 'hero-reveal-up 1000ms cubic-bezier(0.16, 1, 0.3, 1)',
-                        animationDelay: '450ms',
-                        animationFillMode: 'backwards',
-                    }}
-                >
-                    {['Accès contrôlé', 'Actions journalisées', 'Configuration par organisation', 'Assistance sur horaires convenus'].map((t) => (
-                        <div key={t} className="flex items-center gap-1.5 text-[13px] font-medium" style={{ color: 'rgba(248, 250, 252, 0.85)' }}>
-                            <span
-                                className="inline-flex items-center justify-center w-5 h-5 rounded-full"
-                                style={{ background: 'rgba(94, 234, 212, 0.18)', border: '1px solid rgba(94, 234, 212, 0.5)' }}
-                            >
-                                <IconCheck size={11} style={{ color: '#5EEAD4' }} stroke={3} />
-                            </span>
-                            {t}
-                        </div>
+            {/* SECTEURS */}
+            <div className="sectors" id="secteurs">
+                <div className="lbl">Une plateforme conçue pour les environnements industriels exigeants</div>
+                <div className="tabs">
+                    {SECTORS.map((s, i) => (
+                        <span key={s} className={`tab${i === 0 ? ' on' : ''}`}>{s}</span>
                     ))}
                 </div>
             </div>
 
-            {/* ─── COUCHE 6 : Dots verticaux + progress bar a droite ─── */}
-            <div className="absolute right-6 top-1/2 -translate-y-1/2 z-40 hidden md:flex flex-col items-center gap-3">
-                {HERO_SLIDES.map((_, i) => (
-                    <button
-                        key={i}
-                        onClick={() => setActive(i)}
-                        aria-label={`Voir slide ${i + 1}`}
-                        className="cursor-pointer group relative flex items-center gap-3"
-                    >
-                        <span
-                            className="text-[10px] uppercase tracking-[0.18em] font-bold opacity-0 group-hover:opacity-100 transition-opacity"
-                            style={{ color: 'white' }}
-                        >
-                            0{i + 1}
-                        </span>
-                        <span
-                            className="relative block rounded-full transition-all"
-                            style={{
-                                width: i === active ? 4 : 2,
-                                height: i === active ? 36 : 22,
-                                background: i === active ? 'white' : 'rgba(255,255,255,0.35)',
-                            }}
-                        >
-                            {i === active && !paused && (
-                                <span
-                                    className="absolute inset-0 origin-top rounded-full"
-                                    style={{
-                                        background: slide.accent,
-                                        animation: 'hero-progress 7s linear forwards',
-                                        transformOrigin: 'top',
-                                    }}
-                                />
-                            )}
-                        </span>
-                    </button>
-                ))}
-            </div>
-
-            {/* ─── COUCHE 7 : Marquee bandeau statistiques HSE en bas ─── */}
-            <div
-                className="absolute bottom-0 left-0 right-0 z-30 py-4 overflow-hidden"
-                style={{
-                    background: 'linear-gradient(to top, rgba(15, 23, 42, 0.85) 0%, rgba(15, 23, 42, 0.4) 70%, transparent 100%)',
-                    backdropFilter: 'blur(4px)',
-                    WebkitBackdropFilter: 'blur(4px)',
-                }}
-            >
-                <div className="flex" style={{ animation: 'marquee 45s linear infinite', width: 'fit-content' }}>
-                    {[...HERO_MARQUEE, ...HERO_MARQUEE].map((stat, i) => (
-                        <div key={i} className="flex items-center gap-3 px-8 whitespace-nowrap">
-                            {/* Règle plateforme : une norme ISO s'affiche avec son badge, pas en texte */}
-                            {stat.value.startsWith('ISO') ? (
-                                <IsoBadge norm={stat.value} theme="dark" size="md" />
-                            ) : (
-                                <span
-                                    className="text-[26px] font-bold"
-                                    style={{
-                                        fontFamily: "'Source Serif 4', Georgia, serif",
-                                        background: 'linear-gradient(110deg, #5EEAD4 0%, #99F6E4 100%)',
-                                        WebkitBackgroundClip: 'text',
-                                        WebkitTextFillColor: 'transparent',
-                                        backgroundClip: 'text',
-                                    }}
-                                >
-                                    {stat.value}
-                                </span>
-                            )}
-                            <span className="text-[12px] uppercase tracking-[0.16em] font-semibold" style={{ color: 'rgba(255,255,255,0.75)' }}>
-                                {stat.label}
-                            </span>
-                            <span className="text-white/30 text-xl">·</span>
+            {/* PROBLEME */}
+            <section className="alt">
+                <div className="sh reveal"><h2>Les risques terrain ne peuvent plus être pilotés avec des outils dispersés</h2></div>
+                <div className="wrap"><div className="prob">
+                    {PROBLEMS.map((p) => (
+                        <div className="pc reveal" key={p.title}>
+                            <div className="ic" style={{ background: p.bg, color: p.color }}>{p.icon}</div>
+                            <h4>{p.title}</h4>
+                            <p>{p.desc}</p>
+                            <div className="stat" style={{ color: p.color }}>{p.stat}</div>
+                            <div className="cap">{p.cap}</div>
                         </div>
                     ))}
-                </div>
-            </div>
+                </div></div>
+            </section>
 
-            {/* Scroll indicator en bas centre (au-dessus du marquee, masque sur mobile
-                pour ne jamais chevaucher les CTA) */}
-            <a
-                href="#features"
-                className="cursor-pointer absolute bottom-16 left-1/2 -translate-x-1/2 z-30 hidden md:flex flex-col items-center gap-1 text-white/70 hover:text-white transition-colors"
-                style={{ animation: 'float-y 2.5s ease-in-out infinite' }}
-            >
-                <span className="text-[9.5px] uppercase tracking-[0.28em] font-bold">Explorer</span>
-                <IconChevronDown size={18} stroke={2} />
-            </a>
-        </section>
-    );
-}
-
-const HERO_MARQUEE = [
-    { value: 'Terrain', label: 'signalement structuré' },
-    { value: 'CAPA', label: 'actions et échéances suivies' },
-    { value: '21', label: 'modules métier HSE' },
-    { value: 'ISO 45001', label: 'référentiel pris en compte' },
-    { value: 'FR', label: 'interface et assistance' },
-    { value: 'Multi-site', label: 'périmètres configurables' },
-];
-
-// ═══════════════════════════════════════════════════════════════════════
-// HERO VISUAL
-// ═══════════════════════════════════════════════════════════════════════
-
-function HeroVisual() {
-    return (
-        <div className="relative" style={{ animation: 'float-y 6s ease-in-out infinite' }}>
-            <div
-                className="relative rounded-3xl p-7 bg-white"
-                style={{
-                    border: `2px solid ${C.greenSoft}`,
-                    boxShadow: `0 30px 80px -20px ${C.dark}25, 0 0 60px ${C.greenLight}15`,
-                }}
-            >
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-2">
-                        <span className="relative flex w-2.5 h-2.5">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
-                            <span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ background: C.green }} />
-                        </span>
-                        <span className="text-[10.5px] uppercase tracking-[0.14em] font-bold" style={{ color: C.green }}>
-                            Aperçu illustratif
-                        </span>
+            {/* TERRAIN (photo equipe, sans capture) */}
+            <section className="field">
+                <div className="wrap"><div className="fgrid">
+                    <div className="reveal">
+                        <span className="over">Sur le terrain</span>
+                        <h2 style={{ marginTop: 10 }}>Une plateforme entre les mains de vos équipes</h2>
+                        <p className="intro">Du fond de mine jusqu’à la direction HSE, chacun saisit, alerte et suit au bon moment. L’information remonte du terrain, fiable et tracée.</p>
+                        <ul>
+                            <li>✓ Saisie mobile temps réel</li>
+                            <li>✓ Alertes et notifications</li>
+                            <li>✓ Comparaison multi-sites</li>
+                            <li>✓ Analyse de tendances</li>
+                            <li>✓ Rapports automatiques</li>
+                            <li>✓ Données fiables et traçables</li>
+                        </ul>
+                        <button className="btn btn-b" onClick={() => goTo('modules')}>Découvrir les modules</button>
                     </div>
-                    <IconBolt size={15} style={{ color: C.green }} />
-                </div>
+                    <div className="photo reveal">
+                        <span className="cap">Équipe HSE · Consignation sur site</span>
+                        <img src={PHOTO_FIELD} alt="Équipe minière en activité" />
+                    </div>
+                </div></div>
+            </section>
 
-                <div className="grid grid-cols-2 gap-3 mb-5">
-                    <div className="p-3.5 rounded-xl" style={{ background: C.greenBg, border: `1.5px solid ${C.greenSoft}` }}>
-                        <div className="text-[10px] uppercase tracking-[0.12em] mb-1.5 font-bold" style={{ color: C.green }}>LTIFR</div>
-                        <div className="flex items-baseline gap-1.5">
-                            <span style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600, fontSize: 26, color: C.green, letterSpacing: '-0.02em' }}>
-                                Suivi
-                            </span>
+            {/* MODULES */}
+            <section id="modules" className="alt">
+                <div className="sh reveal"><span className="over">Modules</span><h2 style={{ marginTop: 10 }}>Des modules complets pour couvrir tous vos besoins HSE</h2></div>
+                <div className="wrap"><div className="mgrid">
+                    {MODULES.map((m) => (
+                        <div className="mc" key={m.title}>
+                            <div className="ic" style={{ background: m.color + '22', color: m.color }}>{m.icon}</div>
+                            <h4>{m.title}</h4>
+                            <p>{m.desc}</p>
+                            <span className="more">En savoir plus →</span>
                         </div>
-                    </div>
-                    <div className="p-3.5 rounded-xl" style={{ background: '#F0F9FF', border: '1.5px solid #7DD3FC' }}>
-                        <div className="text-[10px] uppercase tracking-[0.12em] mb-1.5 font-bold" style={{ color: '#0369A1' }}>Revue</div>
-                        <div className="flex items-baseline gap-1.5">
-                            <span style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600, fontSize: 26, color: '#0369A1', letterSpacing: '-0.02em' }}>
-                                À planifier
-                            </span>
-                        </div>
-                    </div>
-                </div>
+                    ))}
+                </div></div>
+            </section>
 
-                <div className="mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10.5px] font-semibold text-slate-700">Tendance 30 j</span>
-                        <span className="text-[9.5px] font-bold" style={{ color: C.green }}>Exemple de visualisation</span>
+            {/* WORKFLOW */}
+            <section>
+                <div className="wrap"><div className="flow">
+                    <div className="flow-l reveal">
+                        <span className="over">Processus</span>
+                        <h2 style={{ marginTop: 10 }}>Du terrain au comité de direction, une information unique et fiable</h2>
+                        <p>Un processus digitalisé et collaboratif, de l’observation sur site jusqu’à la décision stratégique.</p>
                     </div>
-                    <Sparkline />
-                </div>
-
-                <div className="pt-4 border-t border-slate-100 space-y-2.5">
-                    {[
-                        { icon: IconBellRinging, label: 'SOS · Galerie Nord', time: '5 min', color: C.emergency, bg: '#FEF2F2' },
-                        { icon: IconClipboardCheck, label: 'Audit clôturé · ISO 19011', time: '2 h', color: C.green, bg: C.greenBg },
-                    ].map((it, i) => {
-                        const Icon = it.icon;
-                        return (
-                            <div key={i} className="flex items-center gap-2.5">
-                                <span
-                                    className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                                    style={{ background: it.bg, border: `1.5px solid ${it.color}30` }}
-                                >
-                                    <Icon size={13} style={{ color: it.color }} stroke={2} />
-                                </span>
-                                <div className="flex-1 min-w-0">
-                                    <div className="text-[12px] text-slate-900 truncate font-semibold">{it.label}</div>
-                                </div>
-                                <span className="text-[10.5px] text-slate-500 whitespace-nowrap font-medium">{it.time}</span>
+                    <div className="steps reveal">
+                        {STEPS.map(([t, d], i) => (
+                            <div className="step" key={t}>
+                                <div className="n">{i + 1}</div>
+                                <h4>{t}</h4>
+                                <p>{d}</p>
                             </div>
-                        );
-                    })}
-                </div>
-            </div>
+                        ))}
+                    </div>
+                </div></div>
+            </section>
 
-            <div
-                className="absolute -bottom-6 -left-8 rounded-xl p-3.5 bg-white hidden md:block"
-                style={{
-                    border: `2px solid ${C.greenSoft}`,
-                    boxShadow: `0 20px 50px -10px ${C.green}30`,
-                    animation: 'float-y 5s ease-in-out infinite reverse',
-                }}
-            >
-                <div className="flex items-center gap-2.5">
-                    <span className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: C.green }}>
-                        <IconCheck size={16} className="text-white" stroke={3} />
-                    </span>
+            {/* FEATURES */}
+            <section id="features" className="alt">
+                <div className="sh reveal"><h2>Bien plus qu’un logiciel de suivi</h2><p>Des capacités avancées pour passer du réactif au préventif.</p></div>
+                <div className="wrap"><div className="fgrid2">
+                    <div className="fc reveal">
+                        <div className="ic" style={{ background: 'rgba(124,58,237,.1)', color: '#7C3AED' }}>🧠</div>
+                        <h4>IA &amp; analyse prédictive</h4>
+                        <ul>
+                            <li>• Détection des tendances anormales</li>
+                            <li>• Identification des incidents récurrents</li>
+                            <li>• Suggestions d’actions prioritaires</li>
+                        </ul>
+                        <span className="more">En savoir plus →</span>
+                    </div>
+                    <div className="fc reveal">
+                        <div className="ic" style={{ background: 'rgba(18,161,80,.12)', color: 'var(--good)' }}>✅</div>
+                        <h4>Conformité &amp; normes</h4>
+                        <p className="fl">Des workflows conçus pour soutenir vos démarches de management HSE.</p>
+                        <ul>
+                            <li>• Aligné avec ISO 45001</li>
+                            <li>• Aligné avec ISO 14001</li>
+                            <li>• Aligné avec ISO 19011</li>
+                            <li>• Traçabilité et preuves auditables</li>
+                        </ul>
+                        <span className="more">En savoir plus →</span>
+                    </div>
+                    <div className="fc map reveal">
+                        <div className="ic" style={{ background: 'rgba(37,99,235,.1)', color: 'var(--blue)' }}>🌍</div>
+                        <h4>Pilotage multi-sites</h4>
+                        <svg className="africa" viewBox="0 0 300 300" role="img" aria-label="Carte d’Afrique : Burkina Faso, Mali, Niger">
+                            <path className="cont" d="M78,52 L120,40 L150,44 L185,46 L218,44 L232,58 L240,84 L250,104 L262,116 L290,118 L268,132 L250,150 L246,175 L252,196 L246,224 L232,250 L214,272 L190,288 L168,286 L152,258 L150,230 L142,208 L136,196 L132,186 L126,182 L108,188 L100,186 L82,190 L68,192 L50,186 L40,176 L26,158 L20,150 L24,128 L34,100 L52,72 Z" />
+                            <path className="sahel" d="M48,102 L100,99 L112,116 L86,134 L58,130 Z" />
+                            <circle cx="60" cy="112" r="4.4" fill="#0F9E8E" stroke="#fff" strokeWidth="1.6" />
+                            <text className="plabel" x="60" y="106" textAnchor="middle">Mali</text>
+                            <circle cx="99" cy="110" r="4.4" fill="#2563EB" stroke="#fff" strokeWidth="1.6" />
+                            <text className="plabel" x="99" y="104" textAnchor="middle">Niger</text>
+                            <circle cx="78" cy="126" r="8.5" fill="rgba(245,166,35,.28)" />
+                            <circle cx="78" cy="126" r="5" fill="#F5A623" stroke="#fff" strokeWidth="1.8" />
+                            <text className="plabel" x="78" y="145" textAnchor="middle">Burkina Faso</text>
+                        </svg>
+                        <div className="mlegend">
+                            <span><i style={{ background: '#F5A623' }} />Burkina Faso</span>
+                            <span><i style={{ background: '#0F9E8E' }} />Mali</span>
+                            <span><i style={{ background: '#2563EB' }} />Niger</span>
+                        </div>
+                    </div>
+                    <div className="fc reveal">
+                        <div className="ic" style={{ background: 'rgba(15,158,142,.12)', color: 'var(--teal)' }}>🔒</div>
+                        <h4>Sécurité &amp; confidentialité</h4>
+                        <ul>
+                            <li>• Rôles et permissions granulaires</li>
+                            <li>• Journalisation complète des opérations</li>
+                            <li>• Chiffrement et sauvegardes</li>
+                        </ul>
+                        <span className="more">En savoir plus →</span>
+                    </div>
+                    <div className="fc vid reveal">
+                        <div className="ic" style={{ background: 'rgba(245,166,35,.16)', color: 'var(--amber-d)' }}>🎥</div>
+                        <h4>Démonstration vidéo</h4>
+                        <div className="play"><span className="pb"><svg width="18" height="18" viewBox="0 0 24 24" fill="#3a2600"><path d="M8 5v14l11-7z" /></svg></span></div>
+                        <span className="more" style={{ color: 'var(--amber-d)' }}>Voir la démonstration →</span>
+                    </div>
+                </div></div>
+            </section>
+
+            {/* CONVERSION + FORMULAIRE */}
+            <section id="demo" className="conv"><div className="wrap">
+                <div className="reveal">
+                    <h2>Passez d’une gestion réactive à un pilotage HSE préventif</h2>
+                    <p className="sub">Échangez avec notre équipe et découvrez comment SafeX 360 peut être configuré selon vos sites, vos processus et vos exigences de management.</p>
+                    <div className="kpis">
+                        <div className="kpi"><div className="n">Multi</div><div className="l">Organisations &amp; sites</div></div>
+                        <div className="kpi"><div className="n">21+</div><div className="l">Modules métier</div></div>
+                        <div className="kpi"><div className="n">Mobile</div><div className="l">Application terrain</div></div>
+                    </div>
+                </div>
+                <form className="form reveal" onSubmit={(e) => e.preventDefault()}>
+                    <h3>Planifier une démonstration</h3>
+                    <div className="fg">
+                        <input placeholder="Nom et prénom *" />
+                        <input placeholder="Organisation *" />
+                        <input placeholder="Fonction / poste" />
+                        <input placeholder="E-mail professionnel *" />
+                        <input placeholder="Téléphone" />
+                        <input placeholder="Pays" />
+                        <select defaultValue=""><option value="" disabled>Nombre de sites</option><option>1 site</option><option>2 à 5 sites</option><option>6 à 20 sites</option><option>Plus de 20 sites</option></select>
+                        <select defaultValue=""><option value="" disabled>Besoin principal</option><option>Incidents &amp; accidents</option><option>Inspections</option><option>Audits &amp; conformité</option><option>Urgences &amp; évacuation</option></select>
+                    </div>
+                    <button className="btn btn-a" type="submit">Planifier une démonstration &nbsp;→</button>
+                    <div className="note">* Champs obligatoires. Vos données restent confidentielles.</div>
+                </form>
+            </div></section>
+
+            {/* FOOTER */}
+            <footer><div className="wrap">
+                <div className="fcols">
                     <div>
-                        <div className="text-[10px] uppercase tracking-[0.12em] font-bold" style={{ color: C.green }}>Référentiels suivis</div>
-                        <div className="text-[11px] text-slate-900 font-semibold">État à valider</div>
+                        <img className="logo-img" src={LOGO_DARK} alt="SafeX 360" style={{ height: 34 }} />
+                        <p className="desc">La plateforme intelligente de pilotage de la Santé, de la Sécurité et de l’Environnement pour l’industrie minière et industrielle.</p>
                     </div>
+                    <div><h5>Solution</h5><ul><li><a onClick={() => goTo('features')}>Fonctionnalités</a></li><li><a onClick={() => goTo('modules')}>Modules</a></li><li><a onClick={() => goTo('secteurs')}>Secteurs</a></li><li><a onClick={() => goTo('demo')}>Tarifs</a></li></ul></div>
+                    <div><h5>Ressources</h5><ul><li><a>Centre d’aide</a></li><li><a>Documentation</a></li><li><a>FAQ</a></li><li><a>Actualités</a></li></ul></div>
+                    <div><h5>Entreprise</h5><ul><li><a>Data Universe</a></li><li><a>À propos</a></li><li><a onClick={() => goTo('demo')}>Contact</a></li><li><a>Partenariats</a></li></ul></div>
+                    <div><h5>Data Universe</h5><p className="contact">Abidjan, Côte d’Ivoire<br />Riviera Feya, Rue L100 - Îlot 64<br />+225 27 22 54 88 40<br />contact@safex360.com<br /><span className="oper"><span className="dot" />Statut des services : Opérationnel</span></p></div>
                 </div>
-            </div>
+                <div className="fbar"><span>© {new Date().getFullYear()} Data Universe. Tous droits réservés.</span><span>Mentions légales · Confidentialité · Conditions d’utilisation</span></div>
+            </div></footer>
         </div>
-    );
-}
-
-function Sparkline() {
-    const values = [42, 38, 45, 32, 28, 24, 22, 18, 15, 19, 14, 12];
-    const max = Math.max(...values);
-    const min = Math.min(...values);
-    const range = max - min;
-    const W = 260;
-    const H = 56;
-    const points = values
-        .map((v, i) => {
-            const x = (i / (values.length - 1)) * W;
-            const y = H - ((v - min) / range) * H;
-            return `${x},${y}`;
-        })
-        .join(' ');
-    const lastY = H - ((values[values.length - 1] - min) / range) * H;
-
-    return (
-        <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
-            <defs>
-                <linearGradient id="hero-spark-v6" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor={C.greenLight} stopOpacity="0.5" />
-                    <stop offset="100%" stopColor={C.greenLight} stopOpacity="0" />
-                </linearGradient>
-            </defs>
-            <polygon points={`0,${H} ${points} ${W},${H}`} fill="url(#hero-spark-v6)" />
-            <polyline points={points} fill="none" stroke={C.green} strokeWidth="2.5"
-                strokeLinecap="round" strokeLinejoin="round" />
-            <circle cx={W} cy={lastY} r="4" fill={C.green}>
-                <animate attributeName="r" values="4;8;4" dur="2s" repeatCount="indefinite" />
-            </circle>
-        </svg>
-    );
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// CLIENTS MARQUEE
-// ═══════════════════════════════════════════════════════════════════════
-
-/** Emblème de marque : forme + dégradé + monogramme, façon vrai logo. */
-function ClientEmblem({ client }: { client: ClientLogo }) {
-    const shapeStyle: React.CSSProperties =
-        client.shape === 'circle' ? { borderRadius: '9999px' }
-        : client.shape === 'squircle' ? { borderRadius: '13px' }
-        : client.shape === 'hexagon' ? { clipPath: 'polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0% 50%)' }
-        : client.shape === 'shield' ? { borderRadius: '10px 10px 50% 50% / 12px 12px 46% 46%' }
-        : { borderRadius: '10px', transform: 'rotate(45deg)' }; // diamond
-
-    return (
-        <div
-            className="w-11 h-11 flex items-center justify-center flex-shrink-0"
-            style={{
-                ...shapeStyle,
-                background: `linear-gradient(140deg, ${client.from} 0%, ${client.to} 100%)`,
-                boxShadow: `0 6px 14px -6px ${client.to}66, inset 0 1px 0 rgba(255,255,255,0.35)`,
-            }}
-            aria-hidden="true"
-        >
-            <span
-                className="text-white text-[15px] font-bold select-none"
-                style={{
-                    fontFamily: "'Source Serif 4', Georgia, serif",
-                    letterSpacing: '-0.02em',
-                    textShadow: '0 1px 2px rgba(0,0,0,0.25)',
-                    transform: client.shape === 'diamond' ? 'rotate(-45deg)' : undefined,
-                }}
-            >
-                {client.initials}
-            </span>
-        </div>
-    );
-}
-
-function ClientsMarquee() {
-    const items = [...CLIENTS, ...CLIENTS];
-    return (
-        <div className="relative">
-            <div className="absolute left-0 top-0 bottom-0 w-24 z-10 pointer-events-none"
-                style={{ background: 'linear-gradient(to right, #FAF9F5, transparent)' }} />
-            <div className="absolute right-0 top-0 bottom-0 w-24 z-10 pointer-events-none"
-                style={{ background: 'linear-gradient(to left, #FAF9F5, transparent)' }} />
-            <div className="flex gap-14 items-center" style={{ animation: 'marquee 35s linear infinite', width: 'max-content' }}>
-                {items.map((client, i) => (
-                    <div key={i} className="flex items-center gap-3 whitespace-nowrap">
-                        <ClientEmblem client={client} />
-                        <div className="leading-tight">
-                            <p
-                                className="text-[14.5px] font-bold tracking-tight text-slate-800"
-                                style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}
-                            >
-                                {client.name}
-                            </p>
-                            <p className="text-[10px] uppercase tracking-[0.14em] text-slate-500 font-semibold">
-                                {client.sub}
-                            </p>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// GALERIE ALBUM PHOTO (inspiration kutunga.org)
-// ═══════════════════════════════════════════════════════════════════════
-
-interface GalleryItem {
-    label: string;
-    title: string;
-    description: string;
-    color: string;
-    bg: string;
-    aspect: 'wide' | 'tall' | 'square';
-    Preview: React.ComponentType;
-}
-
-const GALLERY: GalleryItem[] = [
-    {
-        label: 'Tableau de bord',
-        title: 'Une vue d\'ensemble qui parle',
-        description: 'KPI opérationnels et incidents classés par catégorie. Le préventeur dispose d’une vue de pilotage configurable pour préparer sa journée.',
-        color: C.green,
-        bg: C.greenBg,
-        aspect: 'wide',
-        // LOT — capture reelle de la page d'accueil SafeX 360
-        Preview: () => <RealCapture src="/screenshots/dashboard.png" alt="Tableau de bord SafeX 360 avec les applications HSE" />,
-    },
-    {
-        label: 'SOS déclenché',
-        title: 'L\'alerte qui sauve',
-        description: 'Un seul clic. La position GPS part. L\'escalade s\'enclenche. L\'équipe HSE sait où aller, sans hésiter.',
-        color: C.emergency,
-        bg: '#FEF2F2',
-        aspect: 'tall',
-        // LOT — capture reelle d'une alerte SOS declencheee
-        Preview: () => <RealCapture src="/screenshots/alerte-declenchee.png" alt="Alerte SOS déclenchée sur SafeX 360" />,
-    },
-    {
-        label: 'App mobile terrain',
-        title: 'Déclaration guidée',
-        description: 'Le mode terrain permet de préparer une déclaration avec les informations disponibles, puis de la synchroniser lorsque la connexion revient.',
-        color: C.dark,
-        bg: '#F8FAFC',
-        aspect: 'tall',
-        // ⚠️ NE PAS REMPLACER : mockup smartphone — l'utilisateur a explicitement demande de le garder
-        Preview: PreviewMobile,
-    },
-    {
-        label: 'Alerte générale',
-        title: 'L\'évacuation, sans panique',
-        description: 'L\'alerte générale part, l\'annonce vocale se déclenche, la carte des évacués s\'affiche au point de rassemblement. Tout le monde est compté.',
-        color: C.emergency,
-        bg: '#FEF2F2',
-        aspect: 'wide',
-        // LOT — capture reelle de l'ecran Alerte Generale
-        Preview: () => <RealCapture src="/screenshots/alerte-generale.png" alt="Module Alerte Générale SafeX 360" />,
-    },
-    {
-        label: 'Déclaration incident',
-        title: 'Un formulaire qui n\'oublie rien',
-        description: 'Type d\'événement, gravité, témoins, EPI portés, photos, plan d\'actions. Tout est noté, daté, prêt pour l\'investigation ISO 45001.',
-        color: C.blasting,
-        bg: '#FFF7ED',
-        aspect: 'square',
-        // LOT — capture reelle du formulaire de declaration d'incident
-        Preview: () => <RealCapture src="/screenshots/formulaire-incident.png" alt="Formulaire de déclaration d'incident SafeX 360" />,
-    },
-    {
-        label: 'Non-conformité & Near-miss',
-        title: 'Tous les constats au même endroit',
-        description: 'On repère tôt, on classe selon la norme ISO, on agit, on mesure. Petit à petit, une vraie culture HSE prend racine sur le site.',
-        color: C.audit,
-        bg: '#F3E8FF',
-        aspect: 'square',
-        // LOT — capture reelle du module Non-Conformite & Near-Miss
-        Preview: () => <RealCapture src="/screenshots/non-conformite.png" alt="Module Non-Conformité & Near-Miss SafeX 360" />,
-    },
-];
-
-function GalleryAlbum({ onOpen }: { onOpen?: (idx: number) => void }) {
-    return (
-        <div className="space-y-8">
-            {/* Ligne 1 : grand wide + 2 tall */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Reveal className="lg:col-span-2"><GalleryCard item={GALLERY[0]} onOpen={() => onOpen?.(0)} /></Reveal>
-                <Reveal delay={120}><GalleryCard item={GALLERY[1]} onOpen={() => onOpen?.(1)} /></Reveal>
-            </div>
-
-            {/* Ligne 2 : tall + wide */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Reveal><GalleryCard item={GALLERY[2]} onOpen={() => onOpen?.(2)} /></Reveal>
-                <Reveal delay={120} className="lg:col-span-2"><GalleryCard item={GALLERY[3]} onOpen={() => onOpen?.(3)} /></Reveal>
-            </div>
-
-            {/* Ligne 3 : 2 squares */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Reveal><GalleryCard item={GALLERY[4]} onOpen={() => onOpen?.(4)} /></Reveal>
-                <Reveal delay={120}><GalleryCard item={GALLERY[5]} onOpen={() => onOpen?.(5)} /></Reveal>
-            </div>
-        </div>
-    );
-}
-
-function GalleryCard({ item, onOpen }: { item: GalleryItem; onOpen?: () => void }) {
-    const Preview = item.Preview;
-    const aspectClass =
-        item.aspect === 'wide' ? 'aspect-[16/9]' :
-        item.aspect === 'tall' ? 'aspect-[3/4]' : 'aspect-[4/3]';
-
-    return (
-        <div className="group h-full">
-            <div
-                role="button"
-                tabIndex={0}
-                onClick={onOpen}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen?.(); } }}
-                className={`${aspectClass} relative rounded-3xl overflow-hidden mb-5 transition-all hover:-translate-y-1 w-full cursor-pointer block`}
-                style={{
-                    background: item.bg,
-                    border: `2px solid ${item.color}25`,
-                    boxShadow: `0 20px 60px -15px ${item.color}30`,
-                }}
-                aria-label={`Voir en grand : ${item.title}`}
-            >
-                <Preview />
-
-                {/* Overlay au hover */}
-                <div
-                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                    style={{ background: `${item.color}15` }}
-                >
-                    <div
-                        className="px-4 py-2 rounded-full bg-white flex items-center gap-2 text-[12.5px] font-bold shadow-xl"
-                        style={{ color: item.color }}
-                    >
-                        Voir en grand
-                        <IconArrowUpRight size={14} stroke={2.5} />
-                    </div>
-                </div>
-
-                {/* Label en haut à gauche */}
-                <div
-                    className="absolute top-4 left-4 px-3 py-1 rounded-full text-[10.5px] uppercase tracking-[0.16em] font-bold"
-                    style={{
-                        background: 'rgba(255,255,255,0.95)',
-                        color: item.color,
-                        backdropFilter: 'blur(8px)',
-                    }}
-                >
-                    {item.label}
-                </div>
-            </div>
-
-            {/* Caption sous l'image */}
-            <div className="px-2 text-left">
-                <h3
-                    style={{
-                        fontFamily: "'Source Serif 4', Georgia, serif",
-                        fontWeight: 600,
-                        fontSize: 22,
-                        letterSpacing: '-0.018em',
-                        color: C.dark,
-                        marginBottom: 8,
-                    }}
-                >
-                    {item.title}
-                </h3>
-                <p className="text-[14px] leading-relaxed" style={{ color: '#475569' }}>
-                    {item.description}
-                </p>
-            </div>
-        </div>
-    );
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// PREVIEWS — petites maquettes par module
-// ═══════════════════════════════════════════════════════════════════════
-
-/**
- * RealCapture — Affiche une vraie capture d'ecran de l'application SafeX 360.
- * Les images sont servies depuis Frontend/public/screenshots/ (copiees depuis C:\MineXpert\SafeX\imgs).
- *
- * On utilise object-cover pour cadrer proprement, et un leger gradient de
- * couleur en bas pour assurer la lisibilite du badge "label" en haut.
- */
-function RealCapture({ src, alt }: { src: string; alt: string }) {
-    return (
-        <>
-            <img
-                src={src}
-                alt={alt}
-                className="absolute inset-0 w-full h-full object-cover object-top"
-                loading="lazy"
-            />
-            {/* Voile subtil tout en bas pour adoucir la coupe sur les ecrans tres clairs */}
-            <div
-                className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none"
-                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.05) 0%, transparent 100%)' }}
-            />
-        </>
-    );
-}
-
-function PreviewDashboard() {
-    return (
-        <div className="absolute inset-0 p-6 flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-                <div>
-                    <div className="text-[9.5px] uppercase tracking-[0.14em] text-slate-500 font-bold">SAFEX 360 / TDB</div>
-                    <div style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600, fontSize: 17, color: C.dark }}>
-                        Tableau de bord HSE
-                    </div>
-                </div>
-                <span className="px-2 py-1 rounded-md text-[10px] font-bold" style={{ background: C.greenBg, color: C.green }}>
-                    ● Toutes mines
-                </span>
-            </div>
-
-            <div className="grid grid-cols-4 gap-2 mb-4">
-                {[
-                    { label: 'Incidents', val: '847', col: C.emergency },
-                    { label: 'LTIFR', val: '2.4', col: C.green },
-                    { label: 'Audits', val: '23/30', col: C.audit },
-                    { label: 'Référentiels', val: 'À évaluer', col: C.inspection },
-                ].map((k, i) => (
-                    <div key={i} className="bg-white rounded-lg p-2.5 border border-slate-200">
-                        <div className="text-[8px] uppercase tracking-wider text-slate-500 font-bold">{k.label}</div>
-                        <div style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600, fontSize: 18, color: k.col }}>
-                            {k.val}
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            <div className="bg-white rounded-lg p-3 border border-slate-200 flex-1">
-                <div className="text-[10px] font-bold text-slate-700 mb-2">Incidents par catégorie</div>
-                <div className="flex items-end gap-2 h-[80%]">
-                    {[
-                        { v: 240, col: C.emergency, l: 'Chute' },
-                        { v: 180, col: C.blasting, l: 'Mach.' },
-                        { v: 130, col: '#CA8A04', l: 'Chim.' },
-                        { v: 95, col: C.audit, l: 'Élect.' },
-                        { v: 142, col: C.inspection, l: 'Quasi.' },
-                        { v: 60, col: '#64748B', l: 'Autre' },
-                    ].map((d, i) => (
-                        <div key={i} className="flex-1 flex flex-col items-center justify-end gap-1">
-                            <div className="w-full rounded-t transition-all" style={{
-                                height: `${(d.v / 240) * 75}%`,
-                                background: `linear-gradient(to top, ${d.col}50, ${d.col})`,
-                            }} />
-                            <span className="text-[8px] text-slate-600 font-bold">{d.l}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function PreviewSos() {
-    return (
-        <div className="absolute inset-0 flex items-center justify-center p-6">
-            <div className="text-center">
-                <div
-                    className="w-32 h-32 mx-auto mb-5 rounded-full flex items-center justify-center"
-                    style={{
-                        background: `linear-gradient(135deg, ${C.emergency} 0%, #B91C1C 100%)`,
-                        boxShadow: `0 0 60px ${C.emergency}50, 0 0 0 12px ${C.emergency}15`,
-                        animation: 'pulse-sos 1.5s ease-in-out infinite',
-                    }}
-                >
-                    <IconBellRinging size={56} className="text-white" stroke={1.8} />
-                </div>
-                <div
-                    className="text-[11px] uppercase tracking-[0.22em] font-bold mb-2"
-                    style={{ color: C.emergency }}
-                >
-                    SOS reçu · à l'instant
-                </div>
-                <div className="text-[15px] font-bold mb-1" style={{ color: C.dark }}>
-                    Galerie Nord · −120 m
-                </div>
-                <div className="text-[12px] text-slate-600 font-medium mb-4">
-                    Mamadou Diallo · Chef de poste
-                </div>
-                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border-2 text-[11px] font-bold"
-                    style={{ borderColor: C.emergency, color: C.emergency }}
-                >
-                    <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: C.emergency }} />
-                    Intervention en cours
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function PreviewMobile() {
-    return (
-        <div className="absolute inset-0 flex items-center justify-center p-6">
-            <div className="relative" style={{ width: 180, height: 360 }}>
-                <div
-                    className="absolute inset-0 rounded-[28px] p-1.5"
-                    style={{ background: `linear-gradient(180deg, ${C.dark} 0%, #1E293B 100%)`, boxShadow: `0 20px 50px -10px ${C.dark}50` }}
-                >
-                    <div className="w-full h-full rounded-[22px] bg-white overflow-hidden relative">
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-4 bg-black rounded-b-2xl z-10" />
-                        <div className="px-3 pt-6 pb-2.5 text-white" style={{ background: C.emergency }}>
-                            <div className="flex items-center justify-between text-[9px] font-bold">
-                                <IconAlertTriangle size={14} />
-                                <span className="uppercase tracking-wider">Déclarer</span>
-                                <span>14:23</span>
-                            </div>
-                        </div>
-                        <div className="p-3 space-y-2.5">
-                            <div className="grid grid-cols-2 gap-1.5">
-                                {['Accident', 'Quasi', 'Maladie', 'Dommage'].map((t, i) => (
-                                    <div key={i} className={`text-[9px] py-1.5 rounded text-center font-bold ${
-                                        i === 0 ? 'bg-red-50 text-red-700' : 'bg-slate-50 text-slate-700'
-                                    }`}>
-                                        {t}
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="bg-slate-50 rounded-lg p-2">
-                                <div className="text-[8px] uppercase font-bold text-slate-600">Localisation</div>
-                                <div className="text-[10px] font-bold text-slate-900">Galerie Nord · −120 m</div>
-                            </div>
-                            <div className="bg-slate-50 rounded-lg p-1.5 text-[8.5px] text-slate-700 min-h-[36px]">
-                                Chute de matériel près du convoyeur. Pas de blessé.
-                            </div>
-                            <button className="w-full text-white text-[10px] font-bold py-2 rounded-lg" style={{ background: C.emergency }}>
-                                Envoyer
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function PreviewEvacuation() {
-    return (
-        <div className="absolute inset-0 p-6 flex flex-col">
-            <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: C.emergency }}>
-                    <IconRun size={26} className="text-white" stroke={1.8} />
-                </div>
-                <div>
-                    <div className="text-[10px] uppercase tracking-[0.14em] font-bold" style={{ color: C.emergency }}>
-                        ÉVACUATION GÉNÉRALE
-                    </div>
-                    <div style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600, fontSize: 17, color: C.dark }}>
-                        Site complet · En cours
-                    </div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3 mb-4">
-                {[
-                    { label: 'Évacués', val: '247', col: C.green, total: '/247' },
-                    { label: 'En route', val: '12', col: C.blasting },
-                    { label: 'Non répondu', val: '0', col: C.dark },
-                ].map((k, i) => (
-                    <div key={i} className="bg-white rounded-xl p-3 border border-slate-200">
-                        <div className="text-[8.5px] uppercase tracking-wider text-slate-500 font-bold mb-1">{k.label}</div>
-                        <div className="flex items-baseline gap-0.5">
-                            <span style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600, fontSize: 22, color: k.col }}>
-                                {k.val}
-                            </span>
-                            {k.total && <span className="text-[10px] text-slate-500 font-bold">{k.total}</span>}
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            <div className="bg-white rounded-xl p-3 border border-slate-200 flex-1">
-                <div className="text-[10px] font-bold text-slate-700 mb-2 flex items-center justify-between">
-                    <span>Points de rassemblement</span>
-                    <span className="text-[9px]" style={{ color: C.green }}>● Tous OK</span>
-                </div>
-                <div className="space-y-1.5">
-                    {[
-                        { label: 'PR1 · Entrée principale', count: '89', status: 'ok' },
-                        { label: 'PR2 · Atelier maintenance', count: '64', status: 'ok' },
-                        { label: 'PR3 · Bâtiment admin', count: '94', status: 'ok' },
-                    ].map((p, i) => (
-                        <div key={i} className="flex items-center justify-between p-1.5 rounded bg-slate-50">
-                            <div className="flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 rounded-full" style={{ background: C.green }} />
-                                <span className="text-[10px] font-bold text-slate-900">{p.label}</span>
-                            </div>
-                            <span className="text-[10px] font-bold tabular-nums" style={{ color: C.green }}>{p.count}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function PreviewBlasting() {
-    return (
-        <div className="absolute inset-0 p-5 flex flex-col">
-            <div className="mb-4">
-                <div className="text-[10px] uppercase tracking-[0.14em] font-bold mb-1" style={{ color: C.blasting }}>
-                    Tir prévu · J−1
-                </div>
-                <div style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600, fontSize: 18, color: C.dark }}>
-                    Front Nord · 14h30
-                </div>
-            </div>
-
-            <div className="space-y-2 flex-1">
-                {[
-                    { step: '1. Permis foreur', status: 'OK', col: C.green },
-                    { step: '2. Inspection contrôleur', status: 'OK', col: C.green },
-                    { step: '3. Validation responsable site', status: 'En cours', col: C.blasting },
-                    { step: '4. Notification équipes', status: 'En attente', col: '#94A3B8' },
-                    { step: '5. Périmètre sécurité 300m', status: 'En attente', col: '#94A3B8' },
-                ].map((s, i) => (
-                    <div key={i} className="flex items-center gap-2.5 p-2 rounded-lg bg-white border border-slate-200">
-                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.col }} />
-                        <span className="text-[11px] font-semibold flex-1" style={{ color: C.dark }}>{s.step}</span>
-                        <span className="text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded" style={{ background: s.col + '15', color: s.col }}>
-                            {s.status}
-                        </span>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}
-
-function PreviewAudits() {
-    return (
-        <div className="absolute inset-0 p-5 flex flex-col">
-            <div className="mb-4">
-                <div className="text-[10px] uppercase tracking-[0.14em] font-bold mb-1" style={{ color: C.audit }}>
-                    Programme annuel
-                </div>
-                <div style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600, fontSize: 18, color: C.dark }}>
-                    Calendrier 2026
-                </div>
-            </div>
-
-            <div className="grid grid-cols-12 gap-px bg-slate-200 rounded-lg overflow-hidden mb-3">
-                {['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'].map((m, i) => {
-                    const count = [3, 4, 2, 5, 3, 6, 0, 1, 4, 5, 3, 2][i];
-                    const intensity = Math.min(count / 6, 1);
-                    return (
-                        <div key={i} className="bg-white flex flex-col items-center justify-center py-2"
-                            style={{ background: count > 0 ? `linear-gradient(180deg, #FFFFFF 0%, ${C.audit}${Math.round(intensity * 40).toString(16)} 100%)` : 'white' }}>
-                            <span className="text-[8px] text-slate-700 font-bold">{m}</span>
-                            {count > 0 && <span className="text-[9px] mt-0.5 font-bold" style={{ color: C.audit }}>{count}</span>}
-                        </div>
-                    );
-                })}
-            </div>
-
-            <div className="space-y-1.5 flex-1">
-                {[
-                    { title: 'Audit ISO 45001', date: '15 juin', status: 'En cours', col: C.blasting, bg: '#FFF7ED' },
-                    { title: 'Audit dynamitage', date: '22 juin', status: 'Planifié', col: C.inspection, bg: '#F0F9FF' },
-                    { title: 'Revue ISO 14001', date: '8 juin', status: 'Clôturé', col: C.green, bg: C.greenBg },
-                ].map((a, i) => (
-                    <div key={i} className="flex items-center justify-between p-2 rounded-lg bg-white border border-slate-200">
-                        <div className="flex-1 min-w-0">
-                            <div className="text-[11px] font-bold truncate" style={{ color: C.dark }}>{a.title}</div>
-                            <div className="text-[9px] text-slate-600 font-semibold">{a.date}</div>
-                        </div>
-                        <span className="text-[9px] px-2 py-0.5 rounded-full font-bold" style={{ background: a.bg, color: a.col }}>
-                            {a.status}
-                        </span>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// ISO MEDALLION — Repère visuel d'un référentiel, sans valeur d'attestation
-// ═══════════════════════════════════════════════════════════════════════
-
-function ISOMedallion({ iso }: { iso: typeof ISO_BADGES[0] }) {
-    // ID unique pour eviter collisions defs SVG entre instances
-    const uid = `iso-${iso.code}`;
-    return (
-        <div className="group p-6 rounded-2xl bg-white border-2 border-slate-200 hover:border-slate-400 hover:shadow-2xl hover:-translate-y-1 transition-all h-full">
-            {/* Repère graphique interne : il ne reproduit pas le logo d'un organisme tiers. */}
-            <div className="flex justify-center mb-5">
-                <svg width="100" height="100" viewBox="0 0 120 120" className="transition-transform group-hover:scale-110">
-                    <defs>
-                        {/* Gradient principal (sphere coloree) */}
-                        <radialGradient id={`${uid}-globe`} cx="35%" cy="30%" r="75%">
-                            <stop offset="0%" stopColor={iso.color} stopOpacity="1" />
-                            <stop offset="55%" stopColor={iso.color} stopOpacity="0.95" />
-                            <stop offset="100%" stopColor={iso.colorDeep} stopOpacity="1" />
-                        </radialGradient>
-                        {/* Anneau de sceau exterieur */}
-                        <linearGradient id={`${uid}-ring`} x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stopColor={iso.colorDeep} />
-                            <stop offset="50%" stopColor={iso.color} />
-                            <stop offset="100%" stopColor={iso.colorDeep} />
-                        </linearGradient>
-                        {/* Brillance (highlight) en haut */}
-                        <linearGradient id={`${uid}-shine`} x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stopColor="rgba(255,255,255,0.55)" />
-                            <stop offset="60%" stopColor="rgba(255,255,255,0)" />
-                        </linearGradient>
-                        {/* Path circulaire pour texte en arc */}
-                        <path id={`${uid}-arc-top`}
-                              d="M 25 60 a 35 35 0 0 1 70 0"
-                              fill="none" />
-                        <path id={`${uid}-arc-bot`}
-                              d="M 25 60 a 35 35 0 0 0 70 0"
-                              fill="none" />
-                    </defs>
-
-                    {/* Halo externe subtil */}
-                    <circle cx="60" cy="60" r="56" fill={iso.color} opacity="0.10" />
-
-                    {/* Anneau exterieur du sceau (avec texte en arc autour) */}
-                    <circle cx="60" cy="60" r="50"
-                            fill="none"
-                            stroke={`url(#${uid}-ring)`}
-                            strokeWidth="3" />
-                    <circle cx="60" cy="60" r="46"
-                            fill="none"
-                            stroke={iso.colorDeep}
-                            strokeWidth="0.5"
-                            opacity="0.5" />
-
-                    {/* Texte en arc autour : "INTERNATIONAL STANDARD" haut */}
-                    <text fontSize="5.5" fontWeight="700" letterSpacing="2"
-                          fill={iso.colorDeep} opacity="0.85">
-                        <textPath xlinkHref={`#${uid}-arc-top`} startOffset="50%" textAnchor="middle">
-                            INTERNATIONAL  STANDARD
-                        </textPath>
-                    </text>
-                    {/* Texte en arc bas : qualification neutre du référentiel */}
-                    <text fontSize="5.5" fontWeight="700" letterSpacing="3"
-                          fill={iso.colorDeep} opacity="0.85">
-                        <textPath xlinkHref={`#${uid}-arc-bot`} startOffset="50%" textAnchor="middle">
-                            • REFERENCE •
-                        </textPath>
-                    </text>
-
-                    {/* Points decoratifs gauche/droite (separateurs typographiques) */}
-                    <circle cx="14" cy="60" r="2" fill={iso.color} />
-                    <circle cx="106" cy="60" r="2" fill={iso.color} />
-
-                    {/* Sphere centrale (le "globe" coloré) */}
-                    <circle cx="60" cy="60" r="38"
-                            fill={`url(#${uid}-globe)`} />
-
-                    {/* Maillage longitudes/latitudes du globe (subtil) */}
-                    <g opacity="0.20" stroke="white" strokeWidth="0.5" fill="none">
-                        <ellipse cx="60" cy="60" rx="38" ry="14" />
-                        <ellipse cx="60" cy="60" rx="38" ry="26" />
-                        <ellipse cx="60" cy="60" rx="14" ry="38" />
-                        <ellipse cx="60" cy="60" rx="26" ry="38" />
-                    </g>
-
-                    {/* Bordure blanche inner */}
-                    <circle cx="60" cy="60" r="38" fill="none" stroke="white" strokeWidth="2" />
-
-                    {/* Brillance type sphere (top highlight) */}
-                    <ellipse cx="60" cy="44" rx="28" ry="14" fill={`url(#${uid}-shine)`} />
-
-                    {/* "ISO" en haut */}
-                    <text x="60" y="51" textAnchor="middle"
-                          fontSize="10" fontWeight="700"
-                          fill="white" letterSpacing="3.5">
-                        ISO
-                    </text>
-
-                    {/* Ligne separatrice */}
-                    <line x1="42" y1="55" x2="78" y2="55"
-                          stroke="white" strokeWidth="1" opacity="0.6" />
-
-                    {/* Numero de la norme (le focus) */}
-                    <text x="60" y="74" textAnchor="middle"
-                          fontSize="20" fontWeight="700"
-                          fill="white"
-                          fontFamily="'Source Serif 4', Georgia, serif"
-                          letterSpacing="-1">
-                        {iso.code}
-                    </text>
-
-                    {/* Annee en bas */}
-                    <text x="60" y="85" textAnchor="middle"
-                          fontSize="7" fontWeight="600"
-                          fill="white" opacity="0.92"
-                          letterSpacing="1.2">
-                        :{iso.year}
-                    </text>
-                </svg>
-            </div>
-
-            {/* LOT — Badge couleur a la place du texte plat. Le nom du domaine
-                est affiche dans un "pill" avec le fond a la couleur de la norme. */}
-            <div className="flex flex-col items-center gap-2">
-                {/* Badge principal : pill colore avec le code ISO + domaine */}
-                <div
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full"
-                    style={{
-                        background: `linear-gradient(135deg, ${iso.color} 0%, ${iso.colorDeep} 100%)`,
-                        boxShadow: `0 4px 14px -4px ${iso.color}80, 0 0 0 1px rgba(255,255,255,0.25) inset`,
-                    }}
-                >
-                    <span
-                        className="text-white"
-                        style={{
-                            fontSize: 10,
-                            fontWeight: 800,
-                            letterSpacing: '0.16em',
-                            opacity: 0.95,
-                        }}
-                    >
-                        ISO {iso.code}
-                    </span>
-                    <span className="w-1 h-1 rounded-full bg-white/60" aria-hidden="true" />
-                    <span
-                        className="text-white"
-                        style={{
-                            fontSize: 10.5,
-                            fontWeight: 600,
-                            letterSpacing: '0.02em',
-                        }}
-                    >
-                        {iso.title}
-                    </span>
-                </div>
-                {/* Petit sous-titre avec annee de la norme, en couleur */}
-                <div
-                    className="text-[10.5px] font-bold tracking-[0.18em] uppercase"
-                    style={{ color: iso.color, opacity: 0.85 }}
-                >
-                    Édition {iso.year}
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// CYCLES FONCTIONNELS — exemples de séquences, sans promesse de résultat
-// ═══════════════════════════════════════════════════════════════════════
-
-function BenefitsDynamic() {
-    return (
-        <section
-            id="benefits"
-            className="relative py-32 px-6 overflow-hidden"
-            style={{
-                background: `linear-gradient(135deg, ${C.dark} 0%, #0F1F2E 30%, ${C.green} 70%, ${C.greenLight} 100%)`,
-            }}
-        >
-            {/* Blobs animés flottants */}
-            <div
-                className="absolute top-10 right-10 w-[500px] h-[500px] rounded-full opacity-20 pointer-events-none"
-                style={{
-                    background: 'radial-gradient(circle, #5EEAD4 0%, transparent 70%)',
-                    filter: 'blur(80px)',
-                    animation: 'blob-1 18s ease-in-out infinite',
-                }}
-            />
-            <div
-                className="absolute bottom-10 left-10 w-[400px] h-[400px] rounded-full opacity-25 pointer-events-none"
-                style={{
-                    background: 'radial-gradient(circle, #14B8A6 0%, transparent 70%)',
-                    filter: 'blur(80px)',
-                    animation: 'blob-2 22s ease-in-out infinite',
-                }}
-            />
-
-            {/* Grille décorative subtile */}
-            <div
-                className="absolute inset-0 opacity-10 pointer-events-none"
-                style={{
-                    backgroundImage:
-                        'linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px)',
-                    backgroundSize: '60px 60px',
-                }}
-            />
-
-            <div className="relative max-w-7xl mx-auto">
-                <Reveal>
-                    <div className="text-center max-w-3xl mx-auto mb-16">
-                        <div className="inline-flex items-center gap-3 mb-6">
-                            <span aria-hidden="true" className="block h-px w-10 bg-white/50" />
-                            <IconTrendingUp size={14} className="text-emerald-200" />
-                            <span className="text-[11.5px] uppercase tracking-[0.24em] text-white font-semibold">
-                                Capacités fonctionnelles illustrées
-                            </span>
-                            <span aria-hidden="true" className="block h-px w-10 bg-white/50" />
-                        </div>
-                        <h2
-                            style={{
-                                fontFamily: "'Source Serif 4', Georgia, serif",
-                                fontWeight: 600,
-                                fontSize: 'clamp(36px, 5.5vw, 72px)',
-                                letterSpacing: '-0.03em',
-                                lineHeight: 1.02,
-                                color: '#FFFFFF',
-                                textShadow: '0 4px 30px rgba(0,0,0,0.3)',
-                            }}
-                        >
-                            Ce que les workflows<br />
-                            <span style={{
-                                background: 'linear-gradient(120deg, #5EEAD4 0%, #FFFFFF 100%)',
-                                WebkitBackgroundClip: 'text',
-                                WebkitTextFillColor: 'transparent',
-                                backgroundClip: 'text',
-                                fontStyle: 'italic',
-                            }}>
-                                structurent.
-                            </span>
-                        </h2>
-                        <p className="mt-6 text-[17px] leading-relaxed max-w-2xl mx-auto" style={{ color: 'rgba(255,255,255,0.9)' }}>
-                            Exemples de cycles couverts par les workflows. Les résultats sont propres au
-                            paramétrage et aux pratiques de chaque organisation.
-                        </p>
-                    </div>
-                </Reveal>
-
-                {/* Grid 4 cards présentant des entrées et sorties de workflow */}
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
-                    {[
-                        {
-                            value: 4, suffix: '', prefix: '',
-                            title: 'Cycle incident',
-                            before: 'Déclarer', after: 'Vérifier',
-                            unit: 'étapes structurées',
-                            icon: IconShieldCheck,
-                        },
-                        {
-                            value: 5, suffix: '', prefix: '',
-                            title: 'Suivi des actions',
-                            before: 'Affecter', after: 'Clôturer',
-                            unit: 'états de traitement',
-                            icon: IconClock,
-                        },
-                        {
-                            value: 4, suffix: '', prefix: '',
-                            title: 'Cycle d’audit',
-                            before: 'Planifier', after: 'Suivre',
-                            unit: 'phases documentées',
-                            icon: IconCertificate,
-                        },
-                        {
-                            value: 3, suffix: '', prefix: '',
-                            title: 'Escalade configurée',
-                            before: 'Alerter', after: 'Accuser',
-                            unit: 'niveaux illustratifs',
-                            icon: IconTrendingUp,
-                        },
-                    ].map((b, i) => (
-                        <Reveal key={i} delay={i * 120}>
-                            <BenefitCardDynamic {...b} index={i} />
-                        </Reveal>
-                    ))}
-                </div>
-
-                {/* Note bas de section */}
-                <Reveal delay={500}>
-                    <p className="text-center text-[12.5px] text-white/70 mt-10 max-w-2xl mx-auto">
-                        Illustration fonctionnelle : étapes, états et niveaux doivent être adaptés aux procédures,
-                        rôles et exigences applicables dans chaque organisation.
-                    </p>
-                </Reveal>
-            </div>
-        </section>
-    );
-}
-
-function BenefitCardDynamic({
-    value, prefix, suffix, title, before, after, unit, icon: Icon, index,
-}: {
-    value: number; prefix: string; suffix: string; title: string;
-    before: string; after: string; unit: string; icon: any; index: number;
-}) {
-    const decimals = value % 1 !== 0 ? 1 : 0;
-    const { ref, val } = useCountUp(value, 1800, decimals);
-
-    return (
-        <div
-            ref={ref}
-            className="relative p-7 rounded-2xl backdrop-blur-md transition-all hover:-translate-y-2 h-full overflow-hidden group"
-            style={{
-                background: 'linear-gradient(135deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.06) 100%)',
-                border: '1px solid rgba(255,255,255,0.3)',
-                boxShadow: '0 20px 60px -15px rgba(0,0,0,0.3)',
-                animation: `card-float ${4 + index * 0.5}s ease-in-out infinite`,
-            }}
-        >
-            {/* Décor halo coloré au hover */}
-            <div
-                className="absolute -top-20 -right-20 w-40 h-40 rounded-full opacity-0 group-hover:opacity-50 transition-opacity duration-500 pointer-events-none"
-                style={{ background: '#5EEAD4', filter: 'blur(50px)' }}
-            />
-
-            {/* Icône */}
-            <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
-                style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)' }}
-            >
-                <Icon size={22} className="text-white" stroke={1.8} />
-            </div>
-
-            {/* Valeur géante avec gradient */}
-            <div className="flex items-baseline gap-0.5 mb-2">
-                <span
-                    style={{
-                        fontFamily: "'Source Serif 4', Georgia, serif",
-                        fontWeight: 600,
-                        fontSize: 'clamp(56px, 6vw, 88px)',
-                        letterSpacing: '-0.03em',
-                        background: 'linear-gradient(120deg, #5EEAD4 0%, #FFFFFF 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                        lineHeight: 1,
-                    }}
-                >
-                    {prefix}{val}
-                </span>
-                <span className="text-3xl text-teal-100 font-light ml-1">{suffix}</span>
-            </div>
-
-            {/* Titre */}
-            <div className="text-[14.5px] text-white font-bold mb-4">{title}</div>
-
-            {/* Entrée et sortie du workflow illustré */}
-            <div className="pt-4 border-t border-white/20 space-y-2">
-                <div className="flex items-center justify-between text-[11.5px]">
-                    <span className="text-white/60">Entrée</span>
-                    <span className="font-bold text-white">{before}</span>
-                </div>
-                <div className="flex items-center justify-between text-[11.5px]">
-                    <span className="text-white/60">Sortie</span>
-                    <span className="font-bold text-emerald-200">{after}</span>
-                </div>
-                <div className="text-[10px] text-white/50 mt-2 italic">{unit}</div>
-            </div>
-        </div>
-    );
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// ROI CALCULATOR — formulaire interactif HSE
-// ═══════════════════════════════════════════════════════════════════════
-
-function ROICalculator({ onContact, onLogin }: { onContact: () => void; onLogin: () => void }) {
-    // Prototype interne désactivé : aucune hypothèse chiffrée n'est approuvée pour publication.
-    const [employees, setEmployees] = useState(450);
-    const [sites, setSites] = useState(2);
-    const [ltifr, setLtifr] = useState(4.2);
-    const [costPerLti, setCostPerLti] = useState(85000);  // USD par accident avec arrêt
-    const [hourlyRate, setHourlyRate] = useState(8500);   // FCFA / heure préventeur senior
-    const [auditCostPerYear, setAuditCostPerYear] = useState(35000); // USD audits ISO/an
-    const [preventerCount, setPreventerCount] = useState(4);
-    const [annualLicenseCost, setAnnualLicenseCost] = useState(28000); // USD coût SafeX estimé
-
-    // Ancien prototype de calcul conservé hors rendu dans l'attente d'une méthodologie contrôlée.
-    const calc = useMemo(() => {
-        // Conversion FCFA → USD (1 USD ≈ 600 FCFA)
-        const USD_PER_FCFA = 1 / 600;
-        const HOURS_PER_YEAR = 1820; // base 35h/sem × 52 sem
-        const MILLION_HOURS = (employees * HOURS_PER_YEAR) / 1_000_000;
-
-        // 1. Hypothèse interne non validée
-        const ltiPerYear = ltifr * MILLION_HOURS;
-        const ltiAvoidedPerYear = ltiPerYear * 0.42;
-        const accidentSavingsUSD = ltiAvoidedPerYear * costPerLti;
-
-        // 2. Hypothèse interne non validée
-        const hoursSavedPerPreventerPerYear = HOURS_PER_YEAR * 0.30;
-        const totalHoursSaved = preventerCount * hoursSavedPerPreventerPerYear;
-        const productivitySavingsUSD = totalHoursSaved * hourlyRate * USD_PER_FCFA;
-
-        // 3. Hypothèse interne non validée
-        const auditSavingsUSD = auditCostPerYear * 0.35;
-
-        // 4. INCIDENTS NON DÉCLARÉS révélés (estimation conservative : 15% LTI cachés)
-        const hiddenIncidentsRevealed = ltiPerYear * 0.15;
-        const hiddenIncidentsCostUSD = hiddenIncidentsRevealed * costPerLti * 0.20; // coût moyen évité par anticipation
-
-        // TOTAL
-        const totalAnnualSavingsUSD = accidentSavingsUSD + productivitySavingsUSD + auditSavingsUSD + hiddenIncidentsCostUSD;
-        const netGainUSD = totalAnnualSavingsUSD - annualLicenseCost;
-        const roiPercent = Math.round((netGainUSD / annualLicenseCost) * 100);
-
-        // Payback period (mois)
-        const monthlyLicense = annualLicenseCost / 12;
-        const monthlySavings = totalAnnualSavingsUSD / 12;
-        const paybackMonths = monthlySavings > 0 ? Math.max(1, Math.round(annualLicenseCost / monthlySavings)) : 999;
-
-        // Indicateur interne non validé et interdit de publication
-        const livesPreserved = Math.round(ltiAvoidedPerYear / 600 * 18 / 12 * 10) / 10; // sur 18 mois
-
-        return {
-            ltiAvoidedPerYear: ltiAvoidedPerYear.toFixed(1),
-            accidentSavingsUSD: Math.round(accidentSavingsUSD),
-            productivitySavingsUSD: Math.round(productivitySavingsUSD),
-            auditSavingsUSD: Math.round(auditSavingsUSD),
-            hiddenIncidentsCostUSD: Math.round(hiddenIncidentsCostUSD),
-            totalAnnualSavingsUSD: Math.round(totalAnnualSavingsUSD),
-            netGainUSD: Math.round(netGainUSD),
-            roiPercent,
-            paybackMonths,
-            livesPreserved,
-        };
-    }, [employees, sites, ltifr, costPerLti, hourlyRate, auditCostPerYear, preventerCount, annualLicenseCost]);
-
-    const fmt = (n: number) => new Intl.NumberFormat('fr-FR').format(n);
-
-    return (
-        <section className="bg-[#FAF9F5] py-28 px-6">
-            <div className="max-w-7xl mx-auto">
-                <Reveal>
-                    <div className="text-center max-w-3xl mx-auto mb-14">
-                        <SectionEyebrow color={C.green}>Prototype désactivé</SectionEyebrow>
-                        <h2
-                            className="mt-4"
-                            style={{
-                                fontFamily: "'Source Serif 4', Georgia, serif",
-                                fontWeight: 600,
-                                fontSize: 'clamp(32px, 4.5vw, 56px)',
-                                letterSpacing: '-0.025em',
-                                lineHeight: 1.06,
-                                color: C.dark,
-                            }}
-                        >
-                            Simulation chiffrée{' '}
-                            <span style={{
-                                background: `linear-gradient(120deg, ${C.green} 0%, ${C.greenLight} 100%)`,
-                                WebkitBackgroundClip: 'text',
-                                WebkitTextFillColor: 'transparent',
-                                backgroundClip: 'text',
-                                fontStyle: 'italic',
-                            }}>non publiée</span>
-                        </h2>
-                        <p className="mt-5 text-[16.5px] leading-relaxed" style={{ color: '#475569' }}>
-                            Les hypothèses et sources doivent être validées avant toute utilisation externe.
-                            Ce prototype n'est pas affiché sur la vitrine.
-                        </p>
-                    </div>
-                </Reveal>
-
-                <div className="grid lg:grid-cols-12 gap-7">
-                    {/* Inputs — colonne gauche */}
-                    <Reveal className="lg:col-span-5">
-                        <div className="bg-white rounded-3xl p-7 lg:p-8 border-2 border-slate-200 shadow-xl space-y-5">
-                            <div className="flex items-center gap-2 mb-2">
-                                <div
-                                    className="w-9 h-9 rounded-xl flex items-center justify-center"
-                                    style={{ background: C.greenBg, border: `1.5px solid ${C.greenSoft}` }}
-                                >
-                                    <IconBuildingFactory size={18} style={{ color: C.green }} stroke={1.8} />
-                                </div>
-                                <h3
-                                    style={{
-                                        fontFamily: "'Source Serif 4', Georgia, serif",
-                                        fontWeight: 600,
-                                        fontSize: 19,
-                                        color: C.dark,
-                                    }}
-                                >
-                                    Votre exploitation
-                                </h3>
-                            </div>
-
-                            <RoiSlider
-                                label="Nombre d'employés"
-                                value={employees}
-                                min={50} max={5000} step={50}
-                                onChange={setEmployees}
-                                suffix="personnes"
-                            />
-                            <RoiSlider
-                                label="Nombre de sites"
-                                value={sites}
-                                min={1} max={20} step={1}
-                                onChange={setSites}
-                                suffix="sites"
-                            />
-                            <RoiSlider
-                                label="LTIFR actuel (taux fréquence accidents)"
-                                value={ltifr}
-                                min={0.5} max={15} step={0.1}
-                                onChange={setLtifr}
-                                suffix="/ million d'heures"
-                                decimals={1}
-                                help="Moyenne sectorielle minière Afrique de l'Ouest : 3 à 6"
-                            />
-                            <RoiSlider
-                                label="Coût moyen d'un accident avec arrêt (LTI)"
-                                value={costPerLti}
-                                min={10000} max={500000} step={5000}
-                                onChange={setCostPerLti}
-                                suffix="USD"
-                                help="Direct + indirect (soins, arrêt, expertise, image)"
-                            />
-                            <RoiSlider
-                                label="Nombre de préventeurs HSE"
-                                value={preventerCount}
-                                min={1} max={30} step={1}
-                                onChange={setPreventerCount}
-                                suffix="préventeurs"
-                            />
-                            <RoiSlider
-                                label="Coût annuel des audits ISO externes"
-                                value={auditCostPerYear}
-                                min={5000} max={200000} step={2500}
-                                onChange={setAuditCostPerYear}
-                                suffix="USD"
-                            />
-
-                            <details className="pt-3 border-t border-slate-100">
-                                <summary className="cursor-pointer text-[12.5px] font-bold text-slate-700 hover:text-slate-900">
-                                    Paramètres avancés
-                                </summary>
-                                <div className="mt-4 space-y-4">
-                                    <RoiSlider
-                                        label="Salaire horaire préventeur senior"
-                                        value={hourlyRate}
-                                        min={2000} max={20000} step={500}
-                                        onChange={setHourlyRate}
-                                        suffix="FCFA / heure"
-                                    />
-                                    <RoiSlider
-                                        label="Coût annuel SafeX 360 (estimé)"
-                                        value={annualLicenseCost}
-                                        min={5000} max={150000} step={1000}
-                                        onChange={setAnnualLicenseCost}
-                                        suffix="USD / an"
-                                        help="Tarif indicatif - devis sur demande"
-                                    />
-                                </div>
-                            </details>
-                        </div>
-                    </Reveal>
-
-                    {/* Résultats — colonne droite */}
-                    <Reveal className="lg:col-span-7" delay={150}>
-                        <div className="lg:sticky lg:top-28 space-y-5">
-                            {/* Card principale ROI */}
-                            <div
-                                className="rounded-3xl p-8 lg:p-10 text-white relative overflow-hidden"
-                                style={{
-                                    background: `linear-gradient(135deg, ${C.dark} 0%, ${C.green} 100%)`,
-                                    boxShadow: `0 30px 70px -20px ${C.dark}50`,
-                                }}
-                            >
-                                <div
-                                    className="absolute -top-20 -right-20 w-80 h-80 rounded-full opacity-30 pointer-events-none"
-                                    style={{ background: '#5EEAD4', filter: 'blur(60px)' }}
-                                />
-
-                                <div className="relative">
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <IconSparkles size={16} className="text-emerald-200" />
-                                        <span className="text-[11px] uppercase tracking-[0.18em] text-emerald-200 font-bold">
-                                            Résultat interne non validé
-                                        </span>
-                                    </div>
-
-                                    <div
-                                        className="flex items-baseline gap-1 mb-3"
-                                        style={{
-                                            fontFamily: "'Source Serif 4', Georgia, serif",
-                                            fontWeight: 600,
-                                            background: 'linear-gradient(120deg, #5EEAD4 0%, #FFFFFF 100%)',
-                                            WebkitBackgroundClip: 'text',
-                                            WebkitTextFillColor: 'transparent',
-                                            backgroundClip: 'text',
-                                        }}
-                                    >
-                                        <span style={{
-                                            fontSize: 'clamp(64px, 9vw, 130px)',
-                                            letterSpacing: '-0.04em',
-                                            lineHeight: 0.95,
-                                        }}>
-                                            {calc.roiPercent > 0 ? '+' : ''}{fmt(calc.roiPercent)}
-                                        </span>
-                                        <span style={{ fontSize: 'clamp(32px, 4vw, 56px)', opacity: 0.9 }}>%</span>
-                                    </div>
-
-                                    <div className="text-[14.5px] text-white/85 mb-7 max-w-md">
-                                        Valeur de prototype <strong className="text-white text-[17px]">{fmt(calc.netGainUSD)} USD</strong>,
-                                        non approuvée pour publication.
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4 pt-6 border-t border-white/20">
-                                        <div>
-                                            <div className="text-[10.5px] uppercase tracking-wider text-white/70 font-bold mb-1.5">
-                                                Hypothèse de délai
-                                            </div>
-                                            <div className="flex items-baseline gap-1">
-                                                <span style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600, fontSize: 36, color: '#5EEAD4' }}>
-                                                    {calc.paybackMonths}
-                                                </span>
-                                                <span className="text-[14px] text-white/80">mois</span>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div className="text-[10.5px] uppercase tracking-wider text-white/70 font-bold mb-1.5">
-                                                Indicateur retiré
-                                            </div>
-                                            <div className="flex items-baseline gap-1">
-                                                <span style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontWeight: 600, fontSize: 36, color: '#FCA5A5' }}>
-                                                    {calc.livesPreserved}
-                                                </span>
-                                                <span className="text-[12px] text-white/80">estimation</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Variables du prototype interne */}
-                            <div className="bg-white rounded-3xl p-7 border-2 border-slate-200">
-                                <h4
-                                    className="mb-5"
-                                    style={{
-                                        fontFamily: "'Source Serif 4', Georgia, serif",
-                                        fontWeight: 600,
-                                        fontSize: 18,
-                                        color: C.dark,
-                                    }}
-                                >
-                                    Variables non validées
-                                </h4>
-
-                                <div className="space-y-3">
-                                    <SavingsLine
-                                        icon={IconShieldCheck}
-                                        color={C.green}
-                                        label="Hypothèse incidents"
-                                        sub={`${calc.ltiAvoidedPerYear} LTI/an · variable interne`}
-                                        value={`${fmt(calc.accidentSavingsUSD)} USD`}
-                                    />
-                                    <SavingsLine
-                                        icon={IconTrendingUp}
-                                        color={C.inspection}
-                                        label="Hypothèse de charge"
-                                        sub="Variable interne à documenter"
-                                        value={`${fmt(calc.productivitySavingsUSD)} USD`}
-                                    />
-                                    <SavingsLine
-                                        icon={IconCertificate}
-                                        color={C.audit}
-                                        label="Hypothèse audits"
-                                        sub="Variable interne à documenter"
-                                        value={`${fmt(calc.auditSavingsUSD)} USD`}
-                                    />
-                                    <SavingsLine
-                                        icon={IconAlertTriangle}
-                                        color={C.blasting}
-                                        label="Incidents cachés révélés"
-                                        sub="Quasi-accidents traités avant aggravation"
-                                        value={`${fmt(calc.hiddenIncidentsCostUSD)} USD`}
-                                    />
-
-                                    <div className="pt-3 mt-3 border-t-2 border-slate-200 flex items-center justify-between">
-                                        <div>
-                                            <div className="text-[13px] font-bold" style={{ color: C.dark }}>
-                                                Résultat interne
-                                            </div>
-                                            <div className="text-[11px] text-slate-500">Avant déduction licence</div>
-                                        </div>
-                                        <div
-                                            style={{
-                                                fontFamily: "'Source Serif 4', Georgia, serif",
-                                                fontWeight: 600,
-                                                fontSize: 22,
-                                                color: C.green,
-                                                letterSpacing: '-0.02em',
-                                            }}
-                                        >
-                                            {fmt(calc.totalAnnualSavingsUSD)} USD
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* CTA */}
-                            <div className="bg-white rounded-3xl p-6 border-2 border-slate-200">
-                                <p className="text-[13px] text-slate-700 mb-4 leading-relaxed">
-                                    <strong style={{ color: C.dark }}>Envie d'aller plus loin ?</strong>{' '}
-                                    Demandez une étude personnalisée pour documenter vos hypothèses,
-                                    vos sources et le périmètre de calcul.
-                                </p>
-                                <div className="flex flex-wrap items-center gap-3">
-                                    <button
-                                        onClick={onContact}
-                                        className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-white text-[13.5px] font-bold transition-all hover:scale-[1.02]"
-                                        style={{
-                                            background: `linear-gradient(135deg, ${C.green} 0%, ${C.greenLight} 100%)`,
-                                            boxShadow: `0 8px 20px -5px ${C.green}55`,
-                                        }}
-                                    >
-                                        <IconMail size={14} />
-                                        Demander une étude personnalisée
-                                    </button>
-                                    <button
-                                        onClick={onLogin}
-                                        className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-[13.5px] font-semibold transition-colors"
-                                    >
-                                        Tester la plateforme
-                                        <IconArrowRight size={14} />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </Reveal>
-                </div>
-            </div>
-        </section>
-    );
-}
-
-function RoiSlider({
-    label, value, min, max, step, onChange, suffix, decimals = 0, help,
-}: {
-    label: string; value: number; min: number; max: number; step: number;
-    onChange: (v: number) => void; suffix: string; decimals?: number; help?: string;
-}) {
-    const fmt = (n: number) => new Intl.NumberFormat('fr-FR', {
-        minimumFractionDigits: decimals, maximumFractionDigits: decimals,
-    }).format(n);
-    const percent = ((value - min) / (max - min)) * 100;
-
-    return (
-        <div>
-            <div className="flex items-baseline justify-between mb-1.5">
-                <label className="text-[12.5px] font-bold text-slate-700">{label}</label>
-                <div className="flex items-baseline gap-1">
-                    <span
-                        style={{
-                            fontFamily: "'Source Serif 4', Georgia, serif",
-                            fontWeight: 600,
-                            fontSize: 17,
-                            color: C.green,
-                        }}
-                    >
-                        {fmt(value)}
-                    </span>
-                    <span className="text-[11px] text-slate-500 font-medium">{suffix}</span>
-                </div>
-            </div>
-            <input
-                type="range"
-                min={min}
-                max={max}
-                step={step}
-                value={value}
-                onChange={(e) => onChange(parseFloat(e.target.value))}
-                className="w-full h-2 rounded-full appearance-none cursor-pointer"
-                style={{
-                    background: `linear-gradient(to right, ${C.green} 0%, ${C.greenLight} ${percent}%, #E2E8F0 ${percent}%, #E2E8F0 100%)`,
-                    accentColor: C.green,
-                }}
-            />
-            {help && <p className="text-[10.5px] text-slate-500 italic mt-1.5">{help}</p>}
-        </div>
-    );
-}
-
-function SavingsLine({ icon: Icon, color, label, sub, value }: {
-    icon: any; color: string; label: string; sub: string; value: string;
-}) {
-    return (
-        <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors">
-            <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ background: color + '15', border: `1.5px solid ${color}30` }}
-            >
-                <Icon size={18} style={{ color }} stroke={1.8} />
-            </div>
-            <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-bold" style={{ color: C.dark }}>{label}</div>
-                <div className="text-[11px] text-slate-500">{sub}</div>
-            </div>
-            <div
-                style={{
-                    fontFamily: "'Source Serif 4', Georgia, serif",
-                    fontWeight: 600,
-                    fontSize: 15,
-                    color,
-                    whiteSpace: 'nowrap',
-                }}
-            >
-                {value}
-            </div>
-        </div>
-    );
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// CONTACT MODAL — formulaire de demande d'info (envoi email via mailto)
-// ═══════════════════════════════════════════════════════════════════════
-
-/**
- * ContactModal — Formulaire de demande de démo / contact commercial.
- *
- * Email destinataire : contact@datauniverse.bf (jamais affiché à l'écran
- * pour éviter le scraping). À la soumission, ouvre le client email de
- * l'utilisateur avec un mailto pré-rempli (sujet + corps formaté).
- *
- * Pourquoi mailto plutôt qu'un endpoint backend ?
- *  - Aucune config SMTP requise côté backend pour cette landing publique
- *  - L'email arrive directement dans la boîte de l'utilisateur (preuve)
- *  - L'email destinataire reste caché du HTML (protection anti-bot)
- *  - Si on veut un endpoint backend ensuite, c'est trivial à ajouter
- */
-function ContactModal({ opened, onClose }: { opened: boolean; onClose: () => void }) {
-    const [form, setForm] = useState({
-        firstName: '',
-        lastName: '',
-        company: '',
-        email: '',
-        phone: '',
-        site: '',
-        message: '',
-        consent: false,
-    });
-    const [sending, setSending] = useState(false);
-    const [sent, setSent] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    // Reset à l'ouverture
-    useEffect(() => {
-        if (opened) {
-            setSent(false);
-            setError(null);
-        }
-    }, [opened]);
-
-    // ESC pour fermer
-    useEffect(() => {
-        if (!opened) return;
-        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-        window.addEventListener('keydown', onKey);
-        document.body.style.overflow = 'hidden';
-        return () => {
-            window.removeEventListener('keydown', onKey);
-            document.body.style.overflow = '';
-        };
-    }, [opened, onClose]);
-
-    if (!opened) return null;
-
-    const validate = (): string | null => {
-        if (!form.firstName.trim()) return 'Le prénom est requis';
-        if (!form.lastName.trim()) return 'Le nom est requis';
-        if (!form.email.trim()) return 'L\'email est requis';
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return 'Email invalide';
-        if (!form.message.trim()) return 'Merci de préciser votre demande';
-        if (!form.consent) return 'Merci d\'accepter le traitement des données';
-        return null;
-    };
-
-    const submit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        const err = validate();
-        if (err) { setError(err); return; }
-        setError(null);
-        setSending(true);
-
-        // Construit l'email — destinataire caché du DOM via concaténation runtime
-        const recipient = ['contact', '@', 'datauniverse.bf'].join('');
-        const subject = `[SafeX 360] Demande d'information — ${form.company || form.lastName}`;
-        const body = [
-            `Bonjour,`,
-            ``,
-            `Une nouvelle demande d'information a été envoyée depuis la landing SafeX 360 :`,
-            ``,
-            `— Prénom : ${form.firstName}`,
-            `— Nom : ${form.lastName}`,
-            `— Entreprise : ${form.company || '(non renseigné)'}`,
-            `— Email : ${form.email}`,
-            `— Téléphone : ${form.phone || '(non renseigné)'}`,
-            `— Site / mine : ${form.site || '(non renseigné)'}`,
-            ``,
-            `Message :`,
-            form.message,
-            ``,
-            `---`,
-            `Envoyé le ${new Date().toLocaleString('fr-FR')}`,
-            `Consentement RGPD : accepté`,
-        ].join('\n');
-
-        const mailto = `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
-        // Petit délai pour donner l'illusion d'un envoi en cours
-        await new Promise((r) => setTimeout(r, 500));
-        window.location.href = mailto;
-
-        setSending(false);
-        setSent(true);
-    };
-
-    const update = (k: keyof typeof form) => (e: any) => {
-        const val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
-        setForm((f) => ({ ...f, [k]: val }));
-    };
-
-    return (
-        <div
-            className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-            style={{ background: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(8px)' }}
-            onClick={onClose}
-        >
-            <div
-                className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-                style={{ boxShadow: '0 40px 100px -20px rgba(0,0,0,0.4)' }}
-                onClick={(e) => e.stopPropagation()}
-            >
-                {/* Header avec gradient teal/noir */}
-                <div
-                    className="p-6 lg:p-7 relative"
-                    style={{
-                        background: `linear-gradient(135deg, ${C.green} 0%, ${C.dark} 100%)`,
-                        borderTopLeftRadius: 24,
-                        borderTopRightRadius: 24,
-                    }}
-                >
-                    <button
-                        onClick={onClose}
-                        className="cursor-pointer absolute top-5 right-5 w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition-colors"
-                        aria-label="Fermer"
-                    >
-                        <IconX size={18} />
-                    </button>
-
-                    <div className="flex items-center gap-3 mb-3">
-                        <span className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                            <IconMail size={20} className="text-white" />
-                        </span>
-                        <span className="text-[11.5px] uppercase tracking-[0.18em] text-white/80 font-bold">
-                            Demande d'information
-                        </span>
-                    </div>
-
-                    <h2
-                        style={{
-                            fontFamily: "'Source Serif 4', Georgia, serif",
-                            fontWeight: 600,
-                            fontSize: 'clamp(22px, 3vw, 30px)',
-                            color: 'white',
-                            letterSpacing: '-0.02em',
-                            lineHeight: 1.15,
-                        }}
-                    >
-                        Parlez à un préventeur HSE
-                    </h2>
-                    <p className="mt-2 text-[13.5px] text-white/80 leading-relaxed">
-                        Réponse sous 24h ouvrées. Pas de commercial — un vrai HSE qui a fait du terrain.
-                    </p>
-                </div>
-
-                {/* Corps */}
-                <div className="p-6 lg:p-7">
-                    {sent ? (
-                        <SentSuccess email={form.email} />
-                    ) : (
-                        <form onSubmit={submit} className="space-y-4">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <FormField label="Prénom" required value={form.firstName} onChange={update('firstName')} />
-                                <FormField label="Nom" required value={form.lastName} onChange={update('lastName')} />
-                            </div>
-
-                            <FormField label="Entreprise / mine" value={form.company} onChange={update('company')} placeholder="ex : Mine d'or de Houndé" />
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <FormField label="Email professionnel" required type="email" value={form.email} onChange={update('email')} placeholder="prenom.nom@entreprise.com" />
-                                <FormField label="Téléphone" type="tel" value={form.phone} onChange={update('phone')} placeholder="+226 ..." />
-                            </div>
-
-                            <FormField label="Site / localisation" value={form.site} onChange={update('site')} placeholder="ex : Ouagadougou, Burkina Faso" />
-
-                            <div>
-                                <label className="block text-[12px] font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                                    Votre demande <span style={{ color: C.emergency }}>*</span>
-                                </label>
-                                <textarea
-                                    value={form.message}
-                                    onChange={update('message')}
-                                    placeholder="Parlez-nous de votre besoin : nombre de sites, modules prioritaires, calendrier souhaité..."
-                                    rows={4}
-                                    className="w-full px-3.5 py-2.5 border-2 border-slate-200 rounded-lg text-[14px] focus:outline-none focus:border-teal-600 transition-colors resize-none"
-                                />
-                            </div>
-
-                            <label className="flex items-start gap-2.5 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={form.consent}
-                                    onChange={update('consent')}
-                                    className="mt-0.5 w-4 h-4 rounded border-slate-300 cursor-pointer"
-                                    style={{ accentColor: C.green }}
-                                />
-                                <span className="text-[12px] text-slate-700 leading-relaxed">
-                                    J'accepte que mes données soient utilisées pour répondre à ma demande,
-                                    conformément à la politique de confidentialité (RGPD).
-                                </span>
-                            </label>
-
-                            {error && (
-                                <div className="p-3 rounded-lg bg-red-50 border border-red-200 flex items-center gap-2 text-[13px] text-red-800">
-                                    <IconAlertTriangle size={15} className="flex-shrink-0" />
-                                    {error}
-                                </div>
-                            )}
-
-                            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                                <button
-                                    type="button"
-                                    onClick={onClose}
-                                    className="cursor-pointer px-5 py-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-[13.5px] font-semibold transition-colors"
-                                >
-                                    Annuler
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={sending}
-                                    className="cursor-pointer inline-flex items-center gap-2 px-7 py-2.5 rounded-full text-white text-[14px] font-bold transition-all hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed"
-                                    style={{
-                                        background: `linear-gradient(135deg, ${C.green} 0%, ${C.greenLight} 100%)`,
-                                        boxShadow: `0 8px 20px -5px ${C.green}50`,
-                                    }}
-                                >
-                                    {sending ? (
-                                        <>
-                                            <IconLoader2 size={15} className="animate-spin" />
-                                            Préparation…
-                                        </>
-                                    ) : (
-                                        <>
-                                            <IconSend size={15} />
-                                            Envoyer
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        </form>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function FormField({ label, required, type = 'text', value, onChange, placeholder }: {
-    label: string;
-    required?: boolean;
-    type?: string;
-    value: string;
-    onChange: (e: any) => void;
-    placeholder?: string;
-}) {
-    return (
-        <div>
-            <label className="block text-[12px] font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                {label} {required && <span style={{ color: C.emergency }}>*</span>}
-            </label>
-            <input
-                type={type}
-                value={value}
-                onChange={onChange}
-                placeholder={placeholder}
-                className="w-full px-3.5 py-2.5 border-2 border-slate-200 rounded-lg text-[14px] focus:outline-none focus:border-teal-600 transition-colors"
-            />
-        </div>
-    );
-}
-
-function SentSuccess({ email }: { email: string }) {
-    return (
-        <div className="py-6 text-center">
-            <div
-                className="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-5"
-                style={{ background: C.greenBg, border: `2px solid ${C.green}` }}
-            >
-                <IconCheck size={32} style={{ color: C.green }} stroke={2.5} />
-            </div>
-            <h3
-                style={{
-                    fontFamily: "'Source Serif 4', Georgia, serif",
-                    fontWeight: 600,
-                    fontSize: 22,
-                    color: C.dark,
-                    marginBottom: 8,
-                }}
-            >
-                Votre client mail s'est ouvert
-            </h3>
-            <p className="text-[14px] text-slate-700 max-w-md mx-auto leading-relaxed mb-2">
-                Cliquez sur <strong>Envoyer</strong> dans votre client mail pour transmettre votre demande.
-            </p>
-            <p className="text-[13px] text-slate-500">
-                Nous vous répondrons sur <strong className="text-slate-700">{email}</strong> sous 24h ouvrées.
-            </p>
-        </div>
-    );
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// STYLES GLOBAUX
-// ═══════════════════════════════════════════════════════════════════════
-
-function GlobalStyles() {
-    return (
-        <style>{`
-            @keyframes float-y {
-                0%, 100% { transform: translateY(0); }
-                50% { transform: translateY(-14px); }
-            }
-            @keyframes marquee {
-                0% { transform: translateX(0); }
-                100% { transform: translateX(-50%); }
-            }
-            @keyframes pulse-sos {
-                0%, 100% { transform: scale(1); }
-                50% { transform: scale(1.08); }
-            }
-            @keyframes blob-1 {
-                0%, 100% { transform: translate(0, 0) scale(1); }
-                33% { transform: translate(40px, -50px) scale(1.1); }
-                66% { transform: translate(-30px, 40px) scale(0.95); }
-            }
-            @keyframes blob-2 {
-                0%, 100% { transform: translate(0, 0) scale(1); }
-                33% { transform: translate(-50px, 40px) scale(1.1); }
-                66% { transform: translate(30px, -30px) scale(0.9); }
-            }
-            @keyframes card-float {
-                0%, 100% { transform: translateY(0); }
-                50% { transform: translateY(-8px); }
-            }
-            /* ═══ HERO CINEMATIC — Animations premium ═══ */
-            /* Ken Burns : zoom subtil + pan tres lent pour effet cinema.
-             * Amplitude reduite (max scale 1.08) pour ne pas couper les sujets
-             * (visages, EPI) hors du cadre 16/9. */
-            @keyframes ken-burns-1 {
-                0% { transform: scale(1.02); }
-                100% { transform: scale(1.08); }
-            }
-            @keyframes ken-burns-2 {
-                0% { transform: scale(1.03); }
-                100% { transform: scale(1.09); }
-            }
-            @keyframes ken-burns-3 {
-                0% { transform: scale(1.02); }
-                100% { transform: scale(1.07); }
-            }
-            /* Balayage de lumiere diagonal au changement de slide */
-            @keyframes hero-sweep {
-                0% { transform: translateX(-110%) skewX(-12deg); opacity: 0; }
-                40% { opacity: 0.55; }
-                100% { transform: translateX(110%) skewX(-12deg); opacity: 0; }
-            }
-            /* Fade-in raffine pour le contenu texte du hero */
-            @keyframes hero-reveal-up {
-                0% { opacity: 0; transform: translateY(28px); filter: blur(8px); }
-                100% { opacity: 1; transform: translateY(0); filter: blur(0); }
-            }
-            @keyframes hero-glow-pulse {
-                0%, 100% { box-shadow: 0 0 0 0 rgba(15, 118, 110, 0.0); }
-                50% { box-shadow: 0 0 40px 8px rgba(15, 118, 110, 0.45); }
-            }
-            /* Indicateur de progression du slide actif */
-            @keyframes hero-progress {
-                0% { transform: scaleX(0); }
-                100% { transform: scaleX(1); }
-            }
-            /* Scrolling caption text reveal */
-            @keyframes hero-caption-slide {
-                0% { opacity: 0; transform: translateX(-20px); }
-                100% { opacity: 1; transform: translateX(0); }
-            }
-            /* Particle dust drift */
-            @keyframes dust-drift {
-                0% { transform: translate(0, 0) scale(1); opacity: 0; }
-                10% { opacity: 0.6; }
-                100% { transform: translate(var(--dx), var(--dy)) scale(0.3); opacity: 0; }
-            }
-            /* Slider thumb style */
-            input[type="range"]::-webkit-slider-thumb {
-                -webkit-appearance: none;
-                appearance: none;
-                width: 20px;
-                height: 20px;
-                border-radius: 50%;
-                background: #0F766E;
-                border: 3px solid white;
-                cursor: pointer;
-                box-shadow: 0 4px 10px rgba(15, 118, 110, 0.4);
-                transition: transform 0.1s;
-            }
-            input[type="range"]::-webkit-slider-thumb:hover {
-                transform: scale(1.15);
-            }
-            input[type="range"]::-moz-range-thumb {
-                width: 20px;
-                height: 20px;
-                border-radius: 50%;
-                background: #0F766E;
-                border: 3px solid white;
-                cursor: pointer;
-                box-shadow: 0 4px 10px rgba(15, 118, 110, 0.4);
-            }
-        `}</style>
     );
 }
