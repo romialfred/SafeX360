@@ -263,6 +263,22 @@ scheduler:
   poll-ms: 60000
   batch-size: 50
   retry-backoff-seconds: 300
+
+# Moteur SLA / escalade HSE (ISO 45001 §9.1). OFF par défaut : le planificateur
+# n'est même pas instancié tant que hse.sla.enabled != true (@ConditionalOnProperty).
+# Déploiement progressif conseillé : activer d'abord le fil in-app + WebSocket
+# (email-enabled reste false), puis basculer l'e-mail une fois validé.
+hse:
+  sla:
+    enabled: ${HSE_SLA_ENABLED:false}
+    cron: ${HSE_SLA_CRON:0 0 7 * * *}      # tous les jours 07:00
+    due-soon-days: ${HSE_SLA_DUE_SOON_DAYS:3}
+    escalation-days: ${HSE_SLA_ESCALATION_DAYS:7}
+    email-enabled: ${HSE_SLA_EMAIL_ENABLED:false}
+    # Anti-envoi massif : n'e-maile pas un retard plus vieux que ce seuil (jours),
+    # et plafonne le nombre d'e-mails par balayage (le fil in-app, lui, reste complet).
+    email-max-age-days: ${HSE_SLA_EMAIL_MAX_AGE_DAYS:30}
+    max-emails-per-scan: ${HSE_SLA_MAX_EMAILS_PER_SCAN:50}
 hrms:
   url: ${MINE_XPERT_URL}
 

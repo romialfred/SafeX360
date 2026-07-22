@@ -1,5 +1,6 @@
 package com.minexpert.hns.repository.audit;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.Query;
@@ -12,6 +13,13 @@ import com.minexpert.hns.enums.RecommendationStatus;
 
 public interface RecommendationRepository extends CrudRepository<Recommendation, Long> {
     List<Recommendation> findByAudit_Id(Long auditId);
+
+    // Moteur SLA (§9.1) : recommandations d'audit en retard (échéance dépassée,
+    // non clôturées). `deadline IS NOT NULL` : pas d'échéance = pas de SLA.
+    @Query("SELECT r FROM Recommendation r WHERE r.deadline IS NOT NULL AND r.deadline < :today "
+            + "AND r.status NOT IN :closed")
+    List<Recommendation> findOverdueRecommendations(@Param("today") LocalDate today,
+            @Param("closed") java.util.Collection<RecommendationStatus> closed);
 
     /** LOT 52 — recommandations de tous les audits d'un programme. */
     List<Recommendation> findByAudit_IdIn(List<Long> auditIds);

@@ -1,13 +1,12 @@
 
-import { Icon } from "@iconify-icon/react";
-import { Avatar, Indicator, Drawer, Button, ScrollArea, SegmentedControl, Tooltip } from "@mantine/core";
-import { IconAlertTriangle, IconBellRinging, IconClipboardData, IconUrgent, IconBroadcast, IconMenu2 } from '@tabler/icons-react';
+import { Tooltip } from "@mantine/core";
+import { IconAlertTriangle, IconClipboardData, IconMenu2 } from '@tabler/icons-react';
 import { useTranslation } from "react-i18next";
 
 import { useDispatch, useSelector } from "react-redux";
 import { toggleMobileSidebar } from "../../../slices/MobileSidebarSlice";
 import { useEffect, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import ProfileMenu from "./ProfileMenu";
 import LanguageSwitcher from "../../UtilityComp/LanguageSwitcher";
 
@@ -16,14 +15,13 @@ import { setProfile } from "../../../slices/ProfileSlice";
 import CompanySelector from "./CompanySelector";
 import SosButton from "./SosButton";
 import GeneralAlertButton from "./GeneralAlertButton";
+import SlaNotificationBell from "./SlaNotificationBell";
 import { useActivePageTitle } from "./useActivePageTitle";
 
 const Header = () => {
     const collapsed = useSelector((state: any) => state.collapse);
     const user = useSelector((state: any) => state.user);
     const [drawerOpened, setDrawerOpened] = useState(false);
-    const [notificationDrawerOpened, setNotificationDrawerOpened] = useState(false);
-    const [value, setValue] = useState("all");
     const navigate = useNavigate();
     const [scrolled, setScrolled] = useState(false);
     const { t } = useTranslation(['navigation', 'common']);
@@ -44,30 +42,6 @@ const Header = () => {
             })
         }
     }, [user])
-    const notification = [
-
-        {
-            label: t('navigation:notifications.items.newEmail'),
-            icon: <Icon icon="fluent-color:mail-multiple-28" width="28" height="28" />
-        },
-        {
-            label: t('navigation:notifications.items.newMessage'),
-            icon: <Icon icon="fluent-color:chat-multiple-16" width="28" height="28" />
-        },
-
-        {
-            label: t('navigation:notifications.items.orderShipped'),
-            icon: <Icon icon="fluent-color:alert-28" width="28" height="28" />
-        },
-        {
-            label: t('navigation:notifications.items.orderLate'),
-            icon: <Icon icon="fluent-color:alert-28" width="28" height="28" />
-        },
-        {
-            label: t('navigation:notifications.items.newOffer'),
-            icon: <Icon icon="fluent-color:chat-multiple-16" width="28" height="28" />
-        },
-    ]
 
     useEffect(() => {
         const handleScroll = () => {
@@ -154,122 +128,11 @@ const Header = () => {
                         <LanguageSwitcher tone="dark" />
                     </div>
 
-                    <Indicator inline color="red" label="4" offset={6} size={16}>
-                        <button
-                            type="button"
-                            className="flex items-center cursor-pointer transition-colors duration-200 justify-center rounded-full hover:bg-slate-100 p-2"
-                            onClick={() => setNotificationDrawerOpened(true)}
-                            aria-label={t('navigation:notifications.title')}
-                        >
-                            <IconBellRinging stroke={1.8} size={22} strokeLinecap="round" strokeLinejoin="round" className="text-slate-600" />
-                        </button>
-                    </Indicator>
+                    {/* Cloche SLA HSE (ISO 45001 §9.1) — fil réel des ruptures de délai,
+                        cloisonné par mine. Remplace l'ancien bloc de notifications factice. */}
+                    <SlaNotificationBell />
 
                     <ProfileMenu drawerOpened={drawerOpened} setDrawerOpened={setDrawerOpened} />
-                <Drawer
-                    opened={notificationDrawerOpened}
-                    onClose={() => setNotificationDrawerOpened(false)}
-                    padding="md"
-                    size="sm"
-                    position="right"
-                    title={t('navigation:notifications.title')}
-
-                >
-                    <div className="flex flex-col h-full">
-                        {/* Fixed Segmented Control */}
-                        <div className="bg-white z-10 py-3 sticky top-0">
-                            <SegmentedControl
-                                value={value}
-                                onChange={setValue}
-                                color="primary"
-                                fullWidth
-                                data={[
-                                    { label: t('navigation:notifications.all'), value: "all" },
-                                    { label: t('navigation:notifications.unread'), value: "unread" },
-                                    { label: t('navigation:notifications.archived'), value: "archived" },
-                                ]}
-
-                            />
-                        </div>
-
-                        {/* Scrollable Notifications */}
-                        <ScrollArea className="flex-grow w-full">
-                            <div className="flex flex-col self-start gap-3 p-2">
-                                {notification.map((link, index) => (
-                                    <NavLink
-                                        to=""
-                                        key={index}
-                                        className={({ isActive }) =>
-                                            `flex items-center gap-3 w-full text-sm text-textprimary px-2 py-3 rounded-lg 
-                            ${isActive ? " text-neutral-500 hover:bg-hoverbg hover:text-primary "
-                                                : "hover:bg-hover "}`
-                                        }
-                                    >
-                                        {link.icon}
-                                        <span>{link.label}</span>
-                                    </NavLink>
-                                ))}
-
-                                {/* Notification Cards */}
-                                <div className="flex gap-5 hover:bg-hoverbg p-2 rounded-lg">
-                                    <Avatar src="/avatar4.png" size={50} alt="Profile Picture" />
-                                    <div className="flex flex-col gap-4">
-                                        <div>
-                                            <p className="text-base text-textprimary hover:text-primary">
-                                                {t('navigation:notifications.friendRequest', { name: 'Deja Brady' })}
-                                            </p>
-                                            <p className="text-xs text-textprimary">{t('navigation:notifications.minutesAgo', { count: 37 })}</p>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <Button variant="filled" size="md" radius="md" className="!bg-primary-500">{t('navigation:notifications.accept')}</Button>
-                                            <Button variant="outline" size="md" radius="md" className="!border-primary-500 !text-primary-500">{t('navigation:notifications.reject')}</Button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-5 hover:bg-hoverbg p-2 rounded-lg">
-                                    <Avatar src="/avatar6.png" size={50} alt="Profile Picture" />
-                                    <div className="flex flex-col gap-4">
-                                        <div>
-                                            <p className="text-base text-textprimary hover:text-primary">
-                                                {t('navigation:notifications.sentMessage', { name: 'Luis Sen' })}
-                                            </p>
-                                            <p className="text-xs text-textprimary">{t('navigation:notifications.minutesAgo', { count: 37 })}</p>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <Button variant="filled" size="md" radius="md" className="!bg-primary-500">{t('navigation:notifications.reply')}</Button>
-                                            <Button variant="outline" size="md" radius="md" className="!border-primary-500 !text-primary-500">{t('navigation:notifications.delete')}</Button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="flex gap-5 hover:bg-hoverbg p-2 rounded-lg">
-                                    <Avatar src="/avatar5.png" size={50} alt="Profile Picture" />
-                                    <div className="flex flex-col gap-4">
-                                        <div>
-                                            <p className="text-base text-textprimary hover:text-primary">
-                                                {t('navigation:notifications.friendRequest', { name: 'Rwan' })}
-                                            </p>
-                                            <p className="text-xs text-textprimary">{t('navigation:notifications.minutesAgo', { count: 37 })}</p>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <Button variant="filled" size="md" radius="md" className="!bg-primary-500">{t('navigation:notifications.accept')}</Button>
-                                            <Button variant="outline" size="md" radius="md" className="!border-primary-500 !text-primary-500">{t('navigation:notifications.reject')}</Button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </ScrollArea>
-
-                        {/* Fixed View All Button */}
-                        <div className="bg-white p-3 shadow-md sticky bottom-0">
-                            <Button variant="filled" size="md" radius="md" fullWidth className="!bg-primary-500">
-                                {t('navigation:notifications.viewAll')}
-                            </Button>
-                        </div>
-                    </div>
-                </Drawer>
-
                 </div>
             </div>
 

@@ -17,6 +17,18 @@ public interface CorrectiveActionRepository extends CrudRepository<CorrectiveAct
     @Query("SELECT c FROM CorrectiveAction c WHERE c.incident.id = :incidentId AND (:companyId IS NULL OR c.companyId = :companyId)")
     List<CorrectiveAction> findByIncidentId(@Param("companyId") Long companyId, @Param("incidentId") Long incidentId);
 
+    // ── Moteur SLA (ISO 45001 §9.1/§10.2) : actions en retard / bientôt dues.
+    // `deadline IS NOT NULL` explicite : une action sans échéance n'a pas de SLA.
+    @Query("SELECT c FROM CorrectiveAction c WHERE c.deadline IS NOT NULL AND c.deadline < :today "
+            + "AND c.status NOT IN :closed")
+    List<CorrectiveAction> findOverdueActions(@Param("today") LocalDate today,
+            @Param("closed") java.util.Collection<ActionStatus> closed);
+
+    @Query("SELECT c FROM CorrectiveAction c WHERE c.deadline IS NOT NULL "
+            + "AND c.deadline >= :today AND c.deadline <= :until AND c.status NOT IN :closed")
+    List<CorrectiveAction> findActionsDueSoon(@Param("today") LocalDate today, @Param("until") LocalDate until,
+            @Param("closed") java.util.Collection<ActionStatus> closed);
+
     @Query("""
                 SELECT new com.minexpert.hns.dto.response.CorrectiveActionResponse(
                     c.id,
