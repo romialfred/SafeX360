@@ -1,4 +1,5 @@
 import { Button, LoadingOverlay, Modal, Select, TextInput } from "@mantine/core";
+import { IconUsers, IconUserCheck, IconBuildingCommunity } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useDisclosure } from "@mantine/hooks";
 import { useForm } from "@mantine/form";
@@ -210,6 +211,11 @@ const AuiditorData = () => {
     return (
         <>
             <ReferencePanel<any>
+                stats={[
+                    { label: 'Auditeurs', value: data.length, icon: IconUsers, tone: 'teal' },
+                    { label: 'Actifs', value: data.filter((d: any) => String(d?.status).toUpperCase() === 'ACTIVE').length, icon: IconUserCheck, tone: 'emerald' },
+                    { label: 'Directions', value: new Set(data.map((d: any) => d?.direction).filter(Boolean)).size, icon: IconBuildingCommunity, tone: 'indigo' },
+                ]}
                 newLabel="Nouvel auditeur"
                 onNew={open}
                 loading={loading}

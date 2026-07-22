@@ -6,6 +6,7 @@ import {
     Textarea,
     TextInput,
 } from "@mantine/core";
+import { IconRuler2, IconCircleCheck, IconMathFunction } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useDisclosure } from "@mantine/hooks";
 import { useForm } from "@mantine/form";
@@ -206,6 +207,11 @@ const TechMeasurementData = () => {
     return (
         <>
             <ReferencePanel<any>
+                stats={[
+                    { label: 'Mesures', value: data.length, icon: IconRuler2, tone: 'teal' },
+                    { label: 'Actives', value: data.filter((d: any) => String(d?.status).toUpperCase() === 'ACTIVE').length, icon: IconCircleCheck, tone: 'emerald' },
+                    { label: 'Unités distinctes', value: new Set(data.map((d: any) => d?.unit).filter(Boolean)).size, icon: IconMathFunction, tone: 'sky' },
+                ]}
                 newLabel="Nouvelle mesure technique"
                 onNew={open}
                 loading={loading}

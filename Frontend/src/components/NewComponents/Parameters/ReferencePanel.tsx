@@ -71,8 +71,54 @@ export interface ReferencePanelProps<T> {
     toolbarExtra?: ReactNode;
     /** Bandeau libre au-dessus du tableau (aide, avertissement…). */
     banner?: ReactNode;
+    /** Mini-tableau de bord (cartes de statistiques) en tête du panneau. */
+    stats?: StatItem[];
     pageSize?: number;
     onRowClick?: (row: T) => void;
+}
+
+export type StatTone = 'teal' | 'violet' | 'amber' | 'slate' | 'rose' | 'sky' | 'emerald' | 'cyan' | 'indigo';
+export interface StatItem {
+    label: string;
+    value: ReactNode;
+    icon?: React.ComponentType<any>;
+    tone?: StatTone;
+}
+
+const STAT_TONES: Record<StatTone, string> = {
+    teal: 'border-teal-100 bg-teal-50/60 text-teal-700',
+    violet: 'border-violet-100 bg-violet-50/60 text-violet-700',
+    amber: 'border-amber-100 bg-amber-50/60 text-amber-700',
+    slate: 'border-slate-200 bg-slate-50 text-slate-700',
+    rose: 'border-rose-100 bg-rose-50/60 text-rose-700',
+    sky: 'border-sky-100 bg-sky-50/60 text-sky-700',
+    emerald: 'border-emerald-100 bg-emerald-50/60 text-emerald-700',
+    cyan: 'border-cyan-100 bg-cyan-50/60 text-cyan-700',
+    indigo: 'border-indigo-100 bg-indigo-50/60 text-indigo-700',
+};
+
+function StatStrip({ stats }: { stats: StatItem[] }) {
+    return (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2.5 p-3 border-b border-slate-100">
+            {stats.map((s, i) => {
+                const tone = STAT_TONES[s.tone || 'slate'];
+                const Icon = s.icon;
+                return (
+                    <div key={i} className={`rounded-lg border ${tone} px-3 py-2 flex items-center gap-2.5`}>
+                        {Icon && (
+                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white/70 border border-white/60 shrink-0">
+                                <Icon size={17} stroke={1.7} />
+                            </span>
+                        )}
+                        <div className="min-w-0">
+                            <p className="text-[19px] leading-none tabular-nums font-semibold">{s.value}</p>
+                            <p className="text-[10.5px] uppercase tracking-wide text-slate-500 mt-1 truncate">{s.label}</p>
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
 }
 
 const isActive = (s: RowStatus) => String(s).toUpperCase() === 'ACTIVE';
@@ -147,6 +193,7 @@ export default function ReferencePanel<T>({
     rowActions,
     toolbarExtra,
     banner,
+    stats,
     pageSize = 10,
     onRowClick,
 }: ReferencePanelProps<T>) {
@@ -218,6 +265,9 @@ export default function ReferencePanel<T>({
 
     return (
         <div className="bg-white border border-slate-200 rounded-lg shadow-sm">
+            {/* Mini-tableau de bord */}
+            {stats && stats.length > 0 && <StatStrip stats={stats} />}
+
             {/* Barre d'outils */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 p-3 border-b border-slate-100">
                 {newLabel && onNew && (

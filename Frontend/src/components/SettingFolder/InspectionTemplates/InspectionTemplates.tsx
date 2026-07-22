@@ -16,6 +16,8 @@ import {
     IconTrash,
     IconRotateClockwise,
     IconListCheck,
+    IconClipboardList,
+    IconCategory2,
     IconLock,
     IconChevronUp,
     IconChevronDown,
@@ -246,16 +248,37 @@ export default function InspectionTemplates() {
         }
     };
 
+    const totalPoints = templates.reduce((a: number, t: any) => a + (t.checkpointCount ?? 0), 0);
+    const catCount = TYPES.filter((t) => (grouped[t.value]?.length ?? 0) > 0).length;
+    const STAT_TONE: Record<string, string> = {
+        cyan: 'border-cyan-100 bg-cyan-50/60 text-cyan-700',
+        violet: 'border-violet-100 bg-violet-50/60 text-violet-700',
+        teal: 'border-teal-100 bg-teal-50/60 text-teal-700',
+    };
+
     return (
-        <div className="max-w-5xl">
-            <div className="flex items-start justify-between gap-3 mb-4 flex-wrap">
-                <div>
-                    <h1 className="text-[18px] font-semibold text-slate-900">Modèles d'inspection</h1>
-                    <p className="text-[12.5px] text-slate-500 mt-0.5 max-w-xl">
-                        Définissez les grilles de points de contrôle. Ce sont ces modèles qui apparaissent
-                        lors de la planification d'une inspection.
-                    </p>
-                </div>
+        <div className="w-full">
+            {/* Mini-tableau de bord + action */}
+            <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+                {!editing && !loading && templates.length > 0 ? (
+                    <div className="grid grid-cols-3 gap-2.5 flex-1 min-w-[280px] max-w-[560px]">
+                        {[
+                            { label: 'Modèles', value: templates.length, tone: 'cyan', Icon: IconClipboardList },
+                            { label: 'Catégories', value: catCount, tone: 'violet', Icon: IconCategory2 },
+                            { label: 'Points de contrôle', value: totalPoints, tone: 'teal', Icon: IconListCheck },
+                        ].map((s, i) => (
+                            <div key={i} className={`rounded-lg border px-3 py-2 flex items-center gap-2.5 ${STAT_TONE[s.tone]}`}>
+                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white/70 border border-white/60 shrink-0">
+                                    <s.Icon size={17} stroke={1.7} />
+                                </span>
+                                <div className="min-w-0">
+                                    <p className="text-[19px] leading-none font-semibold tabular-nums">{s.value}</p>
+                                    <p className="text-[10.5px] uppercase tracking-wide text-slate-500 mt-1 truncate">{s.label}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : <div />}
                 {!editing && (
                     <Button leftSection={<IconPlus size={16} />} color="cyan" onClick={startCreate}>
                         Nouveau modèle

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Select, NumberInput, Button, Loader, TextInput, Badge } from '@mantine/core';
-import { IconClockHour4, IconBuildingFactory2, IconUsersGroup, IconPlus, IconInfoCircle } from '@tabler/icons-react';
+import { IconClockHour4, IconBuildingFactory2, IconUsersGroup, IconPlus, IconInfoCircle, IconCalendarMonth } from '@tabler/icons-react';
 import { useSelector } from 'react-redux';
 import {
   listWorkedHoursEntries, upsertWorkedHoursEntry,
@@ -118,6 +118,24 @@ const WorkedHoursManager = () => {
         <div className="flex items-center gap-2 text-slate-500 text-sm py-6"><Loader size="sm" /> Chargement…</div>
       ) : (
         <>
+          {/* Mini-tableau de bord */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            {[
+              { label: 'Heures saisies', value: grandTotal.toLocaleString('fr-FR'), tone: 'border-teal-100 bg-teal-50/60 text-teal-700', Icon: IconClockHour4 },
+              { label: 'Départements', value: departments.length, tone: 'border-cyan-100 bg-cyan-50/60 text-cyan-700', Icon: IconBuildingFactory2 },
+              { label: 'Sous-traitants', value: subRows.length, tone: 'border-violet-100 bg-violet-50/60 text-violet-700', Icon: IconUsersGroup },
+              { label: 'Mois renseignés', value: MONTHS.filter((_, i) => monthTotal(i + 1) > 0).length, tone: 'border-amber-100 bg-amber-50/60 text-amber-700', Icon: IconCalendarMonth },
+            ].map((s, i) => (
+              <div key={i} className={`rounded-lg border px-3 py-2 flex items-center gap-2.5 ${s.tone}`}>
+                <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white/70 border border-white/60 shrink-0"><s.Icon size={17} stroke={1.7} /></span>
+                <div className="min-w-0">
+                  <p className="text-[19px] leading-none font-semibold tabular-nums">{s.value}</p>
+                  <p className="text-[10.5px] uppercase tracking-wide text-slate-500 mt-1 truncate">{s.label}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
           <div className="overflow-x-auto border border-slate-200 rounded-xl">
             <table className="min-w-full text-sm border-collapse">
               <thead>

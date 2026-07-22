@@ -71,7 +71,7 @@ export default function ParameterSectionPage({
 
     return (
         <div className="min-h-full bg-[#FAF8F3] px-4 sm:px-6 lg:px-8 py-5">
-            <div className="max-w-[1280px] mx-auto">
+            <div className="max-w-[1720px] mx-auto">
                 {/* En-tête */}
                 <div className="mb-4">
                     <div className="flex items-center gap-1.5 text-[10px] text-slate-500 mb-1">

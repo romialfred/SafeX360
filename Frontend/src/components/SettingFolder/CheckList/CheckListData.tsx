@@ -1,4 +1,5 @@
 import { Button, LoadingOverlay, Modal, Select, Textarea, TextInput } from "@mantine/core";
+import { IconListCheck, IconCircleCheck, IconCategory2 } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { useDisclosure } from "@mantine/hooks";
 import { useForm } from "@mantine/form";
@@ -207,6 +208,11 @@ const CheckListData = () => {
     return (
         <>
             <ReferencePanel<any>
+                stats={[
+                    { label: 'Check-lists', value: data.length, icon: IconListCheck, tone: 'teal' },
+                    { label: 'Actives', value: data.filter((d: any) => String(d.status).toUpperCase() === 'ACTIVE').length, icon: IconCircleCheck, tone: 'emerald' },
+                    { label: 'Catégories couvertes', value: new Set(data.map((d: any) => d.incidentCategoryName).filter(Boolean)).size, icon: IconCategory2, tone: 'violet' },
+                ]}
                 newLabel="Nouvelle check-list"
                 onNew={handleNew}
                 columns={[
