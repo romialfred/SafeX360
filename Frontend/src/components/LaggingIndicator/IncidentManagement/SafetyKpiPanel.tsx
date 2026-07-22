@@ -1,64 +1,87 @@
 import { useEffect, useState } from 'react';
-import { Select, NumberInput, Button, Loader } from '@mantine/core';
-import { IconChartHistogram, IconDeviceFloppy } from '@tabler/icons-react';
+import { Select, Loader, Tooltip } from '@mantine/core';
 import {
-  getKpi, listWorkedHours, upsertWorkedHours, type SafetyKpi, type WorkedHours,
-} from '../../../services/SafetyMetricsService';
-import { successNotification } from '../../../utility/NotificationUtility';
-import { notifyError } from '../../../utility/notifyError';
+  IconChartHistogram, IconBandage, IconActivity, IconAlertTriangle, IconClockHour4,
+  IconArrowUpRight, IconArrowDownRight, IconMinus, IconSettings,
+} from '@tabler/icons-react';
+import { useNavigate } from 'react-router-dom';
+import { getKpi, type SafetyKpi } from '../../../services/SafetyMetricsService';
 import { OUTCOME_CONFIG } from './IncidentInjuriesPanel';
 
 /**
  * Indicateurs de fréquence des lésions (ISO 45001 §9.1.1 — ILO/OSHA) : LTIFR,
- * TRIFR, taux de gravité (par million d'heures) + saisie des heures travaillées
- * (dénominateur). Cloisonné mine (companyId auto-injecté).
+ * TRIFR, taux de gravité (par million d'heures). La SAISIE des heures travaillées
+ * (dénominateur) se fait dans Paramètres › Outils & Templates › Heures de travail.
  */
 
-const MONTHS = ['Janv.', 'Févr.', 'Mars', 'Avr.', 'Mai', 'Juin', 'Juil.', 'Août', 'Sept.', 'Oct.', 'Nov.', 'Déc.'];
 const CURRENT_YEAR = new Date().getFullYear();
 
-const Kpi = ({ label, value, hint }: { label: string; value: string; hint: string }) => (
-  <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-3">
-    <p className="text-[10.5px] uppercase tracking-wider text-slate-500">{label}</p>
-    <p className="text-2xl text-slate-800 tabular-nums leading-none mt-1">{value}</p>
-    <p className="text-[11px] text-slate-500 mt-1">{hint}</p>
-  </div>
-);
+type Tone = { icon: any; ring: string; text: string; iconColor: string };
+const TONES: Record<string, Tone> = {
+  ltifr: { icon: IconBandage, ring: 'bg-rose-50 border-rose-100', text: 'text-rose-700', iconColor: 'text-rose-500' },
+  trifr: { icon: IconActivity, ring: 'bg-amber-50 border-amber-100', text: 'text-amber-700', iconColor: 'text-amber-500' },
+  severity: { icon: IconAlertTriangle, ring: 'bg-violet-50 border-violet-100', text: 'text-violet-700', iconColor: 'text-violet-500' },
+  hours: { icon: IconClockHour4, ring: 'bg-teal-50 border-teal-100', text: 'text-teal-700', iconColor: 'text-teal-500' },
+};
+
+/** Puce de variation vs mois précédent. lowerIsBetter : baisse = vert (bon). */
+const Delta = ({ delta, lowerIsBetter = true }: { delta: number | null; lowerIsBetter?: boolean }) => {
+  if (delta == null) return null;
+  const flat = Math.abs(delta) < 0.005;
+  const good = lowerIsBetter ? delta < 0 : delta > 0;
+  const color = flat ? 'text-slate-400 bg-slate-100' : good ? 'text-emerald-700 bg-emerald-50' : 'text-rose-700 bg-rose-50';
+  const Icon = flat ? IconMinus : delta > 0 ? IconArrowUpRight : IconArrowDownRight;
+  return (
+    <Tooltip label="Variation vs mois précédent (mois renseignés)">
+      <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10.5px] font-medium ${color}`}>
+        <Icon size={11} /> {flat ? '—' : `${delta > 0 ? '+' : ''}${delta.toFixed(2)}`}
+      </span>
+    </Tooltip>
+  );
+};
+
+const KpiTile = ({ toneKey, label, value, hint, delta, lowerIsBetter }: {
+  toneKey: keyof typeof TONES; label: string; value: string; hint: string; delta?: number | null; lowerIsBetter?: boolean;
+}) => {
+  const tone = TONES[toneKey];
+  const Icon = tone.icon;
+  return (
+    <div className={`rounded-xl border ${tone.ring} p-3`}>
+      <div className="flex items-center justify-between">
+        <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg bg-white/70 border ${tone.ring} ${tone.iconColor}`}>
+          <Icon size={16} />
+        </span>
+        {delta !== undefined && <Delta delta={delta ?? null} lowerIsBetter={lowerIsBetter} />}
+      </div>
+      <p className="text-[10.5px] uppercase tracking-wider text-slate-500 mt-2">{label}</p>
+      <p className={`text-2xl tabular-nums leading-none mt-0.5 ${tone.text}`}>{value}</p>
+      <p className="text-[11px] text-slate-500 mt-1">{hint}</p>
+    </div>
+  );
+};
 
 const SafetyKpiPanel = () => {
+  const navigate = useNavigate();
   const [year, setYear] = useState<number>(CURRENT_YEAR);
   const [kpi, setKpi] = useState<SafetyKpi | null>(null);
-  const [hours, setHours] = useState<WorkedHours[]>([]);
   const [loading, setLoading] = useState(true);
-  const [month, setMonth] = useState<string | null>(null);
-  const [monthHours, setMonthHours] = useState<number | undefined>(undefined);
-  const [saving, setSaving] = useState(false);
 
-  const load = (y: number) => {
+  useEffect(() => {
     setLoading(true);
-    Promise.allSettled([getKpi(y), listWorkedHours(y)])
-      .then(([k, h]) => {
-        setKpi(k.status === 'fulfilled' ? k.value : null);
-        setHours(h.status === 'fulfilled' ? h.value : []);
-      })
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => { load(year); /* eslint-disable-next-line */ }, [year]);
+    getKpi(year).then(setKpi).catch(() => setKpi(null)).finally(() => setLoading(false));
+  }, [year]);
 
   const fmt = (v: number | null | undefined) => (v == null ? '—' : String(v));
 
-  const saveHours = () => {
-    if (!month || monthHours == null) return;
-    setSaving(true);
-    upsertWorkedHours({ year, month: Number(month), hours: monthHours })
-      .then(() => {
-        successNotification('Heures travaillées enregistrées');
-        setMonth(null); setMonthHours(undefined);
-        load(year);
-      })
-      .catch((e) => notifyError(e, "Enregistrement des heures impossible"))
-      .finally(() => setSaving(false));
+  // Variation : deux derniers mois RENSEIGNÉS (heures > 0).
+  const withData = (kpi?.monthly ?? []).filter((m) => m.hoursWorked > 0);
+  const last = withData[withData.length - 1];
+  const prev = withData[withData.length - 2];
+  const delta = (sel: (m: NonNullable<typeof last>) => number | null): number | null => {
+    if (!last || !prev) return null;
+    const a = sel(last); const b = sel(prev);
+    if (a == null || b == null) return null;
+    return Math.round((a - b) * 100) / 100;
   };
 
   const yearOptions = [CURRENT_YEAR, CURRENT_YEAR - 1, CURRENT_YEAR - 2].map((y) => ({ value: String(y), label: String(y) }));
@@ -68,6 +91,12 @@ const SafetyKpiPanel = () => {
       <header className="px-4 py-2.5 bg-slate-50/70 border-b border-slate-200 flex items-center gap-2">
         <IconChartHistogram size={15} className="text-slate-600" />
         <h3 className="text-xs uppercase tracking-wider text-slate-700 flex-1">Indicateurs de fréquence (LTIFR / TRIFR)</h3>
+        <Tooltip label="Saisir les heures travaillées (Paramètres)">
+          <button type="button" onClick={() => navigate('/parameters/tools-templates?tab=worked-hours')}
+            className="inline-flex items-center gap-1 text-[11px] text-slate-500 hover:text-teal-600 transition-colors">
+            <IconSettings size={13} /> Heures travaillées
+          </button>
+        </Tooltip>
         <Select size="xs" w={90} data={yearOptions} value={String(year)} onChange={(v) => setYear(Number(v) || CURRENT_YEAR)} comboboxProps={{ withinPortal: true }} />
       </header>
       <div className="p-4 space-y-4">
@@ -76,15 +105,18 @@ const SafetyKpiPanel = () => {
         ) : (
           <>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <Kpi label="LTIFR" value={fmt(kpi?.ltifr)} hint="Accidents avec arrêt / M h" />
-              <Kpi label="TRIFR" value={fmt(kpi?.trifr)} hint="Enregistrables / M h" />
-              <Kpi label="Taux de gravité" value={fmt(kpi?.severityRate)} hint="Jours perdus / M h" />
-              <Kpi label="Heures travaillées" value={kpi ? kpi.hoursWorked.toLocaleString('fr-FR') : '—'} hint={`${year}`} />
+              <KpiTile toneKey="ltifr" label="LTIFR" value={fmt(kpi?.ltifr)} hint="Accidents avec arrêt / M h" delta={delta((m) => m.ltifr)} lowerIsBetter />
+              <KpiTile toneKey="trifr" label="TRIFR" value={fmt(kpi?.trifr)} hint="Enregistrables / M h" delta={delta((m) => m.trifr)} lowerIsBetter />
+              <KpiTile toneKey="severity" label="Taux de gravité" value={fmt(kpi?.severityRate)} hint="Jours perdus / M h" delta={delta((m) => m.severityRate)} lowerIsBetter />
+              <KpiTile toneKey="hours" label="Heures travaillées" value={kpi ? kpi.hoursWorked.toLocaleString('fr-FR') : '—'} hint={`${year}`} delta={delta((m) => m.hoursWorked)} lowerIsBetter={false} />
             </div>
 
             {kpi && kpi.hoursWorked === 0 && (
               <p className="text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md p-2.5">
-                Aucune heure travaillée saisie pour {year} : les taux sont indéfinis. Renseignez les heures ci-dessous.
+                Aucune heure travaillée saisie pour {year} : les taux sont indéfinis.{' '}
+                <button type="button" className="underline hover:text-amber-900" onClick={() => navigate('/parameters/tools-templates?tab=worked-hours')}>
+                  Renseignez les heures dans Paramètres › Outils & Templates › Heures de travail
+                </button>.
               </p>
             )}
 
@@ -98,20 +130,6 @@ const SafetyKpiPanel = () => {
                 ))}
               </div>
             )}
-
-            {/* Saisie des heures travaillées */}
-            <div className="border-t border-slate-200 pt-3">
-              <p className="text-[12px] font-medium text-slate-700 mb-2">Heures travaillées (dénominateur) — {year}</p>
-              <div className="flex flex-wrap items-end gap-2">
-                <Select size="xs" w={130} label="Mois" placeholder="Choisir" data={MONTHS.map((m, i) => ({ value: String(i + 1), label: m }))}
-                  value={month} onChange={setMonth} comboboxProps={{ withinPortal: true }} />
-                <NumberInput size="xs" w={160} label="Heures" min={0} thousandSeparator=" " value={monthHours} onChange={(v) => setMonthHours(typeof v === 'number' ? v : undefined)} />
-                <Button size="xs" variant="light" disabled={!month || monthHours == null || saving} leftSection={<IconDeviceFloppy size={14} />} onClick={saveHours}>Enregistrer</Button>
-                {hours.length > 0 && (
-                  <span className="text-[11px] text-slate-500">{hours.length} mois saisi(s) · {hours.reduce((a, b) => a + (b.hours || 0), 0).toLocaleString('fr-FR')} h</span>
-                )}
-              </div>
-            </div>
           </>
         )}
       </div>

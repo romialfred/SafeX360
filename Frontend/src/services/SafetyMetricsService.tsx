@@ -26,6 +26,17 @@ export interface WorkedHours {
     hours: number;
 }
 
+export interface MonthlyKpi {
+    month: number;
+    hoursWorked: number;
+    ltiCount: number;
+    recordableCount: number;
+    lostDays: number;
+    ltifr: number | null;
+    trifr: number | null;
+    severityRate: number | null;
+}
+
 export interface SafetyKpi {
     year: number;
     hoursWorked: number;
@@ -37,6 +48,20 @@ export interface SafetyKpi {
     trifr: number | null;
     severityRate: number | null;
     outcomeBreakdown: Record<string, number>;
+    monthly?: MonthlyKpi[];
+}
+
+export type LaborType = 'DEPARTMENT' | 'SUBCONTRACTOR';
+
+export interface WorkedHoursEntry {
+    id?: number | null;
+    year: number;
+    month: number;
+    laborType?: LaborType;
+    departmentId?: number | null;
+    subcontractorName?: string | null;
+    hours: number;
+    departmentName?: string | null;
 }
 
 const base = "/hns/safety-metrics";
@@ -60,4 +85,18 @@ const listWorkedHours = async (year: number): Promise<WorkedHours[]> =>
 const getKpi = async (year: number): Promise<SafetyKpi> =>
     axiosInstance.get(`${base}/kpi`, { params: { year } }).then((r) => r.data);
 
-export { listInjuries, addInjury, deleteInjury, upsertWorkedHours, listWorkedHours, getKpi };
+// ── Heures travaillées DÉTAILLÉES (par département / sous-traitant) ──
+const listWorkedHoursEntries = async (year: number): Promise<WorkedHoursEntry[]> =>
+    axiosInstance.get(`${base}/worked-hours-entries`, { params: { year } }).then((r) => r.data ?? []);
+
+const upsertWorkedHoursEntry = async (dto: WorkedHoursEntry): Promise<WorkedHoursEntry> =>
+    axiosInstance.put(`${base}/worked-hours-entries`, dto).then((r) => r.data);
+
+const deleteWorkedHoursEntry = async (entryId: number): Promise<void> => {
+    await axiosInstance.delete(`${base}/worked-hours-entries/${entryId}`);
+};
+
+export {
+    listInjuries, addInjury, deleteInjury, upsertWorkedHours, listWorkedHours, getKpi,
+    listWorkedHoursEntries, upsertWorkedHoursEntry, deleteWorkedHoursEntry,
+};

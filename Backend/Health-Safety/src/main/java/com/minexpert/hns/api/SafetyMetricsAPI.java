@@ -80,4 +80,28 @@ public class SafetyMetricsAPI {
             @RequestParam("year") int year) {
         return new ResponseEntity<>(safetyMetricsService.computeKpi(companyId, year), HttpStatus.OK);
     }
+
+    // ── Heures travaillées DÉTAILLÉES (par département / sous-traitant) ────────
+
+    @GetMapping("/worked-hours-entries")
+    public ResponseEntity<List<com.minexpert.hns.dto.WorkedHoursEntryDTO>> listWorkedHoursEntries(
+            @RequestParam(value = "companyId", required = false) Long companyId,
+            @RequestParam("year") int year) throws HSException {
+        return new ResponseEntity<>(safetyMetricsService.listWorkedHoursEntries(companyId, year), HttpStatus.OK);
+    }
+
+    @PutMapping("/worked-hours-entries")
+    public ResponseEntity<com.minexpert.hns.dto.WorkedHoursEntryDTO> upsertWorkedHoursEntry(
+            @RequestParam(value = "companyId", required = false) Long companyId,
+            @RequestBody com.minexpert.hns.dto.WorkedHoursEntryDTO dto) throws HSException {
+        return new ResponseEntity<>(safetyMetricsService.upsertWorkedHoursEntry(companyId, dto), HttpStatus.OK);
+    }
+
+    @DeleteMapping("/worked-hours-entries/{entryId}")
+    public ResponseEntity<ResponseDTO> deleteWorkedHoursEntry(
+            @RequestParam(value = "companyId", required = false) Long companyId,
+            @PathVariable Long entryId) throws HSException {
+        safetyMetricsService.deleteWorkedHoursEntry(companyId, entryId);
+        return new ResponseEntity<>(new ResponseDTO("Worked-hours entry deleted successfully."), HttpStatus.OK);
+    }
 }

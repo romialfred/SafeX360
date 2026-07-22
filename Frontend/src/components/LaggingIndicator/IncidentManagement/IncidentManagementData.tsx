@@ -471,11 +471,11 @@ const IncidentManagementData = () => {
                     onClick={() => setSelectedSource('EMPLOYEE')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] transition-colors border ${
                         selectedSource === 'EMPLOYEE'
-                            ? 'bg-teal-50 text-teal-700 border-teal-200 font-medium shadow-sm'
-                            : 'bg-white text-slate-500 border-slate-200 hover:bg-teal-50/50 hover:text-teal-700'
+                            ? 'bg-teal-100 text-teal-800 border-teal-300 font-medium shadow-sm'
+                            : 'bg-teal-50/50 text-teal-700 border-teal-100 hover:bg-teal-50'
                     }`}
                 >
-                    <IconUser size={14} />
+                    <IconUser size={14} className="text-teal-500" />
                     {t('list.employees')}
                     <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10.5px] font-semibold ${
                         selectedSource === 'EMPLOYEE' ? 'bg-teal-100 text-teal-700' : 'bg-slate-100 text-slate-500'
@@ -489,11 +489,11 @@ const IncidentManagementData = () => {
                     onClick={() => setSelectedSource('AI')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] transition-colors border ${
                         selectedSource === 'AI'
-                            ? 'bg-violet-50 text-violet-700 border-violet-200 font-medium shadow-sm'
-                            : 'bg-white text-slate-500 border-slate-200 hover:bg-violet-50/50 hover:text-violet-700'
+                            ? 'bg-violet-100 text-violet-800 border-violet-300 font-medium shadow-sm'
+                            : 'bg-violet-50/50 text-violet-700 border-violet-100 hover:bg-violet-50'
                     }`}
                 >
-                    <IconSparkles size={14} />
+                    <IconSparkles size={14} className="text-violet-500" />
                     {t('list.ai')}
                     <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10.5px] font-semibold ${
                         selectedSource === 'AI' ? 'bg-violet-100 text-violet-700' : 'bg-slate-100 text-slate-500'
@@ -511,10 +511,10 @@ const IncidentManagementData = () => {
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] transition-colors border ${
                     hpiOnly
                         ? 'bg-amber-100 text-amber-800 border-amber-300 font-medium shadow-sm'
-                        : 'bg-white text-slate-500 border-slate-200 hover:bg-amber-50 hover:text-amber-700'
+                        : 'bg-amber-50/50 text-amber-700 border-amber-100 hover:bg-amber-50'
                 }`}
             >
-                <IconAlertTriangle size={14} />
+                <IconAlertTriangle size={14} className="text-amber-500" />
                 {t('list.hpi')}
                 <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10.5px] font-semibold ${
                     hpiOnly ? 'bg-amber-200 text-amber-800' : 'bg-slate-100 text-slate-500'

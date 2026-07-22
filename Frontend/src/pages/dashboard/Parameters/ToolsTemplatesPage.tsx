@@ -4,6 +4,7 @@ import InspectionTemplates from '../../../components/SettingFolder/InspectionTem
 import CheckListData from '../../../components/SettingFolder/CheckList/CheckListData';
 import AuiditorData from '../../../components/SettingFolder/Auditors/AuiditorData';
 import TechMeasurementData from '../../../components/SettingFolder/TechMeasurements/TechMeasurementData';
+import WorkedHoursManager from '../../../components/SettingFolder/WorkedHours/WorkedHoursManager';
 
 const TABS: ParameterTab[] = [
     {
@@ -33,6 +34,13 @@ const TABS: ParameterTab[] = [
         description:
             'Grandeurs et unités de mesure techniques utilisées dans les relevés et les indicateurs de surveillance.',
         content: <TechMeasurementData />,
+    },
+    {
+        id: 'worked-hours',
+        label: 'Heures de travail',
+        description:
+            "Heures travaillées par département et par sous-traitant, mois par mois (ISO 45001 §9.1.1). C'est le dénominateur compilé des taux de fréquence LTIFR / TRIFR / gravité — saisi pour la mine active.",
+        content: <WorkedHoursManager />,
     },
 ];
 

@@ -1,5 +1,6 @@
 package com.minexpert.hns.dto.response;
 
+import java.util.List;
 import java.util.Map;
 
 import lombok.AllArgsConstructor;
@@ -29,4 +30,21 @@ public class SafetyKpiDTO {
     private Double severityRate;
     /** Répartition par issue normalisée (nom d'enum → effectif). */
     private Map<String, Long> outcomeBreakdown;
+    /** Série mensuelle (1..12) : alimente les variations mois-à-mois des tuiles. */
+    private List<MonthlyKpi> monthly;
+
+    /** Indicateurs d'UN mois — taux mensuels (numérateur du mois / heures du mois). */
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class MonthlyKpi {
+        private int month;
+        private double hoursWorked;
+        private long ltiCount;
+        private long recordableCount;
+        private long lostDays;
+        private Double ltifr;
+        private Double trifr;
+        private Double severityRate;
+    }
 }

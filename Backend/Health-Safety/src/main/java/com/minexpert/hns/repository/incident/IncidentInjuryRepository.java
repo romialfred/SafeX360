@@ -38,4 +38,34 @@ public interface IncidentInjuryRepository extends JpaRepository<IncidentInjury, 
 
         Long getTotal();
     }
+
+    /** Lésions par MOIS et par issue (série mensuelle → variations des tuiles). */
+    @Query("SELECT FUNCTION('MONTH', COALESCE(inc.occurredAt, inc.createdAt)) AS month, i.outcome AS outcome, COUNT(i) AS total "
+            + "FROM IncidentInjury i, Incident inc WHERE inc.id = i.incidentId "
+            + "AND FUNCTION('YEAR', COALESCE(inc.occurredAt, inc.createdAt)) = :year "
+            + "AND (:companyId IS NULL OR i.companyId = :companyId) "
+            + "GROUP BY FUNCTION('MONTH', COALESCE(inc.occurredAt, inc.createdAt)), i.outcome")
+    List<MonthOutcomeCount> countByMonthAndOutcomeForYear(@Param("year") int year, @Param("companyId") Long companyId);
+
+    /** Jours perdus par MOIS d'une année (série mensuelle du taux de gravité). */
+    @Query("SELECT FUNCTION('MONTH', COALESCE(inc.occurredAt, inc.createdAt)) AS month, COALESCE(SUM(i.lostDays), 0) AS total "
+            + "FROM IncidentInjury i, Incident inc WHERE inc.id = i.incidentId "
+            + "AND FUNCTION('YEAR', COALESCE(inc.occurredAt, inc.createdAt)) = :year "
+            + "AND (:companyId IS NULL OR i.companyId = :companyId) "
+            + "GROUP BY FUNCTION('MONTH', COALESCE(inc.occurredAt, inc.createdAt))")
+    List<MonthLostDays> sumLostDaysByMonthForYear(@Param("year") int year, @Param("companyId") Long companyId);
+
+    interface MonthOutcomeCount {
+        Integer getMonth();
+
+        InjuryOutcome getOutcome();
+
+        Long getTotal();
+    }
+
+    interface MonthLostDays {
+        Integer getMonth();
+
+        Long getTotal();
+    }
 }

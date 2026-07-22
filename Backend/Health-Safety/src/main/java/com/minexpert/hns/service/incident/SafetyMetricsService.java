@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.minexpert.hns.dto.IncidentInjuryDTO;
 import com.minexpert.hns.dto.WorkedHoursDTO;
+import com.minexpert.hns.dto.WorkedHoursEntryDTO;
 import com.minexpert.hns.dto.response.SafetyKpiDTO;
 import com.minexpert.hns.exception.HSException;
 
@@ -25,6 +26,13 @@ public interface SafetyMetricsService {
     WorkedHoursDTO upsertWorkedHours(Long companyId, WorkedHoursDTO dto) throws HSException;
 
     List<WorkedHoursDTO> listWorkedHours(Long companyId, int year) throws HSException;
+
+    // ── Heures travaillées DÉTAILLÉES (par département / sous-traitant) ──
+    List<WorkedHoursEntryDTO> listWorkedHoursEntries(Long companyId, int year) throws HSException;
+
+    WorkedHoursEntryDTO upsertWorkedHoursEntry(Long companyId, WorkedHoursEntryDTO dto) throws HSException;
+
+    void deleteWorkedHoursEntry(Long companyId, Long entryId) throws HSException;
 
     // ── Indicateurs de fréquence ──
     SafetyKpiDTO computeKpi(Long companyId, int year);
