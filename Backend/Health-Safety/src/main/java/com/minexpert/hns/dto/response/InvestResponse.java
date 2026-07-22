@@ -38,5 +38,10 @@ public class InvestResponse {
     private Long companyId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    // Gouvernance : validation par un pair indépendant (ISO 45001 §10.2).
+    private Boolean validated;
+    private Long reviewedBy;
+    private LocalDateTime reviewedAt;
+    private String validationComment;
 
 }

@@ -25,6 +25,7 @@ import com.minexpert.hns.entity.incident.Incident;
 import com.minexpert.hns.repository.incident.IncidentRepository;
 import com.minexpert.hns.repository.incident.InvestigationRepository;
 import com.minexpert.hns.service.MediaService;
+import com.minexpert.hns.service.audit.ChangeLogService;
 import com.minexpert.hns.utility.StringListConverter;
 
 import jakarta.transaction.Transactional;
@@ -48,6 +49,7 @@ public class InvestigationServiceImpl implements InvestigationService {
     private final CorrectiveActionService correctiveActionService;
     private final MediaService mediaService;
     private final HrmsClient hrmsClient;
+    private final com.minexpert.hns.service.audit.ChangeLogService changeLogService;
 
     /**
      * Resout le companyId d'une investigation. Une investigation appartient
@@ -173,6 +175,44 @@ public class InvestigationServiceImpl implements InvestigationService {
 
     @Override
     @Caching(evict = {
+            @CacheEvict(cacheNames = CACHE_INVESTIGATION_BY_INCIDENT, allEntries = true),
+            @CacheEvict(cacheNames = CACHE_INVESTIGATION_BY_ID, allEntries = true),
+            @CacheEvict(cacheNames = CACHE_INVESTIGATIONS_ALL, allEntries = true)
+    })
+    public void validateInvestigation(Long companyId, Long investigationId, String comment) throws HSException {
+        Investigation investigation = investigationRepository.findByIdWithCompanyContext(investigationId, companyId)
+                .orElseThrow(() -> new HSException("INVESTIGATION_NOT_FOUND"));
+        if (Boolean.TRUE.equals(investigation.getValidated())) {
+            throw new HSException("INVESTIGATION_ALREADY_VALIDATED");
+        }
+        // Verificateur = pair AUTHENTIFIE (non repudiable). On refuse fail-closed si
+        // aucune identite authentifiee n'est presente : une validation « sans auteur »
+        // ne serait pas opposable (le sens meme du controle §10.2).
+        Long actor = com.minexpert.hns.utility.AuthUtils.currentActorId();
+        if (actor == null) {
+            throw new HSException("VALIDATION_ACTOR_REQUIRED");
+        }
+        // Independance (ISO 45001 §10.2) : pas d'auto-validation. Le validateur ne
+        // doit pas figurer dans l'equipe d'enquete — sinon la « revue par un pair »
+        // se reduit a une auto-attestation, exactement ce que le controle interdit.
+        boolean actorOnTeam = StringListConverter.convertStringToParticipants(investigation.getTeam())
+                .stream()
+                .anyMatch(p -> actor.equals(p.getId()));
+        if (actorOnTeam) {
+            throw new HSException("VALIDATOR_MUST_BE_INDEPENDENT");
+        }
+        investigation.setValidated(true);
+        investigation.setReviewedBy(actor);
+        investigation.setReviewedAt(LocalDateTime.now());
+        investigation.setValidationComment(comment);
+        investigation.setUpdatedAt(LocalDateTime.now());
+        investigationRepository.save(investigation);
+        changeLogService.record(ChangeLogService.INVESTIGATION, investigationId, investigation.getCompanyId(),
+                "validated", "false", "true");
+    }
+
+    @Override
+    @Caching(evict = {
             // Eviction large : companyId du parametre peut etre null (derive ensuite)
             @CacheEvict(cacheNames = CACHE_INVESTIGATION_BY_INCIDENT, allEntries = true),
             @CacheEvict(cacheNames = CACHE_INVESTIGATION_BY_ID, allEntries = true),
@@ -226,6 +266,13 @@ public class InvestigationServiceImpl implements InvestigationService {
         entity.setCompanyId(investigation.getCompanyId());
         entity.setIncident(investigation.getIncident());
         entity.setCreatedAt(investigation.getCreatedAt());
+        // Gouvernance (validation par pair) : appartient au SERVEUR, posee par
+        // validateInvestigation. On la PRESERVE — sinon une edition de contenu
+        // apres validation effacerait la validation (et rouvrirait la clôture).
+        entity.setValidated(investigation.getValidated());
+        entity.setReviewedBy(investigation.getReviewedBy());
+        entity.setReviewedAt(investigation.getReviewedAt());
+        entity.setValidationComment(investigation.getValidationComment());
         entity.setUpdatedAt(LocalDateTime.now());
         investigationRepository.save(entity);
     }

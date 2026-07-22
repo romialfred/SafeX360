@@ -33,4 +33,10 @@ const getInvestigationByIncidentId = async (incidentId: any) => {
         });
 }
 
-export { reportInvestigation, getInvestigationById, getAllInvestigations, getInvestigationByIncidentId, updateInvestigation };
+// Validation par un pair indépendant (ISO 45001 §10.2) — prérequis à la clôture.
+const validateInvestigation = async (id: number | string, comment?: string) => {
+    return axiosInstance.put(`${url}/${id}/validate`, { comment: comment ?? null })
+        .then((response) => response.data);
+};
+
+export { reportInvestigation, getInvestigationById, getAllInvestigations, getInvestigationByIncidentId, updateInvestigation, validateInvestigation };

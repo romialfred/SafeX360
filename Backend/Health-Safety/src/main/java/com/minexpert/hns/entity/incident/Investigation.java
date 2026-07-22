@@ -55,6 +55,19 @@ public class Investigation {
     private Integer progress;
     @Enumerated(EnumType.STRING)
     private InvestigationStatus status;
+
+    // ── Gouvernance : validation par un pair indépendant (ISO 45001 §10.2) ──
+    /** Enquête validée par revue indépendante — prérequis à la clôture de l'incident. */
+    @Column(name = "validated")
+    private Boolean validated;
+    /** Vérificateur (pair indépendant) — dérivé de l'identité authentifiée. */
+    @Column(name = "reviewed_by")
+    private Long reviewedBy;
+    @Column(name = "reviewed_at")
+    private LocalDateTime reviewedAt;
+    @Lob
+    @Column(name = "validation_comment")
+    private String validationComment;
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "incident_id", nullable = false)
     private Incident incident;
@@ -74,6 +87,7 @@ public class Investigation {
                 StringListConverter.convertToStringList(taskCauses), taskAnalysis,
                 StringListConverter.convertToStringList(workingCauses), workingAnalysis,
                 StringListConverter.convertToStringList(organizationCauses), organizationAnalysis,
-                null, report, progress, status, incident.getId(), companyId, createdAt, updatedAt);
+                null, report, progress, status, incident.getId(), companyId, createdAt, updatedAt,
+                validated, reviewedBy, reviewedAt, validationComment);
     }
 }

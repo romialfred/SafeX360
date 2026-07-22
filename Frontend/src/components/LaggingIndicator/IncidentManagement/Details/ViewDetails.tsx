@@ -64,6 +64,7 @@ const ViewDetails = () => {
     const [history, setHistory] = useState<any[]>([]);
     const [weatherMap, setWeatherMap] = useState<Record<number, any>>({});
     const [investigationProcesses, setInvestigationProcesses] = useState<any[]>([]);
+    const [reviewerName, setReviewerName] = useState<string | null>(null);
 
 
 
@@ -104,15 +105,7 @@ const ViewDetails = () => {
             })
             .catch((_err) => console.error(_err));
 
-        getInvestigationByIncidentId(Number(id)).then((res) => {
-            setInvestigation(res);
-            getAllInvestigationProcessByInvestigationId(res.id).then((processes) => {
-                setInvestigationProcesses(processes);
-            }).catch((_err) => console.error(_err));
-
-        }).catch((err) => {
-            console.log(err);
-        })
+        fetchInvestigation();
 
         getCorrectiveActionByIncidentId(Number(id)).then((res) => {
             setActions(res);
@@ -138,6 +131,29 @@ const ViewDetails = () => {
             setHistory(res);
             console.log(res);
 
+        }).catch((err) => {
+            console.log(err);
+        });
+    }
+
+    // Recharge l'enquête (utilisé après validation par un pair — ISO 45001 §10.2)
+    const fetchInvestigation = () => {
+        getInvestigationByIncidentId(Number(id)).then((res) => {
+            setInvestigation(res);
+            if (res?.id) {
+                getAllInvestigationProcessByInvestigationId(res.id).then((processes) => {
+                    setInvestigationProcesses(processes);
+                }).catch((_err) => console.error(_err));
+            }
+            // Résout le nom du validateur (non-répudiation §10.2 : « qui a validé »)
+            if (res?.reviewedBy) {
+                getEmployeesByIds([res.reviewedBy]).then((emps: any) => {
+                    const map = mapIdToName(emps);
+                    setReviewerName(map?.[res.reviewedBy]?.name ?? null);
+                }).catch(() => setReviewerName(null));
+            } else {
+                setReviewerName(null);
+            }
         }).catch((err) => {
             console.log(err);
         });
@@ -225,7 +241,13 @@ const ViewDetails = () => {
         investigation: {
             label: 'Investigation',
             icon: IconSearch,
-            content: <InvestigationDetailsTab investigation={investigation} processes={investigationProcesses} />,
+            content: <InvestigationDetailsTab
+                investigation={investigation}
+                processes={investigationProcesses}
+                onValidated={fetchInvestigation}
+                canValidate={!locked.locked}
+                reviewerName={reviewerName}
+            />,
             hide: !investigation || Object.keys(investigation).length === 0,
         },
         actions: {

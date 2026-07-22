@@ -83,6 +83,14 @@ const CODE_MESSAGES: Record<string, string> = {
   INJURY_NOT_FOUND: "La lésion est introuvable. Rechargez la page puis réessayez.",
   WORKED_HOURS_PERIOD_INVALID: "Choisissez un mois valide (1 à 12) et une année.",
   WORKED_HOURS_INVALID: "Le nombre d'heures travaillées doit être positif.",
+  // Gouvernance d'enquête — validation par un pair (ISO 45001 §10.2).
+  INVESTIGATION_NOT_VALIDATED:
+    "L'enquête doit d'abord être validée par un pair avant de pouvoir clôturer cet incident (onglet Investigation).",
+  INVESTIGATION_ALREADY_VALIDATED: "Cette enquête a déjà été validée.",
+  VALIDATOR_MUST_BE_INDEPENDENT:
+    "La validation doit être réalisée par un pair indépendant : un membre de l'équipe d'enquête ne peut pas valider sa propre enquête.",
+  VALIDATION_ACTOR_REQUIRED:
+    "Impossible d'identifier le validateur. Reconnectez-vous puis réessayez.",
 };
 
 export function notifyError(err: any, fallback = "Une erreur est survenue"): void {

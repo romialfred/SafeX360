@@ -46,7 +46,12 @@ public class InvestigationDTO {
                 asStored(humanCauses), humanAnalysis,
                 asStored(taskCauses), taskAnalysis, asStored(workingCauses), workingAnalysis,
                 asStored(organizationCauses), organizationAnalysis,
-                null, report, progress, status, new Incident(incidentId), companyId, createdAt, updatedAt);
+                null, report, progress, status,
+                // Champs de gouvernance (validated/reviewedBy/reviewedAt/validationComment) :
+                // NON portes par le DTO editable — poses par validateInvestigation et
+                // PRESERVES a l'update (voir updateInvestigation).
+                null, null, null, null,
+                new Incident(incidentId), companyId, createdAt, updatedAt);
     }
 
     /**

@@ -50,6 +50,17 @@ public class InvestigationAPI {
         return new ResponseEntity<>(new ResponseDTO("Investigation updated successfully."), HttpStatus.OK);
     }
 
+    /** Validation par un pair indépendant (ISO 45001 §10.2) — prérequis à la clôture. */
+    @PutMapping("/{id}/validate")
+    public ResponseEntity<ResponseDTO> validateInvestigation(
+            @RequestParam(value = "companyId", required = false) Long companyId,
+            @org.springframework.web.bind.annotation.PathVariable Long id,
+            @RequestBody(required = false) java.util.Map<String, String> body) throws HSException {
+        String comment = body != null ? body.get("comment") : null;
+        investigationService.validateInvestigation(companyId, id, comment);
+        return new ResponseEntity<>(new ResponseDTO("Investigation validated successfully."), HttpStatus.OK);
+    }
+
     @GetMapping("/getByIncidentId/{incidentId}")
     public ResponseEntity<InvestResponse> getInvestigationByIncidentId(
             @RequestParam(name = "companyId", required = false) Long companyId,

@@ -345,6 +345,7 @@ public class IncidentServiceImpl implements IncidentService {
         assertIncidentTransition(previous, status);
         if (status == IncidentStatus.CLOSED) {
             assertRiskReducedForClosure(previous, id);
+            assertInvestigationValidatedForClosure(id);
         }
         incident.setStatus(status);
         incident.setUpdatedAt(LocalDateTime.now());
@@ -384,6 +385,25 @@ public class IncidentServiceImpl implements IncidentService {
         int postScore = ra.getPostProbability() * ra.getPostSeverity();
         if (postScore > initialScore) {
             throw new HSException("RISK_NOT_REDUCED");
+        }
+    }
+
+    /**
+     * Verrou de gouvernance (ISO 45001 §10.2) : « pas de clôture sans enquête
+     * validée ». Le verrou porte sur l'ARTEFACT, pas sur le statut précédent :
+     * dès qu'une enquête EXISTE pour l'incident, elle doit être validée par un
+     * pair avant toute clôture — y compris sur un chemin REPORTED → CLOSED (où
+     * le statut précédent ne « suit » pas l'enquête mais où une enquête peut
+     * néanmoins avoir été créée). Les incidents mineurs clos sans enquête ne
+     * sont pas concernés (l'Optional est vide → pas de blocage).
+     */
+    private void assertInvestigationValidatedForClosure(Long incidentId) throws HSException {
+        boolean unvalidatedInvestigationExists = investigationRepository
+                .findByIncidentIdWithCompanyContext(incidentId, null)
+                .map(inv -> !Boolean.TRUE.equals(inv.getValidated()))
+                .orElse(false);
+        if (unvalidatedInvestigationExists) {
+            throw new HSException("INVESTIGATION_NOT_VALIDATED");
         }
     }
 

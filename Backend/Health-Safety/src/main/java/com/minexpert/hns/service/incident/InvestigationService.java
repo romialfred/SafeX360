@@ -18,4 +18,7 @@ public interface InvestigationService {
     public List<InvestigationSummary> getAllInvestigations(Long companyId) throws HSException;
 
     public InvestResponse getInvestigationById(Long companyId, Long id) throws HSException;
+
+    /** Validation par un pair indépendant (ISO 45001 §10.2) — prérequis à la clôture. */
+    public void validateInvestigation(Long companyId, Long investigationId, String comment) throws HSException;
 }
