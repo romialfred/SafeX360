@@ -2,18 +2,16 @@ import { useEffect, useState } from "react";
 import { Badge } from "@mantine/core";
 import { IconTruck, IconClockHour4, IconEyeOff, IconGitCompare, IconChevronRight } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { getSimilarIncidents } from "../../../../services/IncidentService";
 import { incidentStatusLabel } from "../incidentLabels";
 
 // E3.2 — Contexte terrain (engin/quart), signalement confidentiel, et
 // recherche « incidents similaires » (récurrence, ISO 45001 §10.2 apprentissage).
 
-const SHIFT_LABELS: Record<string, string> = {
-    JOUR: "Jour", NUIT: "Nuit", MATIN: "Matin", APRES_MIDI: "Après-midi",
-};
-
 const IncidentContextPanel = ({ incident }: any) => {
     const navigate = useNavigate();
+    const { t, i18n } = useTranslation("incidents");
     const [similar, setSimilar] = useState<any[]>([]);
     const incidentId = incident?.id;
 
@@ -25,6 +23,7 @@ const IncidentContextPanel = ({ incident }: any) => {
     }, [incidentId]);
 
     const hasContext = incident?.equipment || incident?.shift || incident?.confidential;
+    const shiftLabel = (s: string) => t(`context.shift.${s}`, { defaultValue: s });
 
     return (
         <div className="border border-gray-200 rounded-xl bg-white shadow-sm p-4 flex flex-col gap-4">
@@ -38,12 +37,12 @@ const IncidentContextPanel = ({ incident }: any) => {
                     )}
                     {incident?.shift && (
                         <Badge size="sm" color="grape" variant="light" leftSection={<IconClockHour4 size={13} />}>
-                            Quart : {SHIFT_LABELS[incident.shift] ?? incident.shift}
+                            {t("context.shiftPrefix")} {shiftLabel(incident.shift)}
                         </Badge>
                     )}
                     {incident?.confidential && (
                         <Badge size="sm" color="gray" variant="filled" leftSection={<IconEyeOff size={13} />}>
-                            Signalement confidentiel
+                            {t("context.confidential")}
                         </Badge>
                     )}
                 </div>
@@ -52,10 +51,10 @@ const IncidentContextPanel = ({ incident }: any) => {
             {/* Incidents similaires */}
             <div>
                 <h4 className="text-sm text-gray-700 flex items-center gap-2 mb-2">
-                    <IconGitCompare size={16} className="text-slate-500" /> Incidents similaires (même lieu / processus)
+                    <IconGitCompare size={16} className="text-slate-500" /> {t("context.similarTitle")}
                 </h4>
                 {similar.length === 0 ? (
-                    <p className="text-xs text-slate-400">Aucun incident similaire dans cette mine.</p>
+                    <p className="text-xs text-slate-400">{t("context.similarEmpty")}</p>
                 ) : (
                     <div className="flex flex-col divide-y divide-gray-100">
                         {similar.map((s: any) => (
@@ -67,13 +66,13 @@ const IncidentContextPanel = ({ incident }: any) => {
                             >
                                 <div className="min-w-0">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-sm text-slate-800 truncate">{s.title || "(sans intitulé)"}</span>
-                                        {s.sameLocation && <Badge size="xs" color="teal" variant="light">même lieu</Badge>}
-                                        {s.sameProcess && <Badge size="xs" color="indigo" variant="light">même processus</Badge>}
+                                        <span className="text-sm text-slate-800 truncate">{s.title || t("context.untitled")}</span>
+                                        {s.sameLocation && <Badge size="xs" color="teal" variant="light">{t("context.sameLocation")}</Badge>}
+                                        {s.sameProcess && <Badge size="xs" color="indigo" variant="light">{t("context.sameProcess")}</Badge>}
                                     </div>
                                     <span className="text-[11px] text-slate-400">
                                         {s.number}
-                                        {s.occurredAt ? ` · ${new Date(s.occurredAt).toLocaleDateString("fr-FR")}` : ""}
+                                        {s.occurredAt ? ` · ${new Date(s.occurredAt).toLocaleDateString(i18n.language)}` : ""}
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-1 shrink-0">

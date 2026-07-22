@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, Select, TextInput, Textarea, Loader, Checkbox } from '@mantine/core';
 import {
   IconSitemap, IconPlus, IconTrash, IconChevronRight, IconAlertTriangle, IconBinaryTree2,
@@ -58,6 +59,7 @@ interface CauseFormState {
 const emptyCauseForm = (): CauseFormState => ({ label: '', level: '', category: '', parentCauseId: null, failedControl: false });
 
 const IncidentRcaPanel = ({ incidentId, canEdit = true }: IncidentRcaPanelProps) => {
+  const { t } = useTranslation('incidents');
   const [analyses, setAnalyses] = useState<CausalAnalysisDTO[]>([]);
   const [causesByAnalysis, setCausesByAnalysis] = useState<Record<number, CauseDTO[]>>({});
   const [loading, setLoading] = useState(true);
@@ -206,7 +208,7 @@ const IncidentRcaPanel = ({ incidentId, canEdit = true }: IncidentRcaPanelProps)
                           </span>
                           {c.parentCauseId && <IconChevronRight size={13} className="text-slate-300" />}
                           <span className="text-[13px] text-slate-700 flex-1">{c.label}</span>
-                          {c.failedControl && <span className="inline-flex items-center gap-1 text-[10px] rounded border border-orange-200 bg-orange-50 text-orange-700 px-1.5 py-0.5" title="Contrôle / barrière défaillant(e)">⚠ contrôle défaillant</span>}
+                          {c.failedControl && <span className="inline-flex items-center gap-1 text-[10px] rounded border border-orange-200 bg-orange-50 text-orange-700 px-1.5 py-0.5" title={t('rca.failedControlCheck')}>⚠ {t('rca.failedControlBadge')}</span>}
                           {c.category && <span className="text-[10.5px] text-slate-500 bg-white border border-slate-200 rounded px-1.5 py-0.5">{c.category}</span>}
                           {canEdit && (
                             <button type="button" onClick={() => handleDeleteCause(aid, c.id as number)}
@@ -227,7 +229,7 @@ const IncidentRcaPanel = ({ incidentId, canEdit = true }: IncidentRcaPanelProps)
                       {causes.filter((c) => !c.level).map((c) => (
                         <div key={c.id} className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50/60 px-2.5 py-1.5">
                           <span className="text-[13px] text-slate-700 flex-1">{c.label}</span>
-                          {c.failedControl && <span className="inline-flex items-center gap-1 text-[10px] rounded border border-orange-200 bg-orange-50 text-orange-700 px-1.5 py-0.5" title="Contrôle / barrière défaillant(e)">⚠ contrôle défaillant</span>}
+                          {c.failedControl && <span className="inline-flex items-center gap-1 text-[10px] rounded border border-orange-200 bg-orange-50 text-orange-700 px-1.5 py-0.5" title={t('rca.failedControlCheck')}>⚠ {t('rca.failedControlBadge')}</span>}
                           {c.category && <span className="text-[10.5px] text-slate-500 bg-white border border-slate-200 rounded px-1.5 py-0.5">{c.category}</span>}
                           {canEdit && (
                             <button type="button" onClick={() => handleDeleteCause(aid, c.id as number)}
@@ -268,7 +270,7 @@ const IncidentRcaPanel = ({ incidentId, canEdit = true }: IncidentRcaPanelProps)
                 </Button>
                 {/* Contrôle/barrière défaillant(e) (ISO 45001 §10.2 a-b · ICAM). */}
                 <Checkbox size="xs" className="md:col-span-12" color="orange"
-                  label="Cette cause est un contrôle / une barrière défaillant(e)"
+                  label={t('rca.failedControlCheck')}
                   checked={f.failedControl}
                   onChange={(e) => patchForm(aid, { failedControl: e.currentTarget.checked })} />
               </div>

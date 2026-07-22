@@ -351,5 +351,71 @@
       "guideline5": "Formuler des recommandations de prévention précises",
       "guideline6": "Joindre les preuves et la documentation à l'appui"
     }
+  },
+  "regulatory": {
+    "title": "Déclaration réglementaire",
+    "exportTooltip": "Export PDF officiel (incident + enquête)",
+    "exportPdf": "Exporter le PDF",
+    "statusSaved": "Statut réglementaire enregistré.",
+    "statusSaveError": "Impossible d'enregistrer le statut réglementaire.",
+    "notifiedSaved": "Incident marqué comme déclaré à l'autorité.",
+    "notifiedSaveError": "Impossible d'enregistrer la déclaration.",
+    "pdfError": "Impossible de générer le PDF de l'incident.",
+    "declaredOn": "Déclaré à l'autorité le {{date}}.",
+    "declarationRequired": "Déclaration à l'autorité requise",
+    "before": "avant le {{date}}",
+    "overdue": "{{count}} j de retard",
+    "remaining": "{{count}} j restant(s)",
+    "markNotified": "Marquer comme déclaré",
+    "notifiableLabel": "Incident notifiable à l'autorité",
+    "deadlineLabel": "Échéance statutaire",
+    "save": "Enregistrer"
+  },
+  "context": {
+    "shiftPrefix": "Quart :",
+    "confidential": "Signalement confidentiel",
+    "similarTitle": "Incidents similaires (même lieu / processus)",
+    "similarEmpty": "Aucun incident similaire dans cette mine.",
+    "untitled": "(sans intitulé)",
+    "sameLocation": "même lieu",
+    "sameProcess": "même processus",
+    "shift": {
+      "JOUR": "Jour",
+      "NUIT": "Nuit",
+      "MATIN": "Matin",
+      "APRES_MIDI": "Après-midi"
+    }
+  },
+  "governance": {
+    "timelineTitle": "Frise chronologique (ECFC — §10.2)",
+    "timelineEmpty": "Aucun fait dans la frise. Reconstruisez la séquence événements / conditions / barrières.",
+    "barrierFailedChip": "défaillante",
+    "factLabel": "Fait / condition / barrière",
+    "factPlaceholder": "Décrire le fait",
+    "typeLabel": "Type",
+    "whenLabel": "Quand (facultatif)",
+    "add": "Ajouter",
+    "barrierFailedCheck": "Cette barrière / ce contrôle a été défaillant(e)",
+    "witnessesTitle": "Témoignages recueillis (§10.2)",
+    "witnessesEmpty": "Aucun témoignage. Recueillez les dépositions des témoins directs et premiers intervenants.",
+    "witnessNameLabel": "Témoin (nom)",
+    "witnessNamePlaceholder": "Nom du témoin",
+    "witnessRoleLabel": "Rôle / lien",
+    "witnessRolePlaceholder": "Témoin direct, 1er intervenant…",
+    "statementLabel": "Déposition",
+    "statementPlaceholder": "Contenu du témoignage",
+    "save": "Enregistrer",
+    "witnessFallback": "Témoin",
+    "factAdded": "Fait ajouté à la frise",
+    "witnessSaved": "Témoignage enregistré",
+    "type": {
+      "EVENT": "Événement",
+      "CONDITION": "Condition",
+      "BARRIER": "Barrière / contrôle"
+    }
+  },
+  "rca": {
+    "failedControlCheck": "Cette cause est un contrôle / une barrière défaillant(e)",
+    "failedControlBadge": "contrôle défaillant"
   }
 }

@@ -351,5 +351,71 @@
       "guideline5": "Formulate precise prevention recommendations",
       "guideline6": "Attach the evidence and supporting documentation"
     }
+  },
+  "regulatory": {
+    "title": "Regulatory notification",
+    "exportTooltip": "Official PDF export (incident + investigation)",
+    "exportPdf": "Export PDF",
+    "statusSaved": "Regulatory status saved.",
+    "statusSaveError": "Could not save the regulatory status.",
+    "notifiedSaved": "Incident marked as reported to the authority.",
+    "notifiedSaveError": "Could not save the notification.",
+    "pdfError": "Could not generate the incident PDF.",
+    "declaredOn": "Reported to the authority on {{date}}.",
+    "declarationRequired": "Notification to the authority required",
+    "before": "by {{date}}",
+    "overdue": "{{count}}d overdue",
+    "remaining": "{{count}}d left",
+    "markNotified": "Mark as reported",
+    "notifiableLabel": "Incident notifiable to the authority",
+    "deadlineLabel": "Statutory deadline",
+    "save": "Save"
+  },
+  "context": {
+    "shiftPrefix": "Shift:",
+    "confidential": "Confidential report",
+    "similarTitle": "Similar incidents (same location / process)",
+    "similarEmpty": "No similar incident in this mine.",
+    "untitled": "(untitled)",
+    "sameLocation": "same location",
+    "sameProcess": "same process",
+    "shift": {
+      "JOUR": "Day",
+      "NUIT": "Night",
+      "MATIN": "Morning",
+      "APRES_MIDI": "Afternoon"
+    }
+  },
+  "governance": {
+    "timelineTitle": "Timeline (ECFC — §10.2)",
+    "timelineEmpty": "No fact in the timeline yet. Reconstruct the sequence of events / conditions / barriers.",
+    "barrierFailedChip": "failed",
+    "factLabel": "Fact / condition / barrier",
+    "factPlaceholder": "Describe the fact",
+    "typeLabel": "Type",
+    "whenLabel": "When (optional)",
+    "add": "Add",
+    "barrierFailedCheck": "This barrier / control failed",
+    "witnessesTitle": "Witness statements (§10.2)",
+    "witnessesEmpty": "No statement yet. Collect statements from direct witnesses and first responders.",
+    "witnessNameLabel": "Witness (name)",
+    "witnessNamePlaceholder": "Witness name",
+    "witnessRoleLabel": "Role / relationship",
+    "witnessRolePlaceholder": "Direct witness, first responder…",
+    "statementLabel": "Statement",
+    "statementPlaceholder": "Statement content",
+    "save": "Save",
+    "witnessFallback": "Witness",
+    "factAdded": "Fact added to the timeline",
+    "witnessSaved": "Statement saved",
+    "type": {
+      "EVENT": "Event",
+      "CONDITION": "Condition",
+      "BARRIER": "Barrier / control"
+    }
+  },
+  "rca": {
+    "failedControlCheck": "This cause is a failed control / barrier",
+    "failedControlBadge": "failed control"
   }
 }

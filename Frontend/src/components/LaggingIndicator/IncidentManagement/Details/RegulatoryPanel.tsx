@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Badge, Button, Switch, Tooltip } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
 import { IconFileDownload, IconGavel, IconShieldCheck, IconAlertTriangle } from "@tabler/icons-react";
+import { useTranslation } from "react-i18next";
 import {
     exportIncidentPdf,
     markNotifiedToAuthority,
@@ -30,6 +31,8 @@ const toIsoLocal = (d: Date | null): string | null => {
 };
 
 const RegulatoryPanel = ({ incident, onChange, canEdit = true }: any) => {
+    const { t, i18n } = useTranslation("incidents");
+    const fmtDate = (v: any) => new Date(v).toLocaleDateString(i18n.language);
     const [notifiable, setNotifiable] = useState<boolean>(!!incident?.notifiable);
     const [deadline, setDeadline] = useState<Date | null>(toDate(incident?.regulatoryDeadline));
     const [saving, setSaving] = useState(false);
@@ -54,10 +57,10 @@ const RegulatoryPanel = ({ incident, onChange, canEdit = true }: any) => {
         setSaving(true);
         setRegulatoryStatus(incidentId, notifiable, notifiable ? toIsoLocal(deadline) : null)
             .then(() => {
-                successNotification("Statut réglementaire enregistré.");
+                successNotification(t("regulatory.statusSaved"));
                 onChange?.();
             })
-            .catch((err) => notifyError(err, "Impossible d'enregistrer le statut réglementaire."))
+            .catch((err) => notifyError(err, t("regulatory.statusSaveError")))
             .finally(() => setSaving(false));
     };
 
@@ -65,10 +68,10 @@ const RegulatoryPanel = ({ incident, onChange, canEdit = true }: any) => {
         if (!incidentId) return;
         markNotifiedToAuthority(incidentId)
             .then(() => {
-                successNotification("Incident marqué comme déclaré à l'autorité.");
+                successNotification(t("regulatory.notifiedSaved"));
                 onChange?.();
             })
-            .catch((err) => notifyError(err, "Impossible d'enregistrer la déclaration."));
+            .catch((err) => notifyError(err, t("regulatory.notifiedSaveError")));
     };
 
     const handleExport = () => {
@@ -88,7 +91,7 @@ const RegulatoryPanel = ({ incident, onChange, canEdit = true }: any) => {
             .catch(() => {
                 // La réponse d'erreur est un Blob (responseType blob) : notifyError ne
                 // saurait pas l'extraire → message fixe clair.
-                errorNotification("Impossible de générer le PDF de l'incident.");
+                errorNotification(t("regulatory.pdfError"));
             })
             .finally(() => setExporting(false));
     };
@@ -99,9 +102,9 @@ const RegulatoryPanel = ({ incident, onChange, canEdit = true }: any) => {
         <div className="border border-gray-200 rounded-xl bg-white shadow-sm p-4 flex flex-col gap-4">
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <h4 className="text-base text-gray-800 flex items-center gap-2">
-                    <IconGavel size={18} className="text-slate-600" /> Déclaration réglementaire
+                    <IconGavel size={18} className="text-slate-600" /> {t("regulatory.title")}
                 </h4>
-                <Tooltip label="Export PDF officiel (incident + enquête)">
+                <Tooltip label={t("regulatory.exportTooltip")}>
                     <Button
                         size="xs"
                         variant="light"
@@ -110,7 +113,7 @@ const RegulatoryPanel = ({ incident, onChange, canEdit = true }: any) => {
                         loading={exporting}
                         onClick={handleExport}
                     >
-                        Exporter le PDF
+                        {t("regulatory.exportPdf")}
                     </Button>
                 </Tooltip>
             </div>
@@ -120,7 +123,7 @@ const RegulatoryPanel = ({ incident, onChange, canEdit = true }: any) => {
                 <div className="flex items-center gap-2 rounded-lg bg-green-50 border-l-4 border-green-500 px-3 py-2">
                     <IconShieldCheck size={20} className="text-green-600 shrink-0" />
                     <span className="text-sm text-green-800">
-                        Déclaré à l'autorité le {new Date(notifiedAt).toLocaleDateString("fr-FR")}.
+                        {t("regulatory.declaredOn", { date: fmtDate(notifiedAt) })}
                     </span>
                 </div>
             ) : incident?.notifiable ? (
@@ -128,9 +131,9 @@ const RegulatoryPanel = ({ incident, onChange, canEdit = true }: any) => {
                     <div className="flex items-center gap-2">
                         <IconAlertTriangle size={20} className="text-amber-600 shrink-0" />
                         <span className="text-sm text-amber-800">
-                            Déclaration à l'autorité requise
+                            {t("regulatory.declarationRequired")}
                             {incident?.regulatoryDeadline && (
-                                <> avant le {new Date(incident.regulatoryDeadline).toLocaleDateString("fr-FR")}</>
+                                <> {t("regulatory.before", { date: fmtDate(incident.regulatoryDeadline) })}</>
                             )}
                             {dl !== null && (
                                 <Badge
@@ -139,14 +142,16 @@ const RegulatoryPanel = ({ incident, onChange, canEdit = true }: any) => {
                                     color={dl < 0 ? "red" : dl <= 2 ? "orange" : "yellow"}
                                     variant="filled"
                                 >
-                                    {dl < 0 ? `${Math.abs(dl)} j de retard` : `${dl} j restant${dl > 1 ? "s" : ""}`}
+                                    {dl < 0
+                                        ? t("regulatory.overdue", { count: Math.abs(dl) })
+                                        : t("regulatory.remaining", { count: dl })}
                                 </Badge>
                             )}
                         </span>
                     </div>
                     {canEdit && (
                         <Button size="xs" color="amber" variant="filled" onClick={handleMarkNotified}>
-                            Marquer comme déclaré
+                            {t("regulatory.markNotified")}
                         </Button>
                     )}
                 </div>
@@ -158,13 +163,13 @@ const RegulatoryPanel = ({ incident, onChange, canEdit = true }: any) => {
                     <Switch
                         checked={notifiable}
                         onChange={(e) => setNotifiable(e.currentTarget.checked)}
-                        label="Incident notifiable à l'autorité"
+                        label={t("regulatory.notifiableLabel")}
                         color="teal"
                     />
                     {notifiable && (
                         <DateInput
                             size="xs"
-                            label="Échéance statutaire"
+                            label={t("regulatory.deadlineLabel")}
                             valueFormat="DD/MM/YYYY"
                             value={deadline}
                             onChange={(v: any) => setDeadline(v ? new Date(v) : null)}
@@ -173,7 +178,7 @@ const RegulatoryPanel = ({ incident, onChange, canEdit = true }: any) => {
                         />
                     )}
                     <Button size="xs" onClick={handleSave} loading={saving} className="!bg-primary-500">
-                        Enregistrer
+                        {t("regulatory.save")}
                     </Button>
                 </div>
             )}
