@@ -140,9 +140,21 @@ export default function FirstLoginPasswordChange() {
                         <Title order={2} ta="center" style={{ color: '#0F172A', fontWeight: 600 }}>
                             {t('userMgmt.firstLogin.title')}
                         </Title>
-                        <Text size="sm" c="dimmed" ta="center">
-                            {userName ? t('userMgmt.firstLogin.welcomeName', { name: userName }) : ''}
-                            {t('userMgmt.firstLogin.subtitle')}
+                        {/*
+                          Un SEUL nœud texte (pas deux expressions adjacentes) : le nom
+                          d'utilisateur arrive de façon asynchrone (getMyProfile) APRÈS le
+                          montage. Avec deux nœuds texte frères, cette mise à jour post-montage
+                          déclenche un `insertBefore` de réconciliation React qui plante
+                          (« NotFoundError ») dès qu'une couche de traduction navigateur
+                          (Google Translate) a enveloppé les nœuds dans des <font>. En
+                          concaténant en une seule chaîne, React met à jour le texte en place
+                          (nodeValue) sans opération sur les frères → robuste. `translate="no"`
+                          en ceinture-bretelles sur ce texte dynamique.
+                        */}
+                        <Text size="sm" c="dimmed" ta="center" translate="no">
+                            {userName
+                                ? t('userMgmt.firstLogin.welcomeName', { name: userName }) + t('userMgmt.firstLogin.subtitle')
+                                : t('userMgmt.firstLogin.subtitle')}
                         </Text>
                     </Stack>
 
