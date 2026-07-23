@@ -34,7 +34,7 @@ import EmptyState from '../../UtilityComp/EmptyState';
 import { IconShieldExclamation } from '@tabler/icons-react';
 
 import { getAllIncidents } from '../../../services/IncidentService';
-import { INCIDENT_STATUS_OPTIONS, incidentStatusLabel } from './incidentLabels';
+import { INCIDENT_STATUS_OPTIONS, incidentStatusLabel, incidentStatusColor } from './incidentLabels';
 import { formatDateShort } from '../../../utility/DateFormats';
 import { getUniqueSeverityLevel } from '../../../services/SeverityLevelService';
 import { getAllActiveIncidentCategories } from '../../../services/IncidentCategory';
@@ -346,21 +346,12 @@ const IncidentManagementData = () => {
     //     }
     // };
 
-    /**
-     * Refonte ISO Phase 3 : couleur de badge semantique par statut.
-     * Aligne sur le pattern Non-conformite (couleurs workflow) + ISO 45001.
-     */
-    const INCIDENT_STATUS_COLOR: Record<string, string> = {
-        REPORTED: 'blue',
-        ANALYSIS: 'yellow',
-        ACTION_TAKEN: 'orange',
-        IN_INVESTIGATION: 'cyan',
-        CLOSED: 'green',
-        REJECTED: 'red',
-        CANCELLED: 'gray',
-    };
+    // Couleur de badge sémantique par statut : source unique `incidentStatusColor`
+    // (incidentLabels.ts), alignée sur les VRAIS statuts du workflow
+    // PENDING/REPORTED/INVESTIGATION/INVESTIGATION_COMPLETED/CORRECTIVE_ACTIONS/CLOSED/REJECTED.
+    // (L'ancienne carte locale utilisait des noms d'enum périmés → badges gris.)
     const getSeverity = (rowData: any) => {
-        const color = INCIDENT_STATUS_COLOR[String(rowData?.status ?? '').toUpperCase()] ?? 'gray';
+        const color = incidentStatusColor(rowData?.status);
         return (
             <Badge
                 radius="xl"
