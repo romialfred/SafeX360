@@ -77,6 +77,18 @@ management:
     # Désactive le check mail SMTP qui prend 11s+ et timeout Render
     mail:
       enabled: false
+  # Expose les propriétés info.* sur /hns/actuator/info (désactivé par défaut
+  # depuis Spring Boot 2.6). Sert de marqueur de build vérifiable : permet de
+  # confirmer qu'un déploiement Render a bien pris (sinon /actuator/info = {}).
+  info:
+    env:
+      enabled: true
+
+# Marqueur de build vérifiable (public via /hns/actuator/info). À incrémenter
+# pour tracer quelle version tourne réellement en prod après un déploiement.
+info:
+  build:
+    marker: whe-worked-hours-2026-07-23
 
 server:
   port: 8081
