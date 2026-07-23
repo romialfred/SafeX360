@@ -53,7 +53,7 @@ const IncidentManagementData = () => {
     const { t } = useTranslation('incidents');
     // Libellé de statut bilingue : clé i18n `incidents:status.*`, repli sur le libellé FR centralisé.
     const tStatus = (code?: string | null): string =>
-        code ? t(`status.${String(code).toUpperCase()}`, { defaultValue: incidentStatusLabel(code) }) : '—';
+        code ? t(`status.${String(code).toUpperCase()}`, { defaultValue: incidentStatusLabel(code) }) : 'N/A';
     // Options de statut traduites pour le <Select> de filtre (mêmes valeurs backend).
     const statusOptions = INCIDENT_STATUS_OPTIONS.map((o) => ({
         value: o.value,
@@ -328,7 +328,7 @@ const IncidentManagementData = () => {
 
     const levelBodyTemplate = (rowData: any) => {
         const level = rowData.maxSeverityLevel;
-        const severityLevelName = rowData.severityLevelName || '—';
+        const severityLevelName = rowData.severityLevelName || 'N/A';
         return (
             <span className={`px-2 py-1 rounded text-xs w-fit capitalize ${getTailwindColorForSeverityLevel(level)}`}>
                 {`${level} - ${severityLevelName}`}
@@ -398,8 +398,8 @@ const IncidentManagementData = () => {
     const enrichedIncidents = useMemo(() => {
         return incidents.map((i: any) => ({
             ...i,
-            departmentName: deptMap[i?.departmentId]?.name ?? '—',
-            reporterName: emps[i?.reporterId]?.name ?? '—',
+            departmentName: deptMap[i?.departmentId]?.name ?? 'N/A',
+            reporterName: emps[i?.reporterId]?.name ?? 'N/A',
         }));
     }, [incidents, deptMap, emps]);
 
