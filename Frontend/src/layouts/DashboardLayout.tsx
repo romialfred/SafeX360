@@ -9,6 +9,7 @@ import AppFooter from "../components/UtilityComp/AppFooter";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { loadModuleFlagsOnce } from "../components/NewComponents/data/ModuleConfig";
 import InactivityHandler from "../components/UtilityComp/InactivityHandler";
+import { usePageTracking } from "../hooks/usePageTracking";
 import { EmergencyWebSocketProvider } from "../components/EmergencyManagement/Sos/EmergencyWebSocketProvider";
 import CoordinatorAlertListener from "../components/EmergencyManagement/Sos/CoordinatorAlertListener";
 import GeneralAlertListener from "../components/EmergencyManagement/GeneralAlert/GeneralAlertListener";
@@ -31,6 +32,10 @@ import { Z } from "../constants/zIndex";
  *   - Conteneur d'app passé en flex column pour le footer collant
  */
 const DashboardLayout = () => {
+    // Traçabilité des écrans consultés. Monté ici — au-dessus de toutes les pages
+    // authentifiées et nulle part ailleurs : un traqueur par page se serait
+    // fatalement retrouvé absent de certaines.
+    usePageTracking(true);
     const overlay = useAppSelector((state) => state.overlay);
     const selectedCompanyId = useAppSelector((s) => s.companySelection?.selectedCompanyId ?? null);
     const [flagsLoaded, setFlagsLoaded] = useState(false);

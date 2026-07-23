@@ -79,6 +79,9 @@ public class AuthAPI {
     @Autowired
     private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private com.hrms.activity.ActivityService activityService;
+
     private Logger logger = LoggerFactory.getLogger(AuthAPI.class);
 
     @org.springframework.beans.factory.annotation.Value("${JWT_SECRET:}")
@@ -86,7 +89,7 @@ public class AuthAPI {
 
     @PostMapping("/login")
     public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequest request,
-            HttpServletResponse response) {
+            HttpServletResponse response, jakarta.servlet.http.HttpServletRequest httpRequest) {
         if (request.getLogin() == null || request.getLogin().isBlank()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("errorMessage", "Login is required", "errorCode", 400));
@@ -156,7 +159,7 @@ public class AuthAPI {
                         "expiresInSeconds", 300));
             }
 
-            if (mfaRolePolicy.requiresMfa(authenticatedAccount.getRole())) {
+            if (mfaRolePolicy.requiresMfa(authenticatedAccount)) {
                 boolean enrolled = authenticatedAccount.isMfaEnrolled();
                 // AUTO-RÉPARATION d'un état incohérent : drapeau levé sans secret
                 // (réinitialisation partielle, migration, enrôlement interrompu).
@@ -210,6 +213,12 @@ public class AuthAPI {
 
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
             loginAttemptService.recordSuccess(request.getLogin());
+            // Tracabilite : la session s'ouvre la ou le cookie est delivre — c'est le
+            // seul endroit qui constate vraiment qu'un acces a ete accorde.
+            activityService.openSession(authenticatedAccount.getId(), authenticatedAccount.getLogin(),
+                    false,
+                    authenticatedAccount.getCompany() == null ? null : authenticatedAccount.getCompany().getId(),
+                    httpRequest);
             return ResponseEntity.ok("Login successful");
 
         } catch (UsernameNotFoundException e) {
@@ -267,7 +276,7 @@ public class AuthAPI {
             @org.springframework.cache.annotation.CacheEvict(cacheNames = "accountByLogin", allEntries = true)
     })
     public ResponseEntity<?> firstLoginPassword(@RequestBody Map<String, String> body,
-            HttpServletResponse response) {
+            HttpServletResponse response, jakarta.servlet.http.HttpServletRequest httpRequest) {
         String challengeToken = body.get("challenge");
         String newPwd = body.get("newPassword");
         if (challengeToken == null || challengeToken.isBlank()) {
@@ -298,7 +307,7 @@ public class AuthAPI {
         } catch (Exception ignored) { }
 
         // Chaîne : MFA d'abord si le rôle l'exige (enrôlement pour un nouveau compte).
-        if (mfaRolePolicy.requiresMfa(account.getRole())) {
+        if (mfaRolePolicy.requiresMfa(account)) {
             boolean enrolled = account.isMfaEnrolled();
             MfaChallengeService.Challenge mfaCh = mfaChallengeService.issue(
                     account.getId(), account.getLogin(),
@@ -315,6 +324,8 @@ public class AuthAPI {
         ResponseCookie cookie = ResponseCookie.from("jwt", jwt)
                 .httpOnly(true).secure(true).path("/").sameSite("None").build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        activityService.openSession(account.getId(), account.getLogin(), false,
+                account.getCompany() == null ? null : account.getCompany().getId(), httpRequest);
         return ResponseEntity.ok(Map.of("status", "AUTHENTICATED"));
     }
 
@@ -362,7 +373,19 @@ public class AuthAPI {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(HttpServletResponse response) {
+    public ResponseEntity<String> logout(HttpServletResponse response,
+            @CookieValue(name = "jwt", required = false) String token) {
+        // Tracabilite : on ferme la session AVANT d'invalider le cookie — apres, on
+        // ne saurait plus de qui il s'agit.
+        try {
+            if (token != null && !token.isBlank()) {
+                accountRepository.findByLogin(helper.getUsernameFromToken(token))
+                        .ifPresent(acc -> activityService.closeSession(acc.getId(),
+                                com.hrms.activity.UserSession.EndReason.LOGOUT));
+            }
+        } catch (Exception ignored) {
+            // Une deconnexion ne doit jamais echouer parce que la trace echoue.
+        }
         // LOT 42 hotfix : retrait du .domain(".data-univers.com") qui empêche
         // la suppression du cookie sur safex360-gateway.onrender.com (domain
         // mismatch). Le cookie de logout doit cibler le même domaine que le

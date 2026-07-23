@@ -2,36 +2,31 @@ package com.hrms.security;
 
 import org.springframework.stereotype.Component;
 
+import com.hrms.entity.Account;
+
 /**
- * Politique centrale d'exigence de la MFA.
+ * Politique d'exigence du second facteur — decision unique et centralisee.
  *
- * <p>Regle en vigueur : <b>2FA obligatoire pour TOUS les comptes, sans
- * exception</b>. La classe reste le point de passage unique — si une exemption
- * devait un jour exister (compte de service…), elle se declarerait ici et
- * nulle part ailleurs.
+ * <p>Regle : <b>2FA obligatoire pour TOUS les comptes</b>. Le role n'entre plus
+ * dans la decision (une liste de roles privilegies laissait passer tous les
+ * autres, et un compte sans role echappait a tout).
+ *
+ * <p>Unique derogation : une DISPENSE explicite posee par un administrateur sur
+ * un compte precis ({@link Account#getMfaExempt()}), tracee au journal d'audit et
+ * revocable. Une dispense se decide, se voit et se retire ; elle n'est pas un
+ * effet de bord d'un role ou d'un champ vide.
  */
 @Component
 public class MfaRolePolicy {
 
     /**
-     * @param role role du compte — conserve comme point d'extension : la
-     *             decision reste centralisee ici si une exemption devait
-     *             reapparaitre.
-     * @return toujours {@code true}
+     * @param account compte concerne ({@code null} = aucune raison de dispenser)
+     * @return vrai si ce compte doit presenter un second facteur
      */
-    public boolean requiresMfa(String role) {
-        // 2FA OBLIGATOIRE POUR TOUS LES COMPTES (decision securite), SANS EXCEPTION.
-        // A la premiere connexion, apres le changement du mot de passe temporaire,
-        // l'enrolement 2FA est force quel que soit le role ; aux connexions
-        // suivantes, la verification TOTP est exigee.
-        //
-        // FAIL-CLOSED sur le role vide/null : un compte sans role echappait a
-        // l'obligation, ce qui contredisait « tous les comptes » et offrait un
-        // contournement (creer un compte sans role). L'absence de role n'est pas
-        // une dispense de second facteur.
-        //
-        // (Historique : seule une liste PRIVILEGED_ROLES etait soumise a la MFA —
-        // cf. git, commits 8fa3dda et anterieurs. Liste supprimee car sans effet.)
-        return true;
+    public boolean requiresMfa(Account account) {
+        if (account == null) {
+            return true;
+        }
+        return !Boolean.TRUE.equals(account.getMfaExempt());
     }
 }

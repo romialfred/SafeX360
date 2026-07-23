@@ -76,6 +76,9 @@ public class AdminUserController {
 
     @Autowired
     private AccountRepository accountRepository;
+
+    @Autowired
+    private com.hrms.security.AdminGuard adminGuard;
     @Autowired
     private CompanyRepository companyRepository;
     @Autowired
@@ -329,27 +332,10 @@ public class AdminUserController {
      * (seeders, intégrations internes), qui n'existent que sur le réseau privé.
      */
     private String requireAdmin(String token, HttpServletRequest request) {
-        if (token != null && !token.isBlank()) {
-            // Identité utilisateur présente : seul le rôle décide.
-            try {
-                String login = jwtHelper.getUsernameFromToken(token);
-                Account admin = accountRepository.findByLogin(login).orElse(null);
-                // Alias admin (Administrator/Admin/SYSTEM_ADMINISTRATOR), compte ACTIF,
-                // et MDP temporaire déjà changé (un admin firstLogin ne peut pas administrer).
-                if (admin != null && isAdminRole(admin.getRole())
-                        && "ACTIVE".equalsIgnoreCase(admin.getStatus())
-                        && !Boolean.TRUE.equals(admin.getFirstLogin())) {
-                    return login;
-                }
-            } catch (Exception e) {
-                LOG.warn("JWT admin invalide: {}", e.getMessage());
-            }
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "Accès réservé aux administrateurs (SYSTEM_ADMINISTRATOR)");
-        }
-        // Aucune identité utilisateur : appel interne service-à-service uniquement.
-        throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                "Accès réservé aux administrateurs (SYSTEM_ADMINISTRATOR)");
+        // Delegue a la garde unique : la meme regle sert desormais aux ecrans de
+        // tracabilite et a la fiche utilisateur. Recopier cette garde reviendrait a
+        // la laisser diverger.
+        return adminGuard.requireAdmin(token, request);
     }
 
     // ─────────────────────────────────────────────────────────────────────

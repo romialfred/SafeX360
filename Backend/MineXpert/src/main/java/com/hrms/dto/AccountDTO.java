@@ -142,6 +142,10 @@ public class AccountDTO {
                 null,
                 null,
                 null,
+                null,
+                // mfaExempt : la dispense de second facteur ne se pose QUE par
+                // l'action explicite d'un administrateur (endpoint dédié, tracée).
+                // null ici = « ne rien décider » → le compte reste soumis à la 2FA.
                 null);
     }
 }

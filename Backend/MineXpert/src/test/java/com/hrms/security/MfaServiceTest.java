@@ -129,6 +129,21 @@ class MfaServiceTest {
     }
 
     /**
+     * Dispense administrative : un compte explicitement dispense n'a pas de second
+     * facteur a poser — l'enrolement lui est refuse, ce qui evite un compte a la
+     * fois dispense ET enrole (etat contradictoire).
+     */
+    @Test
+    void enrollmentIsRefusedForExemptedAccount() {
+        account.setMfaExempt(true);
+
+        String enrollChallenge = challenges.issue(7L, account.getLogin(), Purpose.ENROLL).token();
+        assertThatThrownBy(() -> service.beginEnrollment(enrollChallenge))
+                .isInstanceOf(MfaService.MfaException.class)
+                .hasMessage("MFA_ENROLLMENT_NOT_ALLOWED");
+    }
+
+    /**
      * Hygiene memoire : un enrolement abandonne ne doit pas laisser son secret TOTP
      * en clair en memoire indefiniment. Le secret expire avec le challenge (5 min).
      */

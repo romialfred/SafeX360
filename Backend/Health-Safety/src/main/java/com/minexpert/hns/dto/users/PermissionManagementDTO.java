@@ -100,7 +100,11 @@ public class PermissionManagementDTO {
                 this.usersManagement,
                 this.settings,
                 this.createdAt,
-                this.updatedAt
+                this.updatedAt,
+                // allowedModules : porte par l'API /users/permissions (CSV), pas par
+                // ce DTO historique. On ne l'ecrase pas ici — null laisse la lecture
+                // retomber sur les colonnes par module pour les profils legacy.
+                null
         );
     }
 

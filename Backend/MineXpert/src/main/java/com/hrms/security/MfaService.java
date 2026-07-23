@@ -93,7 +93,7 @@ public class MfaService {
         // uniquement si le compte est REELLEMENT enrole (drapeau ET secret). Un
         // drapeau seul, sans secret, doit pouvoir s'enroler — sinon le compte est
         // bloque : /login emet un ENROLL que cette garde rejetait.
-        if (!rolePolicy.requiresMfa(account.getRole()) || account.isMfaEnrolled()) {
+        if (!rolePolicy.requiresMfa(account) || account.isMfaEnrolled()) {
             throw new MfaException("MFA_ENROLLMENT_NOT_ALLOWED");
         }
         String secret = pendingSecrets.get(challengeToken, ignored -> totp.newSecret());
@@ -123,7 +123,7 @@ public class MfaService {
         }
 
         Account account = account(challenge.accountId());
-        if (!rolePolicy.requiresMfa(account.getRole())) throw new MfaException("MFA_ENROLLMENT_NOT_ALLOWED");
+        if (!rolePolicy.requiresMfa(account)) throw new MfaException("MFA_ENROLLMENT_NOT_ALLOWED");
         List<String> recoveryCodes = newRecoveryCodes();
         account.setMfaSecretEncrypted(crypto.encrypt(secret));
         account.setMfaRecoveryCodeHashes(hashRecoveryCodes(recoveryCodes));
@@ -142,7 +142,7 @@ public class MfaService {
     public synchronized Account verify(String challengeToken, String code, String recoveryCode) {
         Challenge challenge = challenges.require(challengeToken, Purpose.VERIFY);
         Account account = account(challenge.accountId());
-        if (!rolePolicy.requiresMfa(account.getRole()) || !account.isMfaEnrolled()) {
+        if (!rolePolicy.requiresMfa(account) || !account.isMfaEnrolled()) {
             throw new MfaException("MFA_NOT_ENROLLED");
         }
 

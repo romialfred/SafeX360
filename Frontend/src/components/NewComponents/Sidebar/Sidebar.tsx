@@ -629,6 +629,12 @@ const PERMISSION_VOCABULARY = new Set([
     'commDashboard', 'employeeComm', 'notifications',
     'usersManagement', 'settings',
     'errorManagement',
+    // Modules livrés depuis, désormais attribuables (catalogue serveur
+    // ModuleCatalog). Ils étaient visibles de tous faute de contrôle : la
+    // migration les accorde à tous les profils existants, personne ne perd
+    // donc un accès en place — un administrateur peut les révoquer ensuite.
+    'equipmentRegistry', 'riskOpportunities', 'auditProgram',
+    'isoDocuments', 'processDocs', 'targetForecast', 'modulesManagement',
 ]);
 
 /** Surcharges explicites menu-id → module de permission. */
@@ -639,7 +645,7 @@ const MENU_PERMISSION_OVERRIDES: Record<string, string> = {
     'users-management-hub': 'usersManagement',
     'users-list': 'usersManagement',
     'roles-permissions': 'usersManagement',
-    'modules-management': 'usersManagement',
+    'modules-management': 'modulesManagement',
     'parameters': 'settings',
     'system-settings': 'settings',
     'operational-references': 'settings',
@@ -647,8 +653,13 @@ const MENU_PERMISSION_OVERRIDES: Record<string, string> = {
     'param-incidents': 'settings',
     'param-tools-templates': 'settings',
     'annual-audit-plan': 'auditPlan',
-    'audit-program': 'auditPlan',
-    'risk-opportunities': 'riskRegister',
+    // Ces trois-là avaient été rabattus sur un module voisin faute d'exister
+    // dans la matrice de droits ; ils sont désormais attribuables pour eux-mêmes.
+    'audit-program': 'auditProgram',
+    'risk-opportunities': 'riskOpportunities',
+    'iso-documents': 'isoDocuments',
+    'process-docs': 'processDocs',
+    'target-forecast': 'targetForecast',
 };
 
 /** Convertit un id de menu kebab-case en clé de module camelCase. */

@@ -137,6 +137,19 @@ public class Account {
     private LocalDateTime mfaEnrolledAt;
 
     /**
+     * DISPENSE DE SECOND FACTEUR, decidee compte par compte par un administrateur.
+     *
+     * <p>La regle de la plateforme est « 2FA obligatoire pour tous ». Cette
+     * dispense est la SEULE derogation possible, elle est explicite, tracee dans
+     * le journal d'audit, et revocable — c'est ce qui la distingue d'un trou dans
+     * la politique. Absente ou fausse = second facteur exige.
+     *
+     * <p>Reactiver la 2FA d'un compte dispense le remet en enrolement force a sa
+     * prochaine connexion.
+     */
+    private Boolean mfaExempt;
+
+    /**
      * SOURCE UNIQUE du predicat « ce compte est reellement enrole en 2FA ».
      *
      * <p>Le drapeau {@code mfaEnabled} seul ne suffit pas : sans secret il n'y a

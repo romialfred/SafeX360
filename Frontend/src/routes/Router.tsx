@@ -37,7 +37,6 @@ const PgiPage = lazy(() => import('../pages/dashboard/LeadingIndicator/PGI/PgiPa
 const AddPgiPage = lazy(() => import('../pages/dashboard/LeadingIndicator/PGI/AddPgiPage'));
 const CalenderPage = lazy(() => import('../pages/dashboard/LeadingIndicator/PGI/CalenderPage'));
 const AuditPage = lazy(() => import('../pages/dashboard/LaggingIndicator/AuditManagement/AuditPage'));
-const EditUserPermission = lazy(() => import('../components/NewComponents/UsersManagement/EditUserPermission'));
 const ViewDetailsPage = lazy(() => import('../pages/dashboard/LaggingIndicator/Incident/ViewDetailsPage'));
 const UpdateIncidentsPage = lazy(() => import('../pages/dashboard/LaggingIndicator/Incident/UpdateIncidentsPage'));
 const AddTeamPage = lazy(() => import('../pages/dashboard/SettingFolder/TeamSetup/AddTeamPage'));
@@ -127,7 +126,6 @@ const SettingsPage = lazy(() => import('../components/NewComponents/Settings/Set
 const ModulesManagementPage = lazy(() => import('../components/NewComponents/Settings/ModulesManagementPage'));
 const OperationalReferencesPage = lazy(() => import('../components/NewComponents/OperationalReferences/OperationalReferencesPage'));
 const ISODocuments = lazy(() => import('../components/NewComponents/ISODocuments/ISODocuments'));
-const UserDetails = lazy(() => import('../components/NewComponents/UsersManagement/UserDetails'));
 const Guide = lazy(() => import('../components/NewComponents/HelpCenter/Guide'));
 const FeatureOverview = lazy(() => import('../components/NewComponents/HelpCenter/FeatureOverview'));
 const LoginsPage = lazy(() => import('../components/NewComponents/LoginPage/LoginsPage'));
@@ -162,6 +160,8 @@ const ModuleNotFoundPage = lazy(() => import('../pages/dashboard/ModuleNotFoundP
 const IsoMappingPage = lazy(() => import('../pages/dashboard/IsoMappingPage'));
 // LOT 49 — Module Gestion Utilisateurs
 const UsersAdminPage = lazy(() => import('../components/NewComponents/UsersManagement/UsersAdminPage'));
+const UserProfilePage = lazy(() => import('../components/NewComponents/UsersManagement/UserProfilePage'));
+const LegacyUserRedirect = lazy(() => import('./LegacyUserRedirect'));
 const FirstLoginPasswordChange = lazy(() => import('../pages/auth/FirstLoginPasswordChange'));
 // LOT — Module Dosimetrie & Expositions (2026-06-07: code-splitting actif)
 // Les 33 pages Dosimetrie sont lazy-loaded pour reduire la taille du bundle
@@ -630,8 +630,13 @@ const router = createBrowserRouter([
                 path: 'users-management/create-user', element: <DemoPermissionGuard moduleLabel="Gestion des utilisateurs"><AddUserForm onBackToUsers={handleBackToUsers}
                     onCreateUser={handleCreateUser} /></DemoPermissionGuard>,
             },
-            { path: 'users-management/edit/:id', element: <DemoPermissionGuard moduleLabel="Gestion des utilisateurs"><EditUserPermission /></DemoPermissionGuard>, },
-            { path: 'users-management/usersManagement-details/:id', element: <DemoPermissionGuard moduleLabel="Gestion des utilisateurs"><UserDetails /></DemoPermissionGuard>, },
+            // FICHE UTILISATEUR — écran unique (profil, droits, connexions, activité).
+            // Les deux anciens chemins y redirigent : le bouton « Modifier » ouvrait
+            // encore EditUserPermission, l'écran hérité, alors que la liste et la
+            // création vivaient déjà dans l'expérience actuelle.
+            { path: 'users-admin/:id', element: <DemoPermissionGuard moduleLabel="Gestion des utilisateurs"><UserProfilePage /></DemoPermissionGuard>, },
+            { path: 'users-management/edit/:id', element: <LegacyUserRedirect tab="rights" />, },
+            { path: 'users-management/usersManagement-details/:id', element: <LegacyUserRedirect tab="profile" />, },
 
             { path: "process-docs", element: <WorkProcess /> },
 

@@ -42,14 +42,17 @@ public class MfaController {
     private final UserDetailsService users;
     private final AuditLogService audit;
     private final LoginAttemptService loginAttempts;
+    private final com.hrms.activity.ActivityService activityService;
 
     public MfaController(MfaService mfa, JwtHelper jwtHelper, UserDetailsService users,
-            AuditLogService audit, LoginAttemptService loginAttempts) {
+            AuditLogService audit, LoginAttemptService loginAttempts,
+            com.hrms.activity.ActivityService activityService) {
         this.mfa = mfa;
         this.jwtHelper = jwtHelper;
         this.users = users;
         this.audit = audit;
         this.loginAttempts = loginAttempts;
+        this.activityService = activityService;
     }
 
     @PostMapping("/enroll/start")
@@ -73,7 +76,8 @@ public class MfaController {
     }
 
     @PostMapping("/verify")
-    public ResponseEntity<?> verify(@RequestBody CodeRequest request, HttpServletResponse response) {
+    public ResponseEntity<?> verify(@RequestBody CodeRequest request, HttpServletResponse response,
+            jakarta.servlet.http.HttpServletRequest httpRequest) {
         try {
             Account account = mfa.verify(request.challenge(), request.code(), request.recoveryCode());
             UserDetails userDetails = users.loadUserByUsername(account.getLogin());
@@ -84,6 +88,10 @@ public class MfaController {
                     .httpOnly(true).secure(true).path("/").sameSite("None").build();
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
             loginAttempts.recordSuccess(account.getLogin());
+            // Tracabilite : c'est ICI que la session s'ouvre pour un compte a second
+            // facteur — le /login precedent n'avait accorde aucun acces.
+            activityService.openSession(account.getId(), account.getLogin(), true,
+                    account.getCompany() == null ? null : account.getCompany().getId(), httpRequest);
             safeAudit(account.getLogin(), request.recoveryCode() == null || request.recoveryCode().isBlank()
                     ? "Successfully Logged In with MFA"
                     : "Successfully Logged In with one-time recovery code");

@@ -195,9 +195,23 @@ export default function UsersAdminPage() {
     };
 
     // ─── Rendu cellules ───
+    // Le nom ouvre la fiche complète : c'est le geste naturel dans une liste, et
+    // il évite d'avoir à chercher quel bouton mène à quel écran.
     const renderName = (row: Account) => (
-        <Stack gap={2}>
-            <Text size="sm" fw={500}>{row.name || '—'}</Text>
+        <Stack
+            gap={2}
+            role="link"
+            tabIndex={0}
+            style={{ cursor: 'pointer' }}
+            onClick={() => navigate(`/users-admin/${row.id}`)}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    navigate(`/users-admin/${row.id}`);
+                }
+            }}
+        >
+            <Text size="sm" fw={500} c="teal.7" td="underline">{row.name || '—'}</Text>
             <Text size="xs" c="dimmed">@{row.login}</Text>
         </Stack>
     );
@@ -230,7 +244,7 @@ export default function UsersAdminPage() {
                         variant="light"
                         color="blue"
                         size="sm"
-                        onClick={() => navigate(`/users-management/edit/${row.id}`)}
+                        onClick={() => navigate(`/users-admin/${row.id}?tab=rights`)}
                     >
                         <IconEdit size={14} />
                     </ActionIcon>

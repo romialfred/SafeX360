@@ -83,6 +83,11 @@ public class PermissionManagementServiceImpl implements PermissionManagementServ
         existing.setNotifications(dto.getNotifications());
         existing.setUsersManagement(dto.getUsersManagement());
         existing.setSettings(dto.getSettings());
+        // Ce chemin historique n'ecrit que les colonnes « une par module », alors que
+        // la lecture privilegie desormais la colonne CSV : sans resynchronisation, une
+        // modification faite ici resterait sans effet visible. On recalcule donc le CSV
+        // a partir des colonnes que l'on vient d'ecrire.
+        existing.setAllowedModules(String.join(",", existing.legacyColumnModules()));
         PermissionManagement updated = repository.save(existing);
         return updated.toDTO();
     }

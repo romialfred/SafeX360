@@ -111,6 +111,80 @@ public class PermissionManagement {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    /**
+     * SOURCE DE VERITE des modules autorises : liste CSV des cles de modules.
+     *
+     * <p>Les colonnes « une par module » ci-dessus ne couvrent que les modules
+     * existants au moment ou elles ont ete creees : accorder un module plus
+     * recent (gestion des erreurs, registre des equipements, opportunites SST…)
+     * etait donc SILENCIEUSEMENT PERDU — la matrice le proposait, le serveur
+     * n'avait nulle part ou l'ecrire. Cette colonne accepte n'importe quelle cle
+     * du catalogue serveur, sans migration a chaque nouveau module.
+     *
+     * <p>Les colonnes historiques restent alimentees en parallele pour tout code
+     * qui les lit encore ; la lecture privilegie cette colonne et ne retombe sur
+     * les colonnes que pour les profils crees avant la migration.
+     *
+     * <p>Place en DERNIER : l'entite est construite par un constructeur
+     * @AllArgsConstructor positionnel (PermissionManagementDTO.toEntity) —
+     * inserer un champ ailleurs decalerait silencieusement tous les suivants.
+     */
+    @Column(name = "allowed_modules", length = 4000)
+    private String allowedModules;
+
+
+    /**
+     * Modules deduits des colonnes historiques « une par module ».
+     *
+     * <p>SOURCE UNIQUE de cette deduction : le controleur des permissions ET le
+     * service historique s'appuient tous deux dessus, sinon les deux lectures
+     * divergeraient — c'est precisement ce genre de duplication qui avait fait
+     * perdre des droits en silence.
+     */
+    public java.util.List<String> legacyColumnModules() {
+        java.util.List<String> result = new java.util.ArrayList<>();
+        if (isAllowed(getHome())) result.add("home");
+        if (isAllowed(getNonConformity())) result.add("nonConformity");
+        if (isAllowed(getInspections())) result.add("inspections");
+        if (isAllowed(getMeetings())) result.add("meetings");
+        if (isAllowed(getManagementTour())) result.add("managementTour");
+        if (isAllowed(getPpeOverview())) result.add("ppeOverview");
+        if (isAllowed(getPpeMonitoring())) result.add("ppeMonitoring");
+        if (isAllowed(getPpeRequest())) result.add("ppeRequest");
+        if (isAllowed(getIncidentManagement())) result.add("incidentManagement");
+        if (isAllowed(getInvestigations())) result.add("investigations");
+        if (isAllowed(getActionPlansInc())) result.add("actionPlansInc");
+        if (isAllowed(getPendingActions())) result.add("pendingActions");
+        if (isAllowed(getActionPlan())) result.add("actionPlan");
+        if (isAllowed(getRecommendations())) result.add("recommendations");
+        if (isAllowed(getAdhocActions())) result.add("adhocActions");
+        if (isAllowed(getAuditPlan())) result.add("auditPlan");
+        if (isAllowed(getAudits())) result.add("audits");
+        if (isAllowed(getAuditRecommendations())) result.add("auditRecommendations");
+        if (isAllowed(getComplianceDashboard())) result.add("complianceDashboard");
+        if (isAllowed(getRequirements())) result.add("requirements");
+        if (isAllowed(getPositionAssignments())) result.add("positionAssignments");
+        if (isAllowed(getEmployeeAssignments())) result.add("employeeAssignments");
+        if (isAllowed(getRiskOverview())) result.add("riskOverview");
+        if (isAllowed(getRiskRegister())) result.add("riskRegister");
+        if (isAllowed(getRiskAssessment())) result.add("riskAssessment");
+        if (isAllowed(getChemicalRegister())) result.add("chemicalRegister");
+        if (isAllowed(getDocuments())) result.add("documents");
+        if (isAllowed(getDocumentValidation())) result.add("documentValidation");
+        if (isAllowed(getLessonsLearned())) result.add("lessonsLearned");
+        if (isAllowed(getDocumentManager())) result.add("documentManager");
+        if (isAllowed(getCommDashboard())) result.add("commDashboard");
+        if (isAllowed(getEmployeeComm())) result.add("employeeComm");
+        if (isAllowed(getNotifications())) result.add("notifications");
+        if (isAllowed(getUsersManagement())) result.add("usersManagement");
+        if (isAllowed(getSettings())) result.add("settings");
+        return result;
+    }
+
+    private static boolean isAllowed(String flag) {
+        return flag != null && !flag.isBlank();
+    }
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

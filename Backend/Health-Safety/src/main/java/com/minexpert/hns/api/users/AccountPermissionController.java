@@ -175,7 +175,11 @@ public class AccountPermissionController {
         pm.setCreatedAt(LocalDateTime.now());
         pm.setUpdatedAt(LocalDateTime.now());
 
-        // Applique le pattern "111" sur les modules autorises
+        // Les cles inconnues sont ecartees : un client ne peut pas inventer un module.
+        finalModules = ModuleCatalog.sanitize(finalModules);
+        // Colonne CSV = source de verite (accepte TOUS les modules du catalogue) ;
+        // les colonnes historiques restent alimentees pour le code qui les lit.
+        pm.setAllowedModules(String.join(",", finalModules));
         applyModuleFlags(pm, finalModules);
 
         PermissionManagement saved = permissionRepository.save(pm);
@@ -188,6 +192,26 @@ public class AccountPermissionController {
         resp.put("role", saved.getRole());
         resp.put("allowedModules", String.join(",", finalModules));
         return new ResponseEntity<>(resp, HttpStatus.CREATED);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // GET /catalog — catalogue des modules attribuables (source unique)
+    // ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * Liste des modules attribuables, groupes par categorie. L'IHM construit sa
+     * matrice de droits A PARTIR DE CETTE REPONSE : elle ne tient plus sa propre
+     * liste, donc elle ne peut plus proposer un module que le serveur ignore, ni
+     * en oublier un. Lecture seule ; la matrice d'autorisation de la passerelle
+     * classe tout {@code /users/permissions} hors {@code /by-account/} en
+     * ADMINISTRATION, donc seuls les administrateurs y accedent — ce qui convient,
+     * l'ecran de droits leur etant reserve.
+     */
+    @GetMapping("/catalog")
+    public ResponseEntity<?> catalog() {
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("categories", ModuleCatalog.asPayload());
+        return ResponseEntity.ok(resp);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -274,6 +298,8 @@ public class AccountPermissionController {
                     .map(String::trim).filter(s -> !s.isEmpty())
                     .forEach(finalModules::add);
         }
+        finalModules = ModuleCatalog.sanitize(finalModules);
+        pm.setAllowedModules(String.join(",", finalModules));
         applyModuleFlags(pm, finalModules);
         pm.setUpdatedAt(LocalDateTime.now());
 
@@ -441,47 +467,23 @@ public class AccountPermissionController {
     }
 
     /** Extrait la liste des modules autorises (non null et != "000"). */
+    /**
+     * Modules effectifs d'un profil : la colonne CSV fait foi des qu'elle est
+     * renseignee ; sinon on retombe sur les colonnes « une par module » pour les
+     * profils crees avant la migration (aucun droit perdu au passage).
+     */
     private List<String> extractAllowedModules(PermissionManagement pm) {
-        java.util.List<String> result = new java.util.ArrayList<>();
-        if (isAllowed(pm.getHome())) result.add("home");
-        if (isAllowed(pm.getNonConformity())) result.add("nonConformity");
-        if (isAllowed(pm.getInspections())) result.add("inspections");
-        if (isAllowed(pm.getMeetings())) result.add("meetings");
-        if (isAllowed(pm.getManagementTour())) result.add("managementTour");
-        if (isAllowed(pm.getPpeOverview())) result.add("ppeOverview");
-        if (isAllowed(pm.getPpeMonitoring())) result.add("ppeMonitoring");
-        if (isAllowed(pm.getPpeRequest())) result.add("ppeRequest");
-        if (isAllowed(pm.getIncidentManagement())) result.add("incidentManagement");
-        if (isAllowed(pm.getInvestigations())) result.add("investigations");
-        if (isAllowed(pm.getActionPlansInc())) result.add("actionPlansInc");
-        if (isAllowed(pm.getPendingActions())) result.add("pendingActions");
-        if (isAllowed(pm.getActionPlan())) result.add("actionPlan");
-        if (isAllowed(pm.getRecommendations())) result.add("recommendations");
-        if (isAllowed(pm.getAdhocActions())) result.add("adhocActions");
-        if (isAllowed(pm.getAuditPlan())) result.add("auditPlan");
-        if (isAllowed(pm.getAudits())) result.add("audits");
-        if (isAllowed(pm.getAuditRecommendations())) result.add("auditRecommendations");
-        if (isAllowed(pm.getComplianceDashboard())) result.add("complianceDashboard");
-        if (isAllowed(pm.getRequirements())) result.add("requirements");
-        if (isAllowed(pm.getPositionAssignments())) result.add("positionAssignments");
-        if (isAllowed(pm.getEmployeeAssignments())) result.add("employeeAssignments");
-        if (isAllowed(pm.getRiskOverview())) result.add("riskOverview");
-        if (isAllowed(pm.getRiskRegister())) result.add("riskRegister");
-        if (isAllowed(pm.getRiskAssessment())) result.add("riskAssessment");
-        if (isAllowed(pm.getChemicalRegister())) result.add("chemicalRegister");
-        if (isAllowed(pm.getDocuments())) result.add("documents");
-        if (isAllowed(pm.getDocumentValidation())) result.add("documentValidation");
-        if (isAllowed(pm.getLessonsLearned())) result.add("lessonsLearned");
-        if (isAllowed(pm.getDocumentManager())) result.add("documentManager");
-        if (isAllowed(pm.getCommDashboard())) result.add("commDashboard");
-        if (isAllowed(pm.getEmployeeComm())) result.add("employeeComm");
-        if (isAllowed(pm.getNotifications())) result.add("notifications");
-        if (isAllowed(pm.getUsersManagement())) result.add("usersManagement");
-        if (isAllowed(pm.getSettings())) result.add("settings");
-        return result;
+        if (pm.getAllowedModules() != null && !pm.getAllowedModules().isBlank()) {
+            return Arrays.stream(pm.getAllowedModules().split(","))
+                    .map(String::trim).filter(s -> !s.isEmpty())
+                    .distinct().collect(java.util.stream.Collectors.toList());
+        }
+        return legacyColumnModules(pm);
     }
 
-    private boolean isAllowed(String flag) {
-        return flag != null && !flag.equals("000") && !flag.isBlank();
+    /** Modules deduits des seules colonnes historiques (delegue a l'entite). */
+    private List<String> legacyColumnModules(PermissionManagement pm) {
+        return pm.legacyColumnModules();
     }
+
 }
