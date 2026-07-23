@@ -78,9 +78,10 @@ public class MfaController {
             Account account = mfa.verify(request.challenge(), request.code(), request.recoveryCode());
             UserDetails userDetails = users.loadUserByUsername(account.getLogin());
             String jwt = jwtHelper.generateToken(userDetails);
+            // Cookie de SESSION (pas de maxAge) : effacé à la fermeture du
+            // navigateur → déconnexion systématique. Cohérent avec AuthAPI.login.
             ResponseCookie cookie = ResponseCookie.from("jwt", jwt)
-                    .httpOnly(true).secure(true).path("/").sameSite("None")
-                    .maxAge(Duration.ofMillis(jwtHelper.getExpirationMillis())).build();
+                    .httpOnly(true).secure(true).path("/").sameSite("None").build();
             response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
             loginAttempts.recordSuccess(account.getLogin());
             safeAudit(account.getLogin(), request.recoveryCode() == null || request.recoveryCode().isBlank()

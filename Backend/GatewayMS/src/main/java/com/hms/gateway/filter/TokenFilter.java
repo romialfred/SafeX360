@@ -74,6 +74,7 @@ public class TokenFilter extends AbstractGatewayFilterFactory<TokenFilter.Config
             // 5 essais côté HRMS) : exiger le cookie ici rendait tout le parcours
             // MFA infranchissable, l'enrôlement comme la vérification.
             if (path.equals("/hrms/auth/login") || path.equals("/hrms/account/reset-password")
+                    || path.equals("/hrms/auth/first-login/password")
                     || path.equals("/hrms/auth/mfa/enroll/start")
                     || path.equals("/hrms/auth/mfa/enroll/confirm")
                     || path.equals("/hrms/auth/mfa/verify")) {

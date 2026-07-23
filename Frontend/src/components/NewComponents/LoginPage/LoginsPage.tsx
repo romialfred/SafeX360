@@ -24,6 +24,7 @@ import {
     loginUser,
     startMfaEnrollment,
     verifyMfa,
+    firstLoginChangePassword,
     type MfaEnrollment,
 } from '../../../services/LoginService';
 import { useAppDispatch } from '../../../slices/hooks';
@@ -117,8 +118,13 @@ const LoginsPage = () => {
     type LoginErrorKind = 'credentials' | 'network' | 'server' | 'waking' | 'rateLimit' | 'invitationExpired' | null;
     const [errorKind, setErrorKind] = useState<LoginErrorKind>(null);
     const [wakingStep, setWakingStep] = useState(0);
-    type MfaMode = 'verify' | 'enroll' | 'recoveryCodes' | null;
+    type MfaMode = 'verify' | 'enroll' | 'recoveryCodes' | 'firstLoginPassword' | null;
     const [mfaMode, setMfaMode] = useState<MfaMode>(null);
+    // Première connexion (pré-session) : changement du mot de passe temporaire AVANT la 2FA.
+    const [pwdChallenge, setPwdChallenge] = useState('');
+    const [newPwd, setNewPwd] = useState('');
+    const [confirmPwd, setConfirmPwd] = useState('');
+    const [pwdError, setPwdError] = useState('');
     const [mfaChallenge, setMfaChallenge] = useState('');
     const [mfaEnrollment, setMfaEnrollment] = useState<MfaEnrollment | null>(null);
     const [mfaCode, setMfaCode] = useState('');
@@ -279,6 +285,64 @@ const LoginsPage = () => {
         },
     });
 
+    // Enclenche l'étape 2FA depuis une réponse serveur 428 (MFA_REQUIRED /
+    // MFA_ENROLLMENT_REQUIRED). Réutilisé par le login ET par la première connexion.
+    const beginMfa = async (data: any): Promise<boolean> => {
+        const errCode = data?.errorCode ?? '';
+        const challenge = String(data?.challenge ?? '');
+        if (!challenge || (errCode !== 'MFA_REQUIRED' && errCode !== 'MFA_ENROLLMENT_REQUIRED')) return false;
+        setMfaChallenge(challenge);
+        setMfaCode('');
+        setMfaError('');
+        const ttl = Number(data?.expiresInSeconds) || 300;
+        setMfaDeadline(Date.now() + ttl * 1000);
+        if (errCode === 'MFA_ENROLLMENT_REQUIRED') {
+            try {
+                const enrollment = await startMfaEnrollment(challenge);
+                setMfaEnrollment(enrollment);
+                setMfaMode('enroll');
+            } catch {
+                return false;
+            }
+        } else {
+            setMfaMode('verify');
+        }
+        return true;
+    };
+
+    // Première connexion : pose du nouveau MDP (pré-session) puis enchaînement 2FA/session.
+    const handleFirstLoginPassword = async () => {
+        if (newPwd !== confirmPwd) {
+            setPwdError(language === 'fr' ? 'Les deux mots de passe ne correspondent pas.' : 'Passwords do not match.');
+            return;
+        }
+        const policyOk = newPwd.length >= 10 && /[A-Z]/.test(newPwd) && /[a-z]/.test(newPwd)
+            && /[0-9]/.test(newPwd) && /[^A-Za-z0-9]/.test(newPwd);
+        if (!policyOk) {
+            setPwdError(language === 'fr'
+                ? '10 caractères minimum, avec majuscule, minuscule, chiffre et caractère spécial.'
+                : 'At least 10 characters incl. uppercase, lowercase, digit and special character.');
+            return;
+        }
+        setLoading(true);
+        setPwdError('');
+        try {
+            const res: any = await firstLoginChangePassword(pwdChallenge, newPwd);
+            // 200 = session ouverte (rôle sans 2FA) → on entre.
+            setMfaMode(null);
+            await completeAuthenticatedSession();
+            void res;
+        } catch (err: any) {
+            const data = err?.response?.data;
+            // 428 = le rôle exige la 2FA → on enchaîne sur l'enrôlement / la vérification.
+            if (err?.response?.status === 428 && await beginMfa(data)) return;
+            setPwdError(data?.errorMessage
+                || (language === 'fr' ? 'Échec du changement de mot de passe.' : 'Password change failed.'));
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleSubmit = async (values: any) => {
         setErrorKind(null);
         setWakingStep(0);
@@ -304,30 +368,21 @@ const LoginsPage = () => {
                 const errMsg = err?.response?.data?.errorMessage ?? '';
                 const errCode = err?.response?.data?.errorCode ?? '';
 
-                if (status === 428 && (errCode === 'MFA_REQUIRED' || errCode === 'MFA_ENROLLMENT_REQUIRED')) {
+                // Première connexion : le MDP temporaire doit être changé AVANT la 2FA.
+                if (status === 428 && errCode === 'PASSWORD_CHANGE_REQUIRED') {
                     const challenge = String(err?.response?.data?.challenge ?? '');
-                    if (!challenge) {
-                        finalErrorKind = 'server';
-                        setErrorKind('server');
-                        return;
-                    }
-                    setMfaChallenge(challenge);
-                    setMfaCode('');
-                    setMfaError('');
+                    if (!challenge) { finalErrorKind = 'server'; setErrorKind('server'); return; }
+                    setPwdChallenge(challenge);
+                    setNewPwd(''); setConfirmPwd(''); setPwdError('');
                     const ttl = Number(err?.response?.data?.expiresInSeconds) || 300;
                     setMfaDeadline(Date.now() + ttl * 1000);
-                    if (errCode === 'MFA_ENROLLMENT_REQUIRED') {
-                        try {
-                            const enrollment = await startMfaEnrollment(challenge);
-                            setMfaEnrollment(enrollment);
-                            setMfaMode('enroll');
-                        } catch {
-                            finalErrorKind = 'server';
-                            setErrorKind('server');
-                        }
-                    } else {
-                        setMfaMode('verify');
-                    }
+                    setMfaMode('firstLoginPassword');
+                    return;
+                }
+
+                if (status === 428 && (errCode === 'MFA_REQUIRED' || errCode === 'MFA_ENROLLMENT_REQUIRED')) {
+                    const ok = await beginMfa(err?.response?.data);
+                    if (!ok) { finalErrorKind = 'server'; setErrorKind('server'); }
                     return;
                 }
 
@@ -792,7 +847,9 @@ const LoginsPage = () => {
                         <SafeXLogoColor variant="full" tone="light" size={34} />
                         <span className="hidden sm:block h-8 w-px bg-white/15" aria-hidden="true" />
                         <p className="hidden sm:block text-[11px] tracking-[0.16em] uppercase text-white/60">
-                            {language === 'fr' ? 'Vérification multifacteur' : 'Multi-factor verification'}
+                            {mfaMode === 'firstLoginPassword'
+                                ? (language === 'fr' ? 'Sécurisation du compte' : 'Account security')
+                                : (language === 'fr' ? 'Vérification multifacteur' : 'Multi-factor verification')}
                         </p>
                         {mfaMode !== 'recoveryCodes' && (
                             <button
@@ -807,6 +864,42 @@ const LoginsPage = () => {
                     </div>
 
                     <div className="px-6 py-5">
+                    {mfaMode === 'firstLoginPassword' && (
+                        <div className="space-y-3 text-sm text-slate-800">
+                            <p className="text-slate-600 leading-relaxed">
+                                {language === 'fr'
+                                    ? 'Première connexion : définissez votre nouveau mot de passe personnel. Vous serez ensuite invité à activer la double authentification si votre rôle l’exige.'
+                                    : 'First sign-in: set your new personal password. You will then be asked to enable two-factor authentication if your role requires it.'}
+                            </p>
+                            <PasswordInput
+                                label={language === 'fr' ? 'Nouveau mot de passe' : 'New password'}
+                                value={newPwd}
+                                onChange={(e) => setNewPwd(e.currentTarget.value)}
+                                autoComplete="new-password"
+                            />
+                            <PasswordInput
+                                label={language === 'fr' ? 'Confirmer le mot de passe' : 'Confirm password'}
+                                value={confirmPwd}
+                                onChange={(e) => setConfirmPwd(e.currentTarget.value)}
+                                autoComplete="new-password"
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleFirstLoginPassword(); }}
+                            />
+                            <p className="text-xs text-slate-500">
+                                {language === 'fr'
+                                    ? '10 caractères min. · majuscule · minuscule · chiffre · caractère spécial'
+                                    : 'Min 10 chars · uppercase · lowercase · digit · special'}
+                            </p>
+                            {pwdError && <p role="alert" className="text-red-700">{pwdError}</p>}
+                            <Button
+                                fullWidth
+                                loading={loading}
+                                onClick={handleFirstLoginPassword}
+                                disabled={!newPwd.trim() || !confirmPwd.trim()}
+                            >
+                                {language === 'fr' ? 'Valider et continuer' : 'Confirm and continue'}
+                            </Button>
+                        </div>
+                    )}
                     {mfaMode === 'enroll' && mfaEnrollment && (
                         <div className="space-y-5 text-sm text-slate-800">
                             <p className="text-slate-600 leading-relaxed">

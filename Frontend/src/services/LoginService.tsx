@@ -28,6 +28,14 @@ const confirmMfaEnrollment = async (challenge: string, code: string): Promise<Mf
     return result.data;
 };
 
+// PREMIÈRE CONNEXION (pré-session) : pose le nouveau mot de passe contre le
+// challenge PASSWORD_CHANGE. Réponse 200 = {status:'AUTHENTICATED'} (session ouverte,
+// pas de MFA) ; réponse 428 = enchaînement 2FA (le caller lit err.response.data).
+const firstLoginChangePassword = async (challenge: string, newPassword: string) => {
+    const result = await axiosInstance.post('/hrms/auth/first-login/password', { challenge, newPassword });
+    return result.data;
+};
+
 const verifyMfa = async (challenge: string, code: string, recoveryCode?: string) => {
     const result = await axiosInstance.post('/hrms/auth/mfa/verify', {
         challenge,
@@ -51,4 +59,4 @@ const logoutUser = async () => {
     }
 }
 
-export { loginUser, getUser, logoutUser, startMfaEnrollment, confirmMfaEnrollment, verifyMfa };
+export { loginUser, getUser, logoutUser, startMfaEnrollment, confirmMfaEnrollment, verifyMfa, firstLoginChangePassword };

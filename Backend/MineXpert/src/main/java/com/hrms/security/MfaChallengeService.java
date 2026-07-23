@@ -14,7 +14,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class MfaChallengeService {
 
-    public enum Purpose { ENROLL, VERIFY }
+    // PASSWORD_CHANGE : challenge pré-session émis au 1er login (firstLogin=true)
+    // pour permettre le changement du mot de passe temporaire AVANT la MFA.
+    public enum Purpose { ENROLL, VERIFY, PASSWORD_CHANGE }
 
     public record Challenge(String token, long accountId, String login, Purpose purpose, Instant expiresAt) { }
 
