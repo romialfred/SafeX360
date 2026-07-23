@@ -6,9 +6,8 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.time.Clock;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -34,15 +33,57 @@ public class MfaService {
     private final MfaCryptoService crypto;
     private final BCryptPasswordEncoder recoveryEncoder = new BCryptPasswordEncoder(10);
     private final SecureRandom random = new SecureRandom();
-    private final Map<String, String> pendingSecrets = new ConcurrentHashMap<>();
 
+    /**
+     * Secrets TOTP en attente entre {@code enroll/start} et {@code enroll/confirm}.
+     *
+     * <p>Expiration ALIGNEE sur celle du challenge ({@link MfaChallengeService#TTL})
+     * : une fois le challenge perime, le secret n'a plus d'usage possible. Sans
+     * cette expiration, chaque enrolement abandonne laissait un secret TOTP EN
+     * CLAIR en memoire pour toute la duree de vie du processus — fuite lente et
+     * retention inutile de matiere cryptographique.
+     *
+     * <p>Limite connue et assumee : ce stockage, comme celui des challenges, est
+     * LOCAL au processus. Un redemarrage pendant un enrolement invalide challenge
+     * ET secret ensemble — l'utilisateur recommence sa connexion, il n'y a pas
+     * d'etat incoherent. En revanche, passer le service a PLUSIEURS INSTANCES
+     * exigerait de partager les deux (Redis ou table dediee) ; tant que le service
+     * tourne en instance unique, ce n'est pas necessaire.
+     */
+    private final com.github.benmanes.caffeine.cache.Cache<String, String> pendingSecrets;
+
+    // Constructeur utilise par Spring : il n'existe AUCUN bean Clock dans ce
+    // contexte (MfaChallengeService, TotpService et ServiceTokenVerifier suivent
+    // tous le meme motif de delegation). Exposer uniquement la variante a Clock
+    // ferait echouer le demarrage de l'application.
+    // @Autowired EXPLICITE : des qu'une classe expose PLUSIEURS constructeurs,
+    // Spring n'en choisit plus un automatiquement et se rabat sur le constructeur
+    // par defaut — qui n'existe pas ici (echec au demarrage, attrape par
+    // HrmsApplicationTests.contextLoads).
+    @org.springframework.beans.factory.annotation.Autowired
     public MfaService(AccountRepository accounts, MfaChallengeService challenges,
             MfaRolePolicy rolePolicy, TotpService totp, MfaCryptoService crypto) {
+        this(accounts, challenges, rolePolicy, totp, crypto, Clock.systemUTC());
+    }
+
+    MfaService(AccountRepository accounts, MfaChallengeService challenges,
+            MfaRolePolicy rolePolicy, TotpService totp, MfaCryptoService crypto, Clock clock) {
         this.accounts = accounts;
         this.challenges = challenges;
         this.rolePolicy = rolePolicy;
         this.totp = totp;
         this.crypto = crypto;
+        this.pendingSecrets = com.github.benmanes.caffeine.cache.Caffeine.newBuilder()
+                .expireAfterWrite(MfaChallengeService.TTL)
+                // Horloge injectee : le test fait avancer le temps sans attendre.
+                .ticker(() -> clock.instant().toEpochMilli() * 1_000_000L)
+                .build();
+    }
+
+    /** Nombre de secrets d'enrolement encore en attente (diagnostic + test de fuite). */
+    long pendingEnrollmentCount() {
+        pendingSecrets.cleanUp();
+        return pendingSecrets.estimatedSize();
     }
 
     public Enrollment beginEnrollment(String challengeToken) {
@@ -55,7 +96,7 @@ public class MfaService {
         if (!rolePolicy.requiresMfa(account.getRole()) || account.isMfaEnrolled()) {
             throw new MfaException("MFA_ENROLLMENT_NOT_ALLOWED");
         }
-        String secret = pendingSecrets.computeIfAbsent(challengeToken, ignored -> totp.newSecret());
+        String secret = pendingSecrets.get(challengeToken, ignored -> totp.newSecret());
         // Affichage dans l'application d'authentification (Microsoft
         // Authenticator, Google Authenticator...) : l'`issuer` est le titre en
         // gras (« SafeX 360 »), la partie compte est la ligne du dessous. On y
@@ -73,7 +114,7 @@ public class MfaService {
     @Transactional
     public synchronized EnrollmentResult confirmEnrollment(String challengeToken, String code) {
         Challenge challenge = challenges.require(challengeToken, Purpose.ENROLL);
-        String secret = pendingSecrets.get(challengeToken);
+        String secret = pendingSecrets.getIfPresent(challengeToken);
         if (secret == null) throw new MfaException("MFA_ENROLLMENT_NOT_STARTED");
         long step = totp.validate(secret, code);
         if (step < 0) {
@@ -92,7 +133,7 @@ public class MfaService {
         account.setMfaEnrolledAt(LocalDateTime.now());
         account.setMfaEnabled(true);
         accounts.save(account);
-        pendingSecrets.remove(challengeToken);
+        pendingSecrets.invalidate(challengeToken);
         challenges.consume(challengeToken);
         return new EnrollmentResult(List.copyOf(recoveryCodes));
     }

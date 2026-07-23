@@ -41,7 +41,7 @@ class MfaServiceTest {
         challenges = new MfaChallengeService(clock);
         MfaCryptoService crypto = new MfaCryptoService("unit-test-key-material-generated-at-runtime", mock(Environment.class));
         service = new MfaService(repository, challenges, new MfaRolePolicy(),
-                new TotpService(clock), crypto);
+                new TotpService(clock), crypto, clock);
     }
 
     @Test
@@ -126,6 +126,20 @@ class MfaServiceTest {
 
         String enrollChallenge = challenges.issue(7L, account.getLogin(), Purpose.ENROLL).token();
         assertThat(service.beginEnrollment(enrollChallenge).manualKey()).isNotBlank();
+    }
+
+    /**
+     * Hygiene memoire : un enrolement abandonne ne doit pas laisser son secret TOTP
+     * en clair en memoire indefiniment. Le secret expire avec le challenge (5 min).
+     */
+    @Test
+    void abandonedEnrollmentSecretExpiresWithItsChallenge() {
+        String enrollChallenge = challenges.issue(7L, account.getLogin(), Purpose.ENROLL).token();
+        service.beginEnrollment(enrollChallenge);
+        assertThat(service.pendingEnrollmentCount()).isEqualTo(1);
+
+        clock.advance(Duration.ofMinutes(6));
+        assertThat(service.pendingEnrollmentCount()).isZero();
     }
 
     private static final class MutableClock extends Clock {

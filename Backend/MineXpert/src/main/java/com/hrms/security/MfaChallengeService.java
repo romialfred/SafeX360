@@ -20,7 +20,9 @@ public class MfaChallengeService {
 
     public record Challenge(String token, long accountId, String login, Purpose purpose, Instant expiresAt) { }
 
-    private static final Duration TTL = Duration.ofMinutes(5);
+    // Package-private : MfaService aligne l'expiration des secrets d'enrolement
+    // en attente sur celle des challenges (source unique de la durée de vie).
+    static final Duration TTL = Duration.ofMinutes(5);
     private static final int MAX_ATTEMPTS = 5;
     private final SecureRandom random = new SecureRandom();
     private final Map<String, State> challenges = new ConcurrentHashMap<>();

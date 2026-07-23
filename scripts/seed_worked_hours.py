@@ -22,8 +22,11 @@ PowerShell :
     $env:SAFEX_LOGIN='Administrator'; $env:SAFEX_PASSWORD='********'
     python scripts/seed_worked_hours.py
 
-Le compte utilisé ne doit PAS avoir la MFA activée (sinon utiliser un compte de
-service dédié), sinon le login exigera un code TOTP que ce script ne fournit pas.
+AUTHENTIFICATION : la 2FA étant obligatoire pour TOUS les comptes, la connexion
+passe par scripts/safex_auth.py, qui joue le second facteur avec le secret TOTP du
+compte d'automatisation (Backend/.env : SAFEX_AUTOMATION_LOGIN / _PASSWORD /
+_TOTP_SECRET). Première mise en place : `python scripts/safex_auth.py --enroll`.
+SAFEX_LOGIN / SAFEX_PASSWORD restent acceptés en repli pour un compte hors 2FA.
 """
 import hashlib
 import os
@@ -71,14 +74,16 @@ def plausible_hours(company_id, dept_id, year, month):
 
 
 def main():
-    s = requests.Session()
-    print(f"→ Connexion à {BASE} en tant que {LOGIN} …")
-    r = s.post(f"{BASE}/hrms/auth/login", json={"login": LOGIN, "password": PASSWORD}, timeout=40)
-    if r.status_code != 200:
-        raise SystemExit(f"Login échoué (HTTP {r.status_code}) : {r.text[:200]}")
-    body = r.json() if r.headers.get("content-type", "").startswith("application/json") else {}
-    if isinstance(body, dict) and (body.get("mfaRequired") or body.get("mfa")):
-        raise SystemExit("Ce compte exige la MFA (TOTP) : utilisez un compte sans MFA.")
+    # La 2FA est obligatoire pour tous les comptes : on ne peut plus se contenter
+    # d'un POST /auth/login. safex_auth joue la chaîne complète (login → TOTP).
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from safex_auth import AuthError, login_session
+
+    print(f"→ Connexion à {BASE} (2FA comprise) …")
+    try:
+        s = login_session(login=LOGIN or None, password=PASSWORD or None, base=BASE)
+    except AuthError as e:
+        raise SystemExit(f"Login échoué : {e}")
 
     companies = s.get(f"{BASE}/hrms/company/getAll", timeout=40).json() or []
     months = month_range(START, date.today())
