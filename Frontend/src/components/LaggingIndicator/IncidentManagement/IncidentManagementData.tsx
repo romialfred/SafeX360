@@ -8,7 +8,6 @@ import {
     Select,
     TextInput,
     Tooltip,
-    Tabs,
 } from '@mantine/core';
 import {
     IconEdit,
@@ -20,12 +19,12 @@ import {
     IconUser,
     IconUsersGroup,
     IconAlertTriangle,
+    IconCategory,
 } from '@tabler/icons-react';
 import { FilterMatchMode } from 'primereact/api';
 import { Column } from 'primereact/column';
 import { DataTable, DataTableFilterMeta } from 'primereact/datatable';
 import { Toast } from 'primereact/toast';
-import { Toolbar } from 'primereact/toolbar';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -261,40 +260,39 @@ const IncidentManagementData = () => {
 
     // Catégories : on n'affiche que celles ayant au moins un incident (compteur absolu > 0).
     // Le compteur affiché reste, lui, croisé avec le filtre de gravité actif.
-    const categoryTemplate = () => {
+    // Catégorie → liste déroulante compacte (n'affiche que les catégories ayant au
+    // moins un incident). Le compteur reste croisé avec le filtre de gravité actif.
+    const categorySelectData = () => {
         const visibleCats = [
             'All',
             ...categories.filter(
-                (c) => c !== 'All' && incidents.filter((x) => x.incidentCategoryName === c).length > 0,
+                (c) => c !== 'All' && incidents.filter((x: any) => x.incidentCategoryName === c).length > 0,
             ),
         ];
-        return (
-            <Tabs value={selectedCategoryTab} onChange={value => value && setSelectedCategoryTab(value)} keepMounted={false}>
-                <Tabs.List className="mb-2 border-b border-slate-200 bg-white !rounded-lg p-1">
-                    {visibleCats.map((cat) => {
-                        const isAll = cat === 'All';
-                        const count = incidents.filter(
-                            (x) =>
-                                (selectedLevel === 'All' || x.maxSeverityLevel == selectedLevel) &&
-                                (isAll || x.incidentCategoryName === cat),
-                        ).length;
-                        const colorClass = isAll
-                            ? '!text-slate-500 hover:!text-slate-700 data-[active]:!bg-slate-100 data-[active]:!text-slate-800 data-[active]:!border-slate-300 data-[active]:!font-medium'
-                            : '!text-slate-500 hover:!text-slate-700 data-[active]:!bg-slate-50 data-[active]:!text-slate-800 data-[active]:!border-slate-300 data-[active]:!font-medium';
-                        return (
-                            <Tabs.Tab
-                                key={cat}
-                                value={cat}
-                                className={`!text-slate-600 ${colorClass} !rounded-lg px-3 py-1.5 text-sm transition-colors duration-200`}
-                            >
-                                {isAll ? t('list.all') : cat} ({count})
-                            </Tabs.Tab>
-                        );
-                    })}
-                </Tabs.List>
-            </Tabs>
-        );
+        return visibleCats.map((cat) => {
+            const isAll = cat === 'All';
+            const count = incidents.filter(
+                (x: any) =>
+                    (selectedLevel === 'All' || x.maxSeverityLevel == selectedLevel) &&
+                    (isAll || x.incidentCategoryName === cat),
+            ).length;
+            return { value: cat, label: `${isAll ? t('list.all') : cat} (${count})` };
+        });
     };
+
+    const categorySelectTemplate = () => (
+        <Select
+            allowDeselect={false}
+            size="sm"
+            w={220}
+            aria-label={t('list.colCategory')}
+            leftSection={<IconCategory size={15} />}
+            data={categorySelectData()}
+            value={selectedCategoryTab}
+            onChange={(value) => value && setSelectedCategoryTab(value)}
+            comboboxProps={{ withinPortal: true }}
+        />
+    );
 
     const dropdownFilterTemplate = () => (
         <div className="flex items-center gap-2">
@@ -442,11 +440,8 @@ const IncidentManagementData = () => {
      * Pattern visuel aligne sur la palette plateforme (vert teal + indigo IA).
      */
     const sourceFilterBanner = (
-        <div className="mb-3 flex items-center gap-3 flex-wrap rounded-xl border border-slate-200 bg-gradient-to-r from-white via-slate-50/60 to-white px-3 py-2 shadow-sm">
-            <span className="text-[12px] uppercase tracking-wide text-slate-500 font-semibold pl-1">
-                {t('list.source')}
-            </span>
-            <div className="flex items-center gap-1.5">
+        <div className="mb-3 flex items-center gap-2 flex-wrap rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+            <div className="flex items-center gap-1.5 flex-wrap">
                 {/* TOUS */}
                 <button
                     type="button"
@@ -522,18 +517,8 @@ const IncidentManagementData = () => {
                     {enrichedIncidents.filter((x: any) => x.highPotential === true).length}
                 </span>
             </button>
-            {selectedSource === 'AI' && (
-                <span className="ml-auto flex items-center gap-1.5 text-[12px] text-violet-700 bg-violet-50 px-2.5 py-1 rounded-md border border-violet-200">
-                    <IconSparkles size={12} />
-                    {t('list.aiHint')}
-                </span>
-            )}
-            {selectedSource === 'EMPLOYEE' && (
-                <span className="ml-auto flex items-center gap-1.5 text-[12px] text-teal-700 bg-teal-50 px-2.5 py-1 rounded-md border border-teal-200">
-                    <IconUser size={12} />
-                    {t('list.employeeHint')}
-                </span>
-            )}
+            {/* Affichage tuile/tableau + Export + Recherche — poussés à droite, même ligne que les sources. */}
+            <div className="ml-auto">{rightToolbarTemplate()}</div>
         </div>
     );
 
@@ -542,10 +527,14 @@ const IncidentManagementData = () => {
             <Toast ref={toast} />
             {/* Indicateurs de fréquence des lésions (ISO 45001 §9.1.1 — LTIFR/TRIFR). */}
             <div className="mb-3"><SafetyKpiPanel /></div>
-            {/* NOUVEAU LOT 49 — Filtre Source en tete : Employes vs IA */}
+            {/* Ligne 1 : sources (sans libellé, à gauche) + affichage / export / recherche (à droite). */}
             {sourceFilterBanner}
-            <Toolbar className="mb-3 !p-2" left={leftToolbarTemplate} right={rightToolbarTemplate} />
-            <Toolbar className="mb-4 !p-2" left={categoryTemplate} right={dropdownFilterTemplate} />
+            {/* Ligne 2 : tous les filtres regroupés — gravité · catégorie · statut · département. */}
+            <div className="mb-4 flex items-center gap-2 flex-wrap">
+                {leftToolbarTemplate()}
+                {categorySelectTemplate()}
+                {dropdownFilterTemplate()}
+            </div>
             {
                 viewType === 'table' ? (
                     <DataTable

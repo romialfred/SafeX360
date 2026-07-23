@@ -16,12 +16,13 @@ import { OUTCOME_CONFIG } from './IncidentInjuriesPanel';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
-type Tone = { icon: any; ring: string; text: string; iconColor: string };
+type Tone = { icon: any; tile: string; text: string; iconColor: string; iconBorder: string };
+// Fonds volontairement très transparents (/35) pour un rendu léger et discret.
 const TONES: Record<string, Tone> = {
-  ltifr: { icon: IconBandage, ring: 'bg-rose-50 border-rose-100', text: 'text-rose-700', iconColor: 'text-rose-500' },
-  trifr: { icon: IconActivity, ring: 'bg-amber-50 border-amber-100', text: 'text-amber-700', iconColor: 'text-amber-500' },
-  severity: { icon: IconAlertTriangle, ring: 'bg-violet-50 border-violet-100', text: 'text-violet-700', iconColor: 'text-violet-500' },
-  hours: { icon: IconClockHour4, ring: 'bg-teal-50 border-teal-100', text: 'text-teal-700', iconColor: 'text-teal-500' },
+  ltifr: { icon: IconBandage, tile: 'bg-rose-50/35 border-rose-100/70', text: 'text-rose-700', iconColor: 'text-rose-500', iconBorder: 'border-rose-100' },
+  trifr: { icon: IconActivity, tile: 'bg-amber-50/35 border-amber-100/70', text: 'text-amber-700', iconColor: 'text-amber-500', iconBorder: 'border-amber-100' },
+  severity: { icon: IconAlertTriangle, tile: 'bg-violet-50/35 border-violet-100/70', text: 'text-violet-700', iconColor: 'text-violet-500', iconBorder: 'border-violet-100' },
+  hours: { icon: IconClockHour4, tile: 'bg-teal-50/35 border-teal-100/70', text: 'text-teal-700', iconColor: 'text-teal-500', iconBorder: 'border-teal-100' },
 };
 
 /** Puce de variation vs mois précédent. lowerIsBetter : baisse = vert (bon). */
@@ -46,16 +47,18 @@ const KpiTile = ({ toneKey, label, value, hint, delta, lowerIsBetter }: {
   const tone = TONES[toneKey];
   const Icon = tone.icon;
   return (
-    <div className={`rounded-xl border ${tone.ring} p-3`}>
-      <div className="flex items-center justify-between">
-        <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg bg-white/70 border ${tone.ring} ${tone.iconColor}`}>
+    <div className={`rounded-xl border ${tone.tile} px-3 py-2`}>
+      <div className="flex items-center gap-2">
+        <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white/70 border ${tone.iconBorder} ${tone.iconColor} shrink-0`}>
           <Icon size={16} />
         </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] uppercase tracking-wider text-slate-500 leading-tight truncate">{label}</p>
+          <p className={`text-xl font-semibold tabular-nums leading-tight ${tone.text}`}>{value}</p>
+        </div>
         {delta !== undefined && <Delta delta={delta ?? null} lowerIsBetter={lowerIsBetter} />}
       </div>
-      <p className="text-[10.5px] uppercase tracking-wider text-slate-500 mt-2">{label}</p>
-      <p className={`text-2xl tabular-nums leading-none mt-0.5 ${tone.text}`}>{value}</p>
-      <p className="text-[11px] text-slate-500 mt-1">{hint}</p>
+      <p className="text-[10.5px] text-slate-400 mt-1 truncate">{hint}</p>
     </div>
   );
 };
@@ -99,12 +102,12 @@ const SafetyKpiPanel = () => {
         </Tooltip>
         <Select size="xs" w={90} data={yearOptions} value={String(year)} onChange={(v) => setYear(Number(v) || CURRENT_YEAR)} comboboxProps={{ withinPortal: true }} />
       </header>
-      <div className="p-4 space-y-4">
+      <div className="p-3 space-y-3">
         {loading ? (
           <div className="flex items-center gap-2 text-slate-500 text-sm"><Loader size="sm" /> Chargement…</div>
         ) : (
           <>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
               <KpiTile toneKey="ltifr" label="LTIFR" value={fmt(kpi?.ltifr)} hint="Accidents avec arrêt / M h" delta={delta((m) => m.ltifr)} lowerIsBetter />
               <KpiTile toneKey="trifr" label="TRIFR" value={fmt(kpi?.trifr)} hint="Enregistrables / M h" delta={delta((m) => m.trifr)} lowerIsBetter />
               <KpiTile toneKey="severity" label="Taux de gravité" value={fmt(kpi?.severityRate)} hint="Jours perdus / M h" delta={delta((m) => m.severityRate)} lowerIsBetter />
