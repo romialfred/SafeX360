@@ -18,8 +18,6 @@ import { useNavigate } from 'react-router-dom';
 import Africa from '@react-map/africa';
 import { useAuth } from '../../../hooks/useAuth';
 
-const LOGO_LIGHT = '/safex-logo-dark.png'; // « SafeX » teal — pour fond clair
-const LOGO_DARK = '/safex-logo.png';       // « SafeX » blanc — pour fond fonce
 const PHOTO_HERO = '/hero/training-team.png';
 const PHOTO_FIELD = '/hero/workers-loto.png';
 
@@ -78,18 +76,42 @@ const CSS = `
   .lp .btn-o:hover{border-color:var(--ink)}
   .lp .btn-b{background:var(--blue);color:#fff}
 
-  .lp .nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-  .lp .nav .wrap{display:flex;align-items:center;gap:20px;height:66px}
-  .lp .logo{display:flex;align-items:center;gap:10px}
-  .lp .logo-img{height:30px;width:auto;display:block}
-  .lp .logo-sub{font-size:9px;letter-spacing:.13em;color:var(--faint);font-weight:800;text-transform:uppercase;border-left:1px solid var(--line);padding-left:10px}
-  .lp .menu{display:flex;gap:22px;margin-left:14px;font-size:14px;font-weight:600;color:var(--muted)}
-  .lp .menu a{cursor:pointer}
-  .lp .menu a:hover{color:var(--ink)}
-  .lp .navr{margin-left:auto;display:flex;align-items:center;gap:12px}
-  .lp .lang{font-size:13px;font-weight:700;color:var(--muted);border:1px solid var(--line);border-radius:7px;padding:6px 10px}
-  .lp .link-b{font-size:14px;font-weight:700;color:var(--ink);cursor:pointer}
+  /* BANDEAU DE NAVIGATION — fond plein.
+     Le bandeau blanc translucide se confondait avec le haut de la page : rien ne
+     separait la navigation du contenu. Un aplat sombre pose la barre comme un
+     element a part et fait ressortir l'appel a l'action ambre.
+     TOUT TIENT SUR UNE LIGNE : white-space:nowrap partout et flex-wrap:nowrap —
+     « A propos » et « Se connecter » passaient a la ligne, ce qui donnait ce
+     decalage vertical disgracieux. */
+  .lp .nav{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,#12294A 0%,var(--navy) 100%);border-bottom:1px solid rgba(255,255,255,.09);box-shadow:0 10px 30px -22px rgba(11,30,58,.95)}
+  .lp .nav .wrap{display:flex;align-items:center;gap:16px;height:72px;flex-wrap:nowrap}
+  .lp .logo{display:flex;align-items:center;gap:10px;flex:0 0 auto}
+  /* LETTRAGE VECTORIEL : l'ancien logo etait une image de 349x66 px affichee a
+     30 px de haut — le reechantillonnage produisait les bords rugueux signales.
+     Un lettrage en texte reste net a toutes les resolutions et supprime au
+     passage une requete de 13 ko. */
+  .lp .wordmark{display:inline-flex;align-items:baseline;font-weight:800;font-size:25px;letter-spacing:-.015em;line-height:1;white-space:nowrap}
+  .lp .wordmark .safe{color:#FFFFFF}
+  .lp .wordmark .num{margin-left:7px;letter-spacing:0}
+  .lp .wordmark .n3{color:#2FBFAE}
+  .lp .wordmark .n6{color:var(--amber)}
+  .lp .wordmark .n0{color:#F0666B}
+  .lp .logo-sub{font-size:9px;letter-spacing:.13em;color:rgba(255,255,255,.55);font-weight:800;text-transform:uppercase;border-left:1px solid rgba(255,255,255,.2);padding-left:10px;white-space:nowrap}
+  .lp .menu{display:flex;gap:20px;margin-left:16px;font-size:14px;font-weight:600;color:rgba(255,255,255,.78);white-space:nowrap}
+  .lp .menu a{cursor:pointer;transition:color .15s}
+  .lp .menu a:hover{color:#fff}
+  .lp .navr{margin-left:auto;display:flex;align-items:center;gap:10px;flex:0 0 auto;white-space:nowrap}
+  .lp .lang{font-size:13px;font-weight:700;color:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.22);border-radius:7px;padding:6px 10px;cursor:pointer}
+  .lp .lang:hover{border-color:rgba(255,255,255,.45)}
+  .lp .link-b{font-size:14px;font-weight:700;color:#fff;cursor:pointer;white-space:nowrap}
+  .lp .link-b:hover{color:var(--amber)}
+  .lp .nav .btn{white-space:nowrap;padding:11px 18px}
   @media(max-width:560px){.lp .logo-sub{display:none}}
+  /* Marge de securite : avec flex-wrap:nowrap, un contenu trop large deborderait
+     au lieu de passer a la ligne. On libere d'abord le sous-titre du logo, puis
+     on resserre le menu, avant de le masquer completement sous 960 px. */
+  @media(max-width:1180px){.lp .logo-sub{display:none}}
+  @media(max-width:1080px){.lp .menu{gap:15px;font-size:13.5px;margin-left:10px}}
   @media(max-width:960px){.lp .menu,.lp .link-b,.lp .lang{display:none}}
 
   .lp .hero{background:linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%);border-bottom:1px solid var(--line)}
@@ -305,7 +327,13 @@ export default function LandingPage() {
             {/* NAV */}
             <nav className="nav"><div className="wrap">
                 <div className="logo">
-                    <img className="logo-img" src={LOGO_LIGHT} alt="SafeX 360" />
+                    {/* translate="no" : un nom de marque ne se traduit pas — et un
+                        traducteur automatique qui remplace ces noeuds fait planter
+                        le rendu React. */}
+                    <span className="wordmark" translate="no" aria-label="SafeX 360">
+                        <span className="safe">SafeX</span>
+                        <span className="num"><span className="n3">3</span><span className="n6">6</span><span className="n0">0</span></span>
+                    </span>
                     <span className="logo-sub">Digital HSE Platform</span>
                 </div>
                 <div className="menu">
@@ -319,7 +347,7 @@ export default function LandingPage() {
                 <div className="navr">
                     <span className="lang">FR</span>
                     <a className="link-b" onClick={login}>Se connecter</a>
-                    <button className="btn btn-a" onClick={() => goTo('demo')}>Demander une démonstration</button>
+                    <button className="btn btn-a" onClick={() => goTo('demo')}>Demander une démo</button>
                 </div>
             </div></nav>
 
@@ -538,7 +566,10 @@ export default function LandingPage() {
             <footer><div className="wrap">
                 <div className="fcols">
                     <div>
-                        <img className="logo-img" src={LOGO_DARK} alt="SafeX 360" style={{ height: 34 }} />
+                        <span className="wordmark" translate="no" aria-label="SafeX 360" style={{ fontSize: 28 }}>
+                            <span className="safe">SafeX</span>
+                            <span className="num"><span className="n3">3</span><span className="n6">6</span><span className="n0">0</span></span>
+                        </span>
                         <p className="desc">La plateforme de pilotage de la Santé, de la Sécurité et de l’Environnement pour l’industrie minière et industrielle.</p>
                     </div>
                     <div><h5>Solution</h5><ul><li><a onClick={() => goTo('features')}>Fonctionnalités</a></li><li><a onClick={() => goTo('modules')}>Modules</a></li><li><a onClick={() => goTo('secteurs')}>Secteurs</a></li><li><a onClick={() => goTo('demo')}>Tarifs</a></li></ul></div>
