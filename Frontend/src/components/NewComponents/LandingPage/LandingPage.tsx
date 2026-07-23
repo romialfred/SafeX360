@@ -13,8 +13,9 @@
  * demarches normatives, jamais d'attestation delivree par un organisme tiers.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Africa from '@react-map/africa';
 import { useAuth } from '../../../hooks/useAuth';
 
 const LOGO_LIGHT = '/safex-logo-dark.png'; // « SafeX » teal — pour fond clair
@@ -54,6 +55,9 @@ const STEPS: [string, string][] = [
 ];
 
 const SECTORS = ['⛏ Exploitation minière', '⛰ Carrières', '⚡ Énergie', '🏗 BTP', '🏭 Industrie', '🚚 Logistique'];
+
+// Hero dynamique : le dernier mot défile.
+const HERO_WORDS = ['performance HSE.', 'conformité réglementaire.', 'sécurité au travail.', 'culture de prévention.'];
 
 const CSS = `
   .lp{--ink:#12233D;--navy:#0B1E3A;--muted:#5B6a7d;--faint:#93A0AF;--bg:#FFFFFF;--bg2:#F4F8FC;
@@ -213,13 +217,63 @@ const CSS = `
 
   .lp .reveal{opacity:0;transform:translateY(22px);transition:opacity .6s ease,transform .6s ease}
   .lp .reveal.in{opacity:1;transform:none}
-  @media(prefers-reduced-motion:reduce){.lp .reveal{opacity:1;transform:none;transition:none}}
+
+  /* HERO DYNAMIQUE */
+  .lp .hero h1 .rot{display:inline-block;color:var(--amber-d);animation:lpRot .55s cubic-bezier(.2,.7,.2,1)}
+  @keyframes lpRot{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+  .lp .hero-art .photo img{animation:lpKB 20s ease-in-out infinite alternate;will-change:transform}
+  @keyframes lpKB{from{transform:scale(1)}to{transform:scale(1.09)}}
+  .lp .fc1{animation:lpFloat 5.5s ease-in-out infinite}
+  .lp .fc2{animation:lpFloat 5.5s ease-in-out infinite;animation-delay:1.4s}
+  @keyframes lpFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  .lp .hero-art .live{display:inline-flex;align-items:center;gap:5px}
+  .lp .hero-art .live i{width:6px;height:6px;border-radius:50%;background:var(--good);box-shadow:0 0 0 0 rgba(18,161,80,.5);animation:lpPulse 1.8s infinite}
+  @keyframes lpPulse{0%{box-shadow:0 0 0 0 rgba(18,161,80,.5)}70%{box-shadow:0 0 0 7px rgba(18,161,80,0)}100%{box-shadow:0 0 0 0 rgba(18,161,80,0)}}
+
+  /* SECTEURS défilants (marquee) */
+  .lp .marq{overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);margin-top:16px}
+  .lp .marq-track{display:inline-flex;gap:10px;white-space:nowrap;animation:lpMarq 26s linear infinite;will-change:transform}
+  .lp .marq:hover .marq-track{animation-play-state:paused}
+  @keyframes lpMarq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+  /* CARTE INTERACTIVE */
+  .lp .fc.map .mapbox{margin-top:8px;display:flex;justify-content:center;align-items:center;min-height:180px}
+  .lp .fc.map .mapbox svg{max-width:100%;height:auto}
+
+  @media(prefers-reduced-motion:reduce){
+    .lp .reveal{opacity:1;transform:none;transition:none}
+    .lp .hero h1 .rot,.lp .hero-art .photo img,.lp .fc1,.lp .fc2,.lp .marq-track,.lp .hero-art .live i{animation:none}
+  }
 `;
 
 export default function LandingPage() {
     const navigate = useNavigate();
     const { user } = useAuth();
     const rootRef = useRef<HTMLDivElement | null>(null);
+    const [wordIdx, setWordIdx] = useState(0);
+    const [count, setCount] = useState(0);
+
+    // Hero : le dernier mot du titre défile toutes les 2,4 s.
+    useEffect(() => {
+        const id = setInterval(() => setWordIdx((i) => (i + 1) % HERO_WORDS.length), 2400);
+        return () => clearInterval(id);
+    }, []);
+
+    // Compteur animé de la carte « incidents ce mois » (0 → 128).
+    useEffect(() => {
+        const target = 128;
+        const start = performance.now();
+        const dur = 1400;
+        let raf = 0;
+        const tick = (t: number) => {
+            const p = Math.min(1, (t - start) / dur);
+            const eased = 1 - Math.pow(1 - p, 3);
+            setCount(Math.round(target * eased));
+            if (p < 1) raf = requestAnimationFrame(tick);
+        };
+        raf = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(raf);
+    }, []);
 
     // Utilisateur connecte : RootGate sert le dashboard sur « / ».
     useEffect(() => {
@@ -272,8 +326,8 @@ export default function LandingPage() {
             {/* HERO */}
             <header className="hero"><div className="wrap">
                 <div className="reveal">
-                    <span className="badge">● Solution HSE intelligente pour l’industrie minière</span>
-                    <h1>Anticipez les risques.<br />Protégez vos équipes.<br />Pilotez votre <span className="y">performance HSE.</span></h1>
+                    <span className="badge">● Plateforme HSE dédiée à l’industrie minière &amp; industrielle</span>
+                    <h1>Anticipez les risques.<br />Protégez vos équipes.<br />Pilotez votre <span className="y rot" key={wordIdx}>{HERO_WORDS[wordIdx]}</span></h1>
                     <p className="sub">SafeX 360 digitalise l’ensemble de vos processus Santé, Sécurité et Environnement, du terrain jusqu’au pilotage stratégique.</p>
                     <div className="cta">
                         <button className="btn btn-a" onClick={() => goTo('demo')}>Demander une démonstration &nbsp;→</button>
@@ -289,7 +343,7 @@ export default function LandingPage() {
                 </div>
                 <div className="hero-art reveal">
                     <div className="photo"><img src={PHOTO_HERO} alt="Équipe HSE sur site minier" /></div>
-                    <div className="fc1"><div className="t">Incidents ce mois</div><div className="n">128</div><div className="d">↓ 13%</div></div>
+                    <div className="fc1"><div className="t">Incidents ce mois</div><div className="n">{count}</div><div className="d">↓ 13%</div></div>
                     <div className="fc2"><div className="row"><span className="dot" /><span className="lab">Équipe au complet · 243 pointés</span></div></div>
                 </div>
             </div></header>
@@ -297,10 +351,12 @@ export default function LandingPage() {
             {/* SECTEURS */}
             <div className="sectors" id="secteurs">
                 <div className="lbl">Une plateforme conçue pour les environnements industriels exigeants</div>
-                <div className="tabs">
-                    {SECTORS.map((s, i) => (
-                        <span key={s} className={`tab${i === 0 ? ' on' : ''}`}>{s}</span>
-                    ))}
+                <div className="marq">
+                    <div className="marq-track">
+                        {[...SECTORS, ...SECTORS].map((s, i) => (
+                            <span key={i} className={`tab${i % SECTORS.length === 0 ? ' on' : ''}`}>{s}</span>
+                        ))}
+                    </div>
                 </div>
             </div>
 
@@ -384,12 +440,12 @@ export default function LandingPage() {
                 <div className="sh reveal"><h2>Bien plus qu’un logiciel de suivi</h2><p>Des capacités avancées pour passer du réactif au préventif.</p></div>
                 <div className="wrap"><div className="fgrid2">
                     <div className="fc reveal">
-                        <div className="ic" style={{ background: 'rgba(124,58,237,.1)', color: '#7C3AED' }}>🧠</div>
-                        <h4>IA &amp; analyse prédictive</h4>
+                        <div className="ic" style={{ background: 'rgba(37,99,235,.1)', color: 'var(--blue)' }}>📊</div>
+                        <h4>Analyse &amp; tendances</h4>
                         <ul>
-                            <li>• Détection des tendances anormales</li>
-                            <li>• Identification des incidents récurrents</li>
-                            <li>• Suggestions d’actions prioritaires</li>
+                            <li>• Indicateurs de fréquence (LTIFR / TRIFR)</li>
+                            <li>• Détection des incidents récurrents</li>
+                            <li>• Priorisation des actions correctives</li>
                         </ul>
                         <span className="more">En savoir plus →</span>
                     </div>
@@ -408,17 +464,23 @@ export default function LandingPage() {
                     <div className="fc map reveal">
                         <div className="ic" style={{ background: 'rgba(37,99,235,.1)', color: 'var(--blue)' }}>🌍</div>
                         <h4>Pilotage multi-sites</h4>
-                        <svg className="africa" viewBox="0 0 300 300" role="img" aria-label="Carte d’Afrique : Burkina Faso, Mali, Niger">
-                            <path className="cont" d="M78,52 L120,40 L150,44 L185,46 L218,44 L232,58 L240,84 L250,104 L262,116 L290,118 L268,132 L250,150 L246,175 L252,196 L246,224 L232,250 L214,272 L190,288 L168,286 L152,258 L150,230 L142,208 L136,196 L132,186 L126,182 L108,188 L100,186 L82,190 L68,192 L50,186 L40,176 L26,158 L20,150 L24,128 L34,100 L52,72 Z" />
-                            <path className="sahel" d="M48,102 L100,99 L112,116 L86,134 L58,130 Z" />
-                            <circle cx="60" cy="112" r="4.4" fill="#0F9E8E" stroke="#fff" strokeWidth="1.6" />
-                            <text className="plabel" x="60" y="106" textAnchor="middle">Mali</text>
-                            <circle cx="99" cy="110" r="4.4" fill="#2563EB" stroke="#fff" strokeWidth="1.6" />
-                            <text className="plabel" x="99" y="104" textAnchor="middle">Niger</text>
-                            <circle cx="78" cy="126" r="8.5" fill="rgba(245,166,35,.28)" />
-                            <circle cx="78" cy="126" r="5" fill="#F5A623" stroke="#fff" strokeWidth="1.8" />
-                            <text className="plabel" x="78" y="145" textAnchor="middle">Burkina Faso</text>
-                        </svg>
+                        <div className="mapbox">
+                            <Africa
+                                type="select-single"
+                                size={300}
+                                mapColor="#DCE6F1"
+                                strokeColor="#ffffff"
+                                strokeWidth={0.7}
+                                hoverColor="#F5A623"
+                                selectColor="#DE8E0C"
+                                hints
+                                hintTextColor="#ffffff"
+                                hintBackgroundColor="#0B1E3A"
+                                hintBorderRadius={8}
+                                cityColors={{ BurkinaFaso: '#F5A623', 'Burkina Faso': '#F5A623', Mali: '#0F9E8E', Niger: '#2563EB' }}
+                                onSelect={() => { /* vitrine : survol interactif uniquement */ }}
+                            />
+                        </div>
                         <div className="mlegend">
                             <span><i style={{ background: '#F5A623' }} />Burkina Faso</span>
                             <span><i style={{ background: '#0F9E8E' }} />Mali</span>
@@ -477,7 +539,7 @@ export default function LandingPage() {
                 <div className="fcols">
                     <div>
                         <img className="logo-img" src={LOGO_DARK} alt="SafeX 360" style={{ height: 34 }} />
-                        <p className="desc">La plateforme intelligente de pilotage de la Santé, de la Sécurité et de l’Environnement pour l’industrie minière et industrielle.</p>
+                        <p className="desc">La plateforme de pilotage de la Santé, de la Sécurité et de l’Environnement pour l’industrie minière et industrielle.</p>
                     </div>
                     <div><h5>Solution</h5><ul><li><a onClick={() => goTo('features')}>Fonctionnalités</a></li><li><a onClick={() => goTo('modules')}>Modules</a></li><li><a onClick={() => goTo('secteurs')}>Secteurs</a></li><li><a onClick={() => goTo('demo')}>Tarifs</a></li></ul></div>
                     <div><h5>Ressources</h5><ul><li><a>Centre d’aide</a></li><li><a>Documentation</a></li><li><a>FAQ</a></li><li><a>Actualités</a></li></ul></div>
