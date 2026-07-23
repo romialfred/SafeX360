@@ -157,9 +157,19 @@ public class AuthAPI {
             }
 
             if (mfaRolePolicy.requiresMfa(authenticatedAccount.getRole())) {
-                boolean enrolled = Boolean.TRUE.equals(authenticatedAccount.getMfaEnabled())
-                        && authenticatedAccount.getMfaSecretEncrypted() != null
-                        && !authenticatedAccount.getMfaSecretEncrypted().isBlank();
+                boolean enrolled = authenticatedAccount.isMfaEnrolled();
+                // AUTO-RÉPARATION d'un état incohérent : drapeau levé sans secret
+                // (réinitialisation partielle, migration, enrôlement interrompu).
+                // On remet le drapeau à plat pour que la base dise la vérité —
+                // l'enrôlement forcé enchaîne juste en dessous.
+                if (!enrolled && Boolean.TRUE.equals(authenticatedAccount.getMfaEnabled())) {
+                    authenticatedAccount.setMfaEnabled(false);
+                    accountRepository.save(authenticatedAccount);
+                    try {
+                        auditLogService.logAudit(new AuditLogDTO(null, null, request.getLogin(),
+                                LocalDateTime.now(), "MFA flag repaired (enabled without secret); enrollment forced"));
+                    } catch (Exception ignored) { }
+                }
                 MfaChallengeService.Challenge challenge = mfaChallengeService.issue(
                         authenticatedAccount.getId(), authenticatedAccount.getLogin(),
                         enrolled ? Purpose.VERIFY : Purpose.ENROLL);
@@ -276,8 +286,7 @@ public class AuthAPI {
 
         // Chaîne : MFA d'abord si le rôle l'exige (enrôlement pour un nouveau compte).
         if (mfaRolePolicy.requiresMfa(account.getRole())) {
-            boolean enrolled = Boolean.TRUE.equals(account.getMfaEnabled())
-                    && account.getMfaSecretEncrypted() != null && !account.getMfaSecretEncrypted().isBlank();
+            boolean enrolled = account.isMfaEnrolled();
             MfaChallengeService.Challenge mfaCh = mfaChallengeService.issue(
                     account.getId(), account.getLogin(),
                     enrolled ? MfaChallengeService.Purpose.VERIFY : MfaChallengeService.Purpose.ENROLL);

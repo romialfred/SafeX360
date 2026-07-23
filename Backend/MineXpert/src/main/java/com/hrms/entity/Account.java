@@ -136,6 +136,25 @@ public class Account {
 
     private LocalDateTime mfaEnrolledAt;
 
+    /**
+     * SOURCE UNIQUE du predicat « ce compte est reellement enrole en 2FA ».
+     *
+     * <p>Le drapeau {@code mfaEnabled} seul ne suffit pas : sans secret il n'y a
+     * rien a verifier. Ce test etait auparavant duplique — /login exigeait le
+     * secret, {@code MfaService.beginEnrollment} regardait le seul drapeau — et
+     * les deux versions divergeaient : un compte {@code mfaEnabled=1} sans secret
+     * recevait un challenge ENROLL que l'enrolement refusait ensuite
+     * (MFA_ENROLLMENT_NOT_ALLOWED), donc aucun ecran 2FA et une connexion
+     * impossible. Un seul predicat, appele des deux cotes, supprime la divergence.
+     */
+    @jakarta.persistence.Transient
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public boolean isMfaEnrolled() {
+        return Boolean.TRUE.equals(this.mfaEnabled)
+                && this.mfaSecretEncrypted != null
+                && !this.mfaSecretEncrypted.isBlank();
+    }
+
     public AccountDTO toDTO() {
         return new AccountDTO(
                 this.id,

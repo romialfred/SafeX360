@@ -117,6 +117,9 @@ const LoginsPage = () => {
     const dispatch = useAppDispatch();
     type LoginErrorKind = 'credentials' | 'network' | 'server' | 'waking' | 'rateLimit' | 'invitationExpired' | null;
     const [errorKind, setErrorKind] = useState<LoginErrorKind>(null);
+    // Détail technique renvoyé par le serveur (code d'erreur MFA notamment) —
+    // affiché sous le message générique pour ne plus masquer la cause réelle.
+    const [serverDetail, setServerDetail] = useState('');
     const [wakingStep, setWakingStep] = useState(0);
     type MfaMode = 'verify' | 'enroll' | 'recoveryCodes' | 'firstLoginPassword' | null;
     const [mfaMode, setMfaMode] = useState<MfaMode>(null);
@@ -301,7 +304,15 @@ const LoginsPage = () => {
                 const enrollment = await startMfaEnrollment(challenge);
                 setMfaEnrollment(enrollment);
                 setMfaMode('enroll');
-            } catch {
+            } catch (e: any) {
+                // NE PAS AVALER L'ERREUR : le serveur exige l'enrôlement mais le
+                // démarrage échoue → sans ce détail, l'utilisateur ne voyait qu'un
+                // « erreur technique » générique et le compte semblait simplement
+                // refuser la connexion (c'est ainsi que le verrou mfaEnabled-sans-secret
+                // est resté invisible). On remonte le code/message du serveur.
+                const d = e?.response?.data;
+                setServerDetail(String(d?.errorCode || d?.errorMessage || e?.message || '')
+                    .slice(0, 120));
                 return false;
             }
         } else {
@@ -345,6 +356,7 @@ const LoginsPage = () => {
 
     const handleSubmit = async (values: any) => {
         setErrorKind(null);
+        setServerDetail('');
         setWakingStep(0);
         form.validate();
         if (!form.isValid()) return;
@@ -1068,7 +1080,7 @@ const LoginsPage = () => {
 
                 <Modal
                     opened={errorKind !== null && errorKind !== 'waking'}
-                    onClose={() => setErrorKind(null)}
+                    onClose={() => { setErrorKind(null); setServerDetail(''); }}
                     centered
                     withCloseButton={false}
                     radius="lg"
@@ -1139,15 +1151,27 @@ const LoginsPage = () => {
                         <p
                             style={{ color: 'rgba(255,255,255,0.75)', fontSize: '13.5px', maxWidth: '300px', marginTop: '12px', lineHeight: '1.6' }}
                         >
-                            {errorKind === 'credentials' && t.popupCredentials}
-                            {errorKind === 'rateLimit' && t.popupRateLimit}
-                            {errorKind === 'network' && t.popupNetwork}
-                            {errorKind === 'server' && t.popupServer}
-                            {errorKind === 'invitationExpired' && t.popupInvitationExpired}
+                            {/* UN SEUL nœud texte (concat ternaire) : des nœuds texte
+                                frères mis à jour après le montage font planter
+                                insertBefore sous Google Translate. */}
+                            {errorKind === 'credentials' ? t.popupCredentials
+                                : errorKind === 'rateLimit' ? t.popupRateLimit
+                                    : errorKind === 'network' ? t.popupNetwork
+                                        : errorKind === 'server' ? t.popupServer
+                                            : errorKind === 'invitationExpired' ? t.popupInvitationExpired
+                                                : ''}
                         </p>
+                        {serverDetail && (
+                            <p
+                                translate="no"
+                                style={{ color: 'rgba(255,255,255,0.55)', fontSize: '12px', maxWidth: '300px', marginTop: '6px', fontFamily: 'monospace' }}
+                            >
+                                {serverDetail}
+                            </p>
+                        )}
 
                         <Button
-                            onClick={() => setErrorKind(null)}
+                            onClick={() => { setErrorKind(null); setServerDetail(''); }}
                             size="md"
                             radius="md"
                             mt={24}

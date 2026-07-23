@@ -78,6 +78,56 @@ class MfaServiceTest {
                 .hasMessage("MFA_CODE_INVALID_OR_REPLAYED");
     }
 
+    /**
+     * VERROU MORTEL (regression) : un compte {@code mfaEnabled=true} sans secret
+     * recevait un challenge ENROLL de /login, mais l'enrolement le refusait
+     * (MFA_ENROLLMENT_NOT_ALLOWED) — plus aucun ecran 2FA, connexion impossible.
+     * L'enrolement doit demarrer : le drapeau seul ne vaut pas enrolement.
+     */
+    @Test
+    void enrollmentStartsWhenFlagIsSetButSecretIsMissing() {
+        account.setMfaEnabled(true);
+        account.setMfaSecretEncrypted(null);
+
+        String enrollChallenge = challenges.issue(7L, account.getLogin(), Purpose.ENROLL).token();
+        assertThat(service.beginEnrollment(enrollChallenge).manualKey()).isNotBlank();
+    }
+
+    /** L'autre sens de la garde : un compte REELLEMENT enrole ne se re-enrole pas. */
+    @Test
+    void enrollmentIsRefusedWhenAccountIsTrulyEnrolled() {
+        String first = challenges.issue(7L, account.getLogin(), Purpose.ENROLL).token();
+        MfaService.Enrollment enrollment = service.beginEnrollment(first);
+        service.confirmEnrollment(first,
+                TotpService.generateCode(enrollment.manualKey(), clock.instant().getEpochSecond() / 30));
+
+        String second = challenges.issue(7L, account.getLogin(), Purpose.ENROLL).token();
+        assertThatThrownBy(() -> service.beginEnrollment(second))
+                .isInstanceOf(MfaService.MfaException.class)
+                .hasMessage("MFA_ENROLLMENT_NOT_ALLOWED");
+    }
+
+    /** Symetrique cote verification : drapeau sans secret = non enrole. */
+    @Test
+    void verifyIsRefusedWhenFlagIsSetButSecretIsMissing() {
+        account.setMfaEnabled(true);
+        account.setMfaSecretEncrypted(null);
+
+        String verifyChallenge = challenges.issue(7L, account.getLogin(), Purpose.VERIFY).token();
+        assertThatThrownBy(() -> service.verify(verifyChallenge, "123456", null))
+                .isInstanceOf(MfaService.MfaException.class)
+                .hasMessage("MFA_NOT_ENROLLED");
+    }
+
+    /** FAIL-CLOSED : un compte sans role reste soumis a la 2FA (pas de contournement). */
+    @Test
+    void enrollmentStartsForAccountWithoutRole() {
+        account.setRole(null);
+
+        String enrollChallenge = challenges.issue(7L, account.getLogin(), Purpose.ENROLL).token();
+        assertThat(service.beginEnrollment(enrollChallenge).manualKey()).isNotBlank();
+    }
+
     private static final class MutableClock extends Clock {
         private Instant instant;
         MutableClock(Instant instant) { this.instant = instant; }

@@ -1,47 +1,37 @@
 package com.hrms.security;
 
-import java.text.Normalizer;
-import java.util.Locale;
-import java.util.Set;
-
 import org.springframework.stereotype.Component;
 
-/** Politique centrale des roles pour lesquels la MFA est obligatoire. */
+/**
+ * Politique centrale d'exigence de la MFA.
+ *
+ * <p>Regle en vigueur : <b>2FA obligatoire pour TOUS les comptes, sans
+ * exception</b>. La classe reste le point de passage unique — si une exemption
+ * devait un jour exister (compte de service…), elle se declarerait ici et
+ * nulle part ailleurs.
+ */
 @Component
 public class MfaRolePolicy {
 
-    // Les roles d'administration viennent de la SOURCE UNIQUE AdminRoles —
-    // les redeclarer ici recreerait la duplication qui avait produit la
-    // regression « 403 pour tous les administrateurs ». Seuls les roles
-    // metier NON admin soumis a la MFA sont listes localement.
-    private static final Set<String> PRIVILEGED_ROLES = java.util.stream.Stream.concat(
-            AdminRoles.ALIASES.stream(),
-            Set.of(
-            "HEALTH_SAFETY_COORDINATOR", "HSE_MANAGER", "HSE_OFFICER",
-            "MEDECIN", "MEDICAL_DOCTOR", "DOCTOR", "PHYSICIAN",
-            "PCR", "RPO", "PCR_RPO", "DOSIMETRY_MEDICAL",
-            "RESPONSABLE_DYNAMITAGE", "BLAST_MANAGER", "BLAST_RESPONSIBLE",
-            "BLAST_SUPERVISOR", "BLAST_ADMIN", "BLAST_OFFICER").stream())
-            .collect(java.util.stream.Collectors.toUnmodifiableSet());
-
+    /**
+     * @param role role du compte — conserve comme point d'extension : la
+     *             decision reste centralisee ici si une exemption devait
+     *             reapparaitre.
+     * @return toujours {@code true}
+     */
     public boolean requiresMfa(String role) {
-        // 2FA OBLIGATOIRE POUR TOUS LES COMPTES (décision sécurité) : tout rôle non
-        // vide impose l'enrôlement puis la vérification MFA. À la première connexion,
-        // après le changement du mot de passe, l'enrôlement 2FA est donc forcé quel
-        // que soit le rôle ; aux connexions suivantes, la vérification TOTP est exigée.
-        // (Historique : seuls PRIVILEGED_ROLES étaient soumis — conservé pour trace.)
-        return role != null && !role.isBlank();
-    }
-
-    static String normalize(String role) {
-        if (role == null || role.isBlank()) {
-            return "";
-        }
-        return Normalizer.normalize(role, Normalizer.Form.NFD)
-                .replaceAll("\\p{M}", "")
-                .trim()
-                .toUpperCase(Locale.ROOT)
-                .replace('-', '_')
-                .replace(' ', '_');
+        // 2FA OBLIGATOIRE POUR TOUS LES COMPTES (decision securite), SANS EXCEPTION.
+        // A la premiere connexion, apres le changement du mot de passe temporaire,
+        // l'enrolement 2FA est force quel que soit le role ; aux connexions
+        // suivantes, la verification TOTP est exigee.
+        //
+        // FAIL-CLOSED sur le role vide/null : un compte sans role echappait a
+        // l'obligation, ce qui contredisait « tous les comptes » et offrait un
+        // contournement (creer un compte sans role). L'absence de role n'est pas
+        // une dispense de second facteur.
+        //
+        // (Historique : seule une liste PRIVILEGED_ROLES etait soumise a la MFA —
+        // cf. git, commits 8fa3dda et anterieurs. Liste supprimee car sans effet.)
+        return true;
     }
 }
