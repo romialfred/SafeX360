@@ -82,9 +82,12 @@ const CompanySelector = ({ isEnabled = true, className }: CompanySelectorProps) 
         return companies; // compte non migré → comportement historique (rôle)
     }, [companies, allMines, authorizedIds]);
 
-    // « Toutes les mines (consolidé) » : autorisé pour les comptes allMines migrés,
-    // et — rétrocompat — pour les admins non encore migrés (comportement historique).
-    const consolidatedAllowed = allMines || (!isMigrated && isAdmin);
+    // RÈGLE PRODUIT : une SEULE mine à la fois, jamais de vue « Toutes les mines ».
+    // Même un utilisateur multi-mines (ou allMines) voit par défaut SA mine de
+    // création (userCompanyId) et bascule d'une mine à l'autre — jamais le consolidé.
+    // → consolidatedAllowed forcé à false : masque l'option « Toutes les mines » et
+    //   empêche toute sélection null (le défaut retombe sur une mine concrète).
+    const consolidatedAllowed = false;
 
     const isCompanyVisible = (id: number | null): boolean => {
         if (id === null) return consolidatedAllowed; // « consolidé » réservé aux ayants droit
