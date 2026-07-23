@@ -1,0 +1,83 @@
+name: Deploy backend to Render
+
+# Auto-deploy DÉTERMINISTE des services backend Render à chaque push sur main.
+# Remplace l'auto-deploy natif de Render (qui dépend d'un webhook GitHub fragile,
+# cassé par ex. lors d'un reset de mot de passe). Chaque service n'est redéployé
+# QUE si son dossier a changé (filtre par chemin) → pas de rebuild inutile.
+#
+# Prérequis : ajouter le secret RENDER_API_KEY dans
+#   GitHub → Settings → Secrets and variables → Actions → New repository secret
+#   (même valeur que RENDER_API_KEY dans Backend/.env).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      service:
+        description: "Service à (re)déployer manuellement"
+        type: choice
+        default: all
+        options: [all, hns, gateway, minexpert, eureka]
+
+# Un seul déploiement à la fois : on ne coupe pas un déploiement en cours.
+concurrency:
+  group: render-deploy
+  cancel-in-progress: false
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      hns: ${{ steps.f.outputs.hns }}
+      gateway: ${{ steps.f.outputs.gateway }}
+      minexpert: ${{ steps.f.outputs.minexpert }}
+      eureka: ${{ steps.f.outputs.eureka }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: f
+        with:
+          filters: |
+            hns:
+              - 'Backend/Health-Safety/**'
+            gateway:
+              - 'Backend/GatewayMS/**'
+            minexpert:
+              - 'Backend/MineXpert/**'
+            eureka:
+              - 'Backend/Eureka-Server/**'
+
+  deploy:
+    needs: changes
+    runs-on: ubuntu-latest
+    env:
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: chmod +x .github/scripts/render-deploy.sh
+
+      # Ordre volontaire : Eureka d'abord (découverte de services), puis les autres.
+      - name: Eureka
+        if: >-
+          (github.event_name == 'push' && needs.changes.outputs.eureka == 'true') ||
+          (github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'eureka'))
+        run: .github/scripts/render-deploy.sh srv-d8hb9342m8qs73auqco0 eureka
+
+      - name: Gateway
+        if: >-
+          (github.event_name == 'push' && needs.changes.outputs.gateway == 'true') ||
+          (github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'gateway'))
+        run: .github/scripts/render-deploy.sh srv-d8hb9dq8pkls73c8gb4g gateway
+
+      - name: MineXpert
+        if: >-
+          (github.event_name == 'push' && needs.changes.outputs.minexpert == 'true') ||
+          (github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'minexpert'))
+        run: .github/scripts/render-deploy.sh srv-d8hb9cmq1p3s73808bh0 minexpert
+
+      - name: Health-Safety (HNS)
+        if: >-
+          (github.event_name == 'push' && needs.changes.outputs.hns == 'true') ||
+          (github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'hns'))
+        run: .github/scripts/render-deploy.sh srv-d8hb9d647okc738f4qb0 hns
