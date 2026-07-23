@@ -33,7 +33,7 @@ except Exception:
 
 DRY = "--dry" in sys.argv
 TARGET = "aiven" if "aiven" in sys.argv else "local"
-START = (2025, 10)  # octobre 2025
+START = (2024, 1)  # janvier 2024 (couvre les incidents 2024-2026 pour le dénominateur LTIFR)
 
 
 def load_env(path="Backend/.env"):
