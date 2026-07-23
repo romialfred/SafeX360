@@ -17,10 +17,23 @@ API="https://api.render.com/v1/services/${SVC}"
 AUTH=(-H "Authorization: Bearer ${RENDER_API_KEY}" -H "Accept: application/json")
 
 echo "▶ ${NAME} : déclenchement du déploiement…"
-DEP=$(curl -fsS "${AUTH[@]}" -H "Content-Type: application/json" \
-        -X POST "${API}/deploys" -d '{"clearCache":"do_not_clear"}' | jq -r '.id // empty')
+# On ne met PAS -f ici : sur une erreur HTTP, curl -f masque le corps de la
+# réponse et l'échec devient indiagnosticable dans GitHub Actions (c'est
+# exactement ce qui s'est produit — étape rouge, aucune cause visible).
+# On capture le code HTTP ET le corps, et on les affiche.
+HTTP_BODY=$(curl -sS -w $'\n%{http_code}' "${AUTH[@]}" -H "Content-Type: application/json" \
+        -X POST "${API}/deploys" -d '{"clearCache":"do_not_clear"}' || true)
+CODE=$(printf '%s' "${HTTP_BODY}" | tail -n1)
+BODY=$(printf '%s' "${HTTP_BODY}" | sed '$d')
+DEP=$(printf '%s' "${BODY}" | jq -r '.id // empty' 2>/dev/null || true)
 if [ -z "${DEP}" ]; then
-  echo "❌ ${NAME} : aucun identifiant de déploiement renvoyé par l'API Render."
+  echo "❌ ${NAME} : l'API Render n'a pas renvoyé d'identifiant de déploiement (HTTP ${CODE:-?})."
+  case "${CODE}" in
+    401|403) echo "   → clé d'API refusée : le secret GitHub RENDER_API_KEY est absent, expiré ou n'a pas accès à ce service."
+             echo "     Settings > Secrets and variables > Actions > RENDER_API_KEY (même valeur que Backend/.env)." ;;
+    404)     echo "   → service introuvable : vérifiez l'identifiant ${SVC}." ;;
+    *)       echo "   → réponse brute : $(printf '%s' "${BODY}" | head -c 300)" ;;
+  esac
   exit 1
 fi
 echo "   deploy=${DEP}"

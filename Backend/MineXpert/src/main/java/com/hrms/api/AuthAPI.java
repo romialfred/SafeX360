@@ -253,6 +253,19 @@ public class AuthAPI {
      * publique (allow-list gateway) : aucune session n'existe encore à ce stade.
      */
     @PostMapping("/first-login/password")
+    // INVALIDATION DU CACHE OBLIGATOIRE. MyUserDetailsService lit le compte via
+    // AccountServiceImpl.getAccountByLogin, annote @Cacheable("accountByLogin")
+    // (Caffeine, expireAfterWrite = 10 min). Sans eviction ici, la verification
+    // du mot de passe au login suivant travaillait sur la copie EN CACHE : le
+    // nouveau mot de passe etait refuse (401) et l'ANCIEN mot de passe temporaire
+    // continuait de fonctionner pendant 10 minutes — soit exactement l'inverse de
+    // ce que la premiere connexion doit garantir. L'ancien endpoint
+    // /me/change-password-first evinçait deja ces caches ; le nouveau flux
+    // pre-session l'avait perdu.
+    @org.springframework.cache.annotation.Caching(evict = {
+            @org.springframework.cache.annotation.CacheEvict(cacheNames = "accountById", allEntries = true),
+            @org.springframework.cache.annotation.CacheEvict(cacheNames = "accountByLogin", allEntries = true)
+    })
     public ResponseEntity<?> firstLoginPassword(@RequestBody Map<String, String> body,
             HttpServletResponse response) {
         String challengeToken = body.get("challenge");
