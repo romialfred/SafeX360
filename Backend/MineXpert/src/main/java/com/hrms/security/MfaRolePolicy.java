@@ -25,7 +25,12 @@ public class MfaRolePolicy {
             .collect(java.util.stream.Collectors.toUnmodifiableSet());
 
     public boolean requiresMfa(String role) {
-        return PRIVILEGED_ROLES.contains(normalize(role));
+        // 2FA OBLIGATOIRE POUR TOUS LES COMPTES (décision sécurité) : tout rôle non
+        // vide impose l'enrôlement puis la vérification MFA. À la première connexion,
+        // après le changement du mot de passe, l'enrôlement 2FA est donc forcé quel
+        // que soit le rôle ; aux connexions suivantes, la vérification TOTP est exigée.
+        // (Historique : seuls PRIVILEGED_ROLES étaient soumis — conservé pour trace.)
+        return role != null && !role.isBlank();
     }
 
     static String normalize(String role) {
