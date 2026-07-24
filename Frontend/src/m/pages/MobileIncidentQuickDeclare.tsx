@@ -27,6 +27,24 @@ import { positiveMineId } from '../../utils/activeMine';
 type IncidentType = 'NEAR_MISS' | 'INJURY' | 'PROPERTY' | 'ENVIRONMENTAL';
 type Severity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
+/**
+ * Convertit un blob image en base64 BRUT (sans le préfixe « data:...;base64, »),
+ * format attendu par MediaDTO côté serveur. Le résultat reste sérialisable en
+ * JSON, donc stockable dans la file hors ligne (IndexedDB) puis rejouable.
+ */
+function blobToRawBase64(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(reader.error ?? new Error('lecture image échouée'));
+        reader.onloadend = () => {
+            const result = String(reader.result ?? '');
+            const comma = result.indexOf(',');
+            resolve(comma >= 0 ? result.slice(comma + 1) : result);
+        };
+        reader.readAsDataURL(blob);
+    });
+}
+
 const TYPES: { code: IncidentType; label: string; sublabel: string }[] = [
     { code: 'NEAR_MISS', label: 'Presqu\'accident', sublabel: 'Sans dommage' },
     { code: 'INJURY', label: 'Blessure', sublabel: 'Personne blessée' },
@@ -53,6 +71,11 @@ export default function MobileIncidentQuickDeclare() {
     const [description, setDescription] = useState<string>('');
     const [photoName, setPhotoName] = useState<string | null>(null);
     const [photoSizeKb, setPhotoSizeKb] = useState<number | null>(null);
+    // Base64 BRUT de la photo compressée : joint à l'incident via le champ
+    // evidence, comme le fait le wizard web. La photo est ainsi PERSISTÉE en base
+    // (entité Media, @Lob) avec l'incident — plus de fichier orphelin sur le
+    // disque éphémère de l'hébergeur.
+    const [photoData, setPhotoData] = useState<string | null>(null);
     const [sending, setSending] = useState<boolean>(false);
     const [done, setDone] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -96,6 +119,10 @@ export default function MobileIncidentQuickDeclare() {
             const photo = await capturePhoto({ label: 'incident' });
             setPhotoName(photo.filename);
             setPhotoSizeKb(Math.round(photo.sizeBytes / 1024));
+            // Conversion du blob compressé en base64 brut (sans le préfixe
+            // « data:...;base64, ») : c'est le format qu'attend MediaDTO côté
+            // serveur (Base64.getDecoder().decode(file)).
+            setPhotoData(await blobToRawBase64(photo.blob));
             haptic('light');
         } catch (e) {
             // Annulation utilisateur : pas d'erreur visible (UX silencieuse)
@@ -153,7 +180,12 @@ export default function MobileIncidentQuickDeclare() {
                 source: 'EMPLOYEE',
                 involvedPersons: [],
                 witnesses: [],
-                evidence: [],
+                // Photo rattachée à l'incident au MÊME format que le wizard web
+                // (MediaDTO { name, type, file }) : persistée en base par
+                // mediaService.saveAllMedia, visible ensuite comme toute preuve.
+                evidence: photoData
+                    ? [{ id: null, name: photoName ?? 'incident.jpg', type: 'data:image/jpeg;base64', file: photoData }]
+                    : [],
                 ppe: [],
                 weatherConditions: [],
             };
@@ -276,7 +308,7 @@ export default function MobileIncidentQuickDeclare() {
                     </button>
                     {photoName && (
                         <p className="text-[11px] text-emerald-700 mt-1 px-1">
-                            ✓ Compressée et mise en file d'attente — sera envoyée au retour réseau
+                            ✓ Compressée et jointe à la déclaration — envoyée avec l'incident
                         </p>
                     )}
                 </div>
