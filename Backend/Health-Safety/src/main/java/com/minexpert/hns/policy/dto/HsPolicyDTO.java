@@ -34,6 +34,10 @@ public class HsPolicyDTO {
     private LocalDateTime signedAt;
     private String signatureImage;
 
+    /** PDF officiel joint (facultatif) : nom + contenu base64 (data-URL). */
+    private String attachmentName;
+    private String attachmentData;
+
     private List<HsPolicyArticleDTO> articles;
 
     // ── Consultation (§5.4), renseigné à la lecture ──
@@ -54,6 +58,8 @@ public class HsPolicyDTO {
         dto.signatoryTitle = p.getSignatoryTitle();
         dto.signedAt = p.getSignedAt();
         dto.signatureImage = p.getSignatureImage();
+        dto.attachmentName = p.getAttachmentName();
+        dto.attachmentData = p.getAttachmentData();
         dto.articles = articles;
         return dto;
     }

@@ -31,6 +31,8 @@ export interface HsPolicy {
     signatoryTitle?: string | null;
     signedAt?: string | null;
     signatureImage?: string | null;
+    attachmentName?: string | null;
+    attachmentData?: string | null;
     articles?: HsPolicyArticle[];
     acknowledged?: boolean | null;
     acknowledgedAt?: string | null;

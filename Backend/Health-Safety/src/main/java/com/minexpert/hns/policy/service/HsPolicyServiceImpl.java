@@ -124,6 +124,8 @@ public class HsPolicyServiceImpl implements HsPolicyService {
         policy.setTitle(dto.getTitle());
         policy.setPreamble(dto.getPreamble());
         policy.setEffectiveDate(dto.getEffectiveDate());
+        policy.setAttachmentName(dto.getAttachmentName());
+        policy.setAttachmentData(dto.getAttachmentData());
         policy.setUpdatedAt(LocalDateTime.now());
         HsPolicy saved = policyRepository.save(policy);
 

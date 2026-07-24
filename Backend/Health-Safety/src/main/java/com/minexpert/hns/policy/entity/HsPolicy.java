@@ -95,6 +95,17 @@ public class HsPolicy {
     @Column(name = "signature_image", columnDefinition = "LONGTEXT")
     private String signatureImage;
 
+    /**
+     * PDF officiel joint (facultatif) : version signée/scannée ou document de
+     * référence. Stocké en base64 (data-URL) EN BASE, comme les autres pièces de
+     * la plateforme (entité Media) — pas de fichier orphelin sur disque éphémère.
+     */
+    @Column(name = "attachment_name", length = 255)
+    private String attachmentName;
+
+    @Column(name = "attachment_data", columnDefinition = "LONGTEXT")
+    private String attachmentData;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

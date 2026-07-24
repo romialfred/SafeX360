@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
-    ActionIcon, Badge, Button, Collapse, Group, Loader, Modal, Stack, Text,
+    ActionIcon, Badge, Button, Collapse, FileButton, Group, Loader, Modal, Stack, Text,
     Textarea, TextInput, Timeline,
 } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import {
-    IconArrowDown, IconArrowUp, IconCertificate, IconCheck, IconChevronDown, IconEdit,
-    IconEye, IconFileText, IconHistory, IconPlus, IconShieldCheck, IconTrash, IconUsers,
-    IconWriting,
+    IconArrowDown, IconArrowUp, IconBulb, IconCertificate, IconCheck, IconChevronDown,
+    IconDownload, IconEdit, IconEye, IconFileText, IconFileTypePdf, IconHistory, IconPaperclip,
+    IconPlus, IconShieldCheck, IconSparkles, IconTrash, IconUsers, IconWriting,
 } from '@tabler/icons-react';
+
+import { EXAMPLE_POLICY } from './examplePolicy';
 
 import {
     acknowledge as ackPolicy, getAcknowledgementStats, getPolicy, getPublished,
@@ -136,6 +138,23 @@ function PolicyReader({
                 </div>
             </div>
 
+            {/* Document PDF officiel joint */}
+            {policy.attachmentData && (
+                <a href={policy.attachmentData} download={policy.attachmentName || 'politique-sst.pdf'}
+                    className="mt-6 flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4 hover:border-teal-300 transition-colors no-underline">
+                    <Group gap="sm">
+                        <div className="w-10 h-10 rounded-lg bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center">
+                            <IconFileTypePdf size={22} />
+                        </div>
+                        <div>
+                            <Text size="sm" fw={600} className="text-slate-800">{policy.attachmentName || 'Document PDF'}</Text>
+                            <Text size="xs" c="dimmed">Version officielle jointe — cliquez pour télécharger</Text>
+                        </div>
+                    </Group>
+                    <IconDownload size={20} className="text-slate-400" />
+                </a>
+            )}
+
             {/* Prise de connaissance (§5.4) */}
             <div className="rounded-2xl border border-slate-200 bg-white p-5 mt-6 mb-10">
                 {policy.acknowledged ? (
@@ -206,6 +225,37 @@ function PolicyEditor({
         return { ...d, articles: list };
     });
 
+    // Charge l'exemple ISO 45001 §5.2 dans le brouillon, en conservant l'id et la
+    // date déjà saisis — c'est un point de départ à adapter, pas un écrasement total.
+    const loadExample = () => setDraft((d) => ({
+        ...d,
+        title: EXAMPLE_POLICY.title,
+        preamble: EXAMPLE_POLICY.preamble,
+        articles: (EXAMPLE_POLICY.articles ?? []).map((a) => ({ ...a })),
+    }));
+
+    // PDF joint : lu en data-URL base64 (persisté en base, comme les autres pièces).
+    // Garde-fou de taille : un PDF de politique reste léger ; au-delà on refuse
+    // plutôt que d'engorger la base et la file hors ligne.
+    const MAX_PDF_MB = 8;
+    const attachPdf = (file: File | null) => {
+        if (!file) return;
+        if (file.type !== 'application/pdf') {
+            errorNotification('Seuls les fichiers PDF sont acceptés.');
+            return;
+        }
+        if (file.size > MAX_PDF_MB * 1024 * 1024) {
+            errorNotification(`Le PDF dépasse ${MAX_PDF_MB} Mo. Choisissez un fichier plus léger.`);
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => setDraft((d) => ({
+            ...d, attachmentName: file.name, attachmentData: String(reader.result ?? ''),
+        }));
+        reader.readAsDataURL(file);
+    };
+    const removePdf = () => setDraft((d) => ({ ...d, attachmentName: null, attachmentData: null }));
+
     const save = async (): Promise<HsPolicy | null> => {
         setSaving(true);
         try {
@@ -260,6 +310,20 @@ function PolicyEditor({
 
     return (
         <div className="max-w-3xl mx-auto">
+            {/* Aide au démarrage : un exemple conforme §5.2 à adapter. */}
+            <div className="rounded-xl border border-teal-200 bg-teal-50/60 p-4 mb-4 flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-2">
+                    <IconBulb size={18} className="text-teal-600" />
+                    <div>
+                        <Text size="sm" fw={600} className="text-slate-800">Besoin d'un point de départ ?</Text>
+                        <Text size="xs" c="dimmed">Chargez un exemple de politique conforme ISO 45001 §5.2, puis adaptez-le à votre site.</Text>
+                    </div>
+                </div>
+                <Button size="compact-sm" variant="light" color="teal" leftSection={<IconSparkles size={14} />} onClick={loadExample}>
+                    Charger un exemple
+                </Button>
+            </div>
+
             <div className="rounded-xl border border-slate-200 bg-white p-5">
                 <TextInput label="Titre de la politique" value={draft.title ?? ''}
                     onChange={(e) => setDraft((d) => ({ ...d, title: e.currentTarget.value }))} />
@@ -268,6 +332,26 @@ function PolicyEditor({
                 <DateInput label="Date de prise d'effet" valueFormat="DD/MM/YYYY" mt="sm"
                     value={draft.effectiveDate ? new Date(draft.effectiveDate) : null}
                     onChange={(v) => setDraft((d) => ({ ...d, effectiveDate: v ? toIsoDateLocal(v as Date) : null }))} />
+
+                {/* PDF officiel joint (facultatif) */}
+                <Text size="sm" fw={500} mt="md" mb={4}>Document PDF joint (facultatif)</Text>
+                {draft.attachmentData ? (
+                    <Group justify="space-between" className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                        <Group gap="xs">
+                            <IconFileTypePdf size={20} className="text-rose-600" />
+                            <Text size="sm" style={{ wordBreak: 'break-all' }}>{draft.attachmentName || 'document.pdf'}</Text>
+                        </Group>
+                        <ActionIcon variant="subtle" color="red" onClick={removePdf} aria-label="Retirer le PDF"><IconTrash size={16} /></ActionIcon>
+                    </Group>
+                ) : (
+                    <FileButton onChange={attachPdf} accept="application/pdf">
+                        {(props) => (
+                            <Button {...props} variant="default" leftSection={<IconPaperclip size={16} />}>
+                                Joindre un PDF
+                            </Button>
+                        )}
+                    </FileButton>
+                )}
             </div>
 
             <Group justify="space-between" mt="lg" mb="xs">
