@@ -90,25 +90,31 @@ function PolicyReader({
     userName: string;
 }) {
     return (
-        <div className="max-w-3xl mx-auto">
-            {/* En-tête — couverture du document */}
-            <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
-                <div className="px-6 py-7 text-white" style={{ background: 'linear-gradient(135deg,#12294A 0%,#0B1E3A 100%)' }}>
-                    <div className="flex items-center gap-2 text-white/70 text-[12px] uppercase tracking-[0.12em]">
-                        <IconShieldCheck size={15} /> {mineName}
+        <div className="max-w-4xl mx-auto">
+            {/* En-tête — couverture du document (claire, compacte, premium) */}
+            <div className="rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-sm">
+                {/* filet d'accent — la seule touche de couleur forte */}
+                <div className="h-1.5" style={{ background: 'linear-gradient(90deg,#12294A 0%,#1E7F76 100%)' }} />
+                <div className="px-8 pt-6 pb-5">
+                    <div className="flex items-center gap-1.5 text-teal-700 text-[11.5px] font-semibold uppercase tracking-[0.14em]">
+                        <IconShieldCheck size={14} /> {mineName}
                     </div>
-                    <h1 className="text-2xl sm:text-3xl font-bold mt-2 leading-tight">
+                    <h1 className="text-[26px] sm:text-[31px] font-bold mt-2 leading-[1.15]"
+                        style={{ color: '#12294A', fontFamily: 'Georgia,"Times New Roman",serif' }}>
                         {policy.title || 'Politique Santé & Sécurité au Travail'}
                     </h1>
-                    <Group gap="xs" mt="md">
+                    <Group gap="xs" mt="sm">
                         <Badge color="teal" variant="light">Version {policy.version ?? '—'}</Badge>
                         <Badge color="gray" variant="light">En vigueur depuis le {fmt(policy.effectiveDate)}</Badge>
                         <Badge color="blue" variant="light" leftSection={<IconCertificate size={12} />}>ISO 45001 §5.2</Badge>
                     </Group>
                 </div>
                 {policy.preamble && (
-                    <div className="px-6 py-5 bg-white border-t border-slate-100">
-                        <p className="text-[15px] text-slate-700 leading-relaxed whitespace-pre-line">{policy.preamble}</p>
+                    <div className="px-8 pb-7">
+                        {/* préambule = chapô : liseré navy à gauche, texte posé */}
+                        <p className="text-[15.5px] text-slate-700 leading-relaxed whitespace-pre-line border-l-2 border-slate-200 pl-4">
+                            {policy.preamble}
+                        </p>
                     </div>
                 )}
             </div>
@@ -309,7 +315,7 @@ function PolicyEditor({
     const articles = draft.articles ?? [];
 
     return (
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-4xl mx-auto">
             {/* Aide au démarrage : un exemple conforme §5.2 à adapter. */}
             <div className="rounded-xl border border-teal-200 bg-teal-50/60 p-4 mb-4 flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-2">
@@ -539,7 +545,7 @@ export default function HsPolicyPage() {
                             onSaved={loadManagement}
                             onPublished={() => { setMode('read'); loadPublished(); setEditing(null); }} />
                     ) : (
-                        <div className="max-w-3xl mx-auto">
+                        <div className="max-w-4xl mx-auto">
                             <div className="rounded-xl border border-slate-200 bg-white p-5 flex items-center justify-between flex-wrap gap-3">
                                 <div>
                                     <Text fw={600}>Aucun brouillon en cours</Text>
