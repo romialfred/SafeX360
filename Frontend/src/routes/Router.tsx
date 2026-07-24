@@ -632,9 +632,9 @@ const router = createBrowserRouter([
                     onCreateUser={handleCreateUser} /></DemoPermissionGuard>,
             },
             // FICHE UTILISATEUR — écran unique (profil, droits, connexions, activité).
-            // Les deux anciens chemins y redirigent : le bouton « Modifier » ouvrait
-            // encore EditUserPermission, l'écran hérité, alors que la liste et la
-            // création vivaient déjà dans l'expérience actuelle.
+            // Les deux anciens chemins y redirigent : le clic sur « Modifier » menait
+            // encore à l'ancien écran d'édition, alors que la liste et la création
+            // vivaient déjà dans l'expérience actuelle (écrans hérités supprimés).
             { path: 'users-admin/:id', element: <DemoPermissionGuard moduleLabel="Gestion des utilisateurs"><UserProfilePage /></DemoPermissionGuard>, },
             { path: 'users-management/edit/:id', element: <LegacyUserRedirect tab="rights" />, },
             { path: 'users-management/usersManagement-details/:id', element: <LegacyUserRedirect tab="profile" />, },

@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+
 import com.minexpert.hns.dto.InvestActionDTO;
 import com.minexpert.hns.dto.ResponseDTO;
 import com.minexpert.hns.dto.response.InvestResponse;
@@ -38,14 +40,14 @@ public class InvestigationAPI {
     @PostMapping("/create")
     public ResponseEntity<Long> createInvestigation(
             @RequestParam(value = "companyId", required = false) Long companyId,
-            @RequestBody InvestActionDTO request) throws HSException {
+            @Valid @RequestBody InvestActionDTO request) throws HSException {
         return new ResponseEntity<>(investigationService.addInvestigation(companyId, request), HttpStatus.CREATED);
     }
 
     @PutMapping("/update")
     public ResponseEntity<ResponseDTO> updateInvestigation(
             @RequestParam(value = "companyId", required = false) Long companyId,
-            @RequestBody InvestActionDTO request) throws HSException {
+            @Valid @RequestBody InvestActionDTO request) throws HSException {
         investigationService.updateInvestigation(companyId, request);
         return new ResponseEntity<>(new ResponseDTO("Investigation updated successfully."), HttpStatus.OK);
     }

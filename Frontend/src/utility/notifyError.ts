@@ -64,6 +64,9 @@ const CODE_MESSAGES: Record<string, string> = {
     "Renseignez le risque APRÈS mesures (probabilité et gravité résiduelles) avant de clôturer cet incident.",
   RISK_NOT_REDUCED:
     "Le risque résiduel est supérieur au risque initial : la clôture exige une réduction du risque. Renforcez les mesures.",
+  // Hiérarchie des mesures (ISO 45001 §8.1.2) — verrou de clôture.
+  CONTROL_HIERARCHY_REQUIRED:
+    "Chaque action corrective doit déclarer son niveau dans la hiérarchie des mesures (élimination, substitution, ingénierie, administratif ou EPI — §8.1.2) avant de clôturer l'incident.",
   // Revue d'efficacité des actions (ISO 45001 §10.2 e).
   EFFECTIVENESS_REVIEW_REQUIRES_COMPLETED:
     "La revue d'efficacité n'est possible qu'une fois l'action réalisée (100 %).",
@@ -89,6 +92,9 @@ const CODE_MESSAGES: Record<string, string> = {
   INJURY_NOT_FOUND: "La lésion est introuvable. Rechargez la page puis réessayez.",
   WORKED_HOURS_PERIOD_INVALID: "Choisissez un mois valide (1 à 12) et une année.",
   WORKED_HOURS_INVALID: "Le nombre d'heures travaillées doit être positif.",
+  // Intégrité de l'enquête (ISO 45001 §10.2 · SPEC « obligatoire = persisté »).
+  INCIDENT_ID_REQUIRED:
+    "Cette enquête doit être rattachée à un incident. Rouvrez-la depuis la fiche de l'incident concerné.",
   // Gouvernance d'enquête — validation par un pair (ISO 45001 §10.2).
   INVESTIGATION_NOT_VALIDATED:
     "L'enquête doit d'abord être validée par un pair avant de pouvoir clôturer cet incident (onglet Investigation).",

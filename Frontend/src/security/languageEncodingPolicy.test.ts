@@ -29,7 +29,6 @@ describe('langue et encodage des sources UI', () => {
             'components/Landing/Navbar/Navbar.tsx',
             'components/NewComponents/UsersManagement/UsersManagement.tsx',
             'components/NewComponents/UsersManagement/AddUserForm.tsx',
-            'components/NewComponents/UsersManagement/UserDetails.tsx',
         ];
         const visibleEnglish = />\s*(Update|View|Dashboard|Status|Details|Delete|Edit)\s*</;
 

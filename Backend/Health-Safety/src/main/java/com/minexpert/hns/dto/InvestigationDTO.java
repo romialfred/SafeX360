@@ -9,6 +9,8 @@ import com.minexpert.hns.entity.incident.Investigation;
 import com.minexpert.hns.enums.InvestigationStatus;
 import com.minexpert.hns.utility.StringListConverter;
 
+import jakarta.validation.constraints.NotNull;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -36,6 +38,11 @@ public class InvestigationDTO {
     private String report;
     private Integer progress;
     private InvestigationStatus status;
+    // ISO 45001 §10.2 / SPEC « obligatoire = persisté » : une enquête sans incident
+    // rattaché est un artefact orphelin, non opposable. L'IHM envoie toujours cet
+    // identifiant (créée depuis le contexte d'un incident) ; cette garde ferme le
+    // seul chemin restant — un appel direct à l'API mal formé.
+    @NotNull(message = "INCIDENT_ID_REQUIRED")
     private Long incidentId;
     private Long companyId;
     private LocalDateTime createdAt;

@@ -366,6 +366,7 @@ public class IncidentServiceImpl implements IncidentService {
             assertRiskReducedForClosure(previous, id);
             assertInvestigationValidatedForClosure(id);
             assertHpiInvestigatedForClosure(incident);
+            assertControlsHierarchyDeclaredForClosure(id);
         }
         incident.setStatus(status);
         incident.setUpdatedAt(LocalDateTime.now());
@@ -528,6 +529,33 @@ public class IncidentServiceImpl implements IncidentService {
                 .orElse(false);
         if (!validatedInvestigationExists) {
             throw new HSException("HPI_REQUIRES_VALIDATED_INVESTIGATION");
+        }
+    }
+
+    /**
+     * Hiérarchie des mesures (ISO 45001 §8.1.2) — CLÔTURE OPPOSABLE.
+     *
+     * <p>La norme impose de choisir les mesures de maîtrise selon une hiérarchie
+     * (élimination > substitution > ingénierie > administratif > EPI). Le niveau
+     * était modélisé et stocké mais purement déclaratif : on pouvait clôturer un
+     * incident dont les actions correctives ne classaient rien. Ce verrou rend la
+     * règle opposable : toute action corrective attachée à l'incident doit
+     * DÉCLARER son niveau dans la hiérarchie avant la clôture.
+     *
+     * <p>Choix délibéré — on exige la DÉCLARATION du niveau, pas l'absence d'EPI :
+     * l'EPI peut légitimement être la mesure résiduelle. Forcer « au moins une
+     * mesure non-EPI » serait présomptueux et produirait de fausses classifications.
+     * L'alerte « EPI seul » reste un avertissement d'IHM, pas un blocage.
+     *
+     * <p>Ne bloque pas un incident mineur clos SANS action corrective (liste vide
+     * ⇒ pas d'exigence), exactement comme la garde d'enquête.
+     */
+    private void assertControlsHierarchyDeclaredForClosure(Long incidentId) throws HSException {
+        boolean someActionMissesHierarchy = correctiveActionRepository
+                .findByIncidentId(null, incidentId).stream()
+                .anyMatch(action -> action.getControlHierarchy() == null);
+        if (someActionMissesHierarchy) {
+            throw new HSException("CONTROL_HIERARCHY_REQUIRED");
         }
     }
 
