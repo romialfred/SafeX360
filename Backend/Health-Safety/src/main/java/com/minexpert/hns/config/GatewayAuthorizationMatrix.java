@@ -110,6 +110,7 @@ public class GatewayAuthorizationMatrix {
 
     private static boolean isSelfServicePath(String path) {
         return path.contains("/mobile/push-token")
+                || path.contains("/acknowledge")
                 || path.contains("/acknowledgement")
                 || path.contains("/acknowledgment");
     }

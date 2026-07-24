@@ -48,6 +48,7 @@ import {
     IconUserHeart,
     // Historique des alertes d'urgence
     IconHistory,
+    IconCertificate,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { isModuleEnabled } from '../data/ModuleConfig';
@@ -215,6 +216,15 @@ const menuItems: MenuItem[] = [
         id: 'dashboard',
         label: 'Tableau de bord',
         icon: IconChartBar,
+        color: 'text-teal-600',
+    },
+    {
+        // Politique SST (ISO 45001 §5.2/§5.4) — document fondateur, accessible à
+        // TOUS les travailleurs (pas un module attribuable/révocable). La gestion
+        // est gardée par rôle côté page + serveur.
+        id: 'hs-policy',
+        label: 'Politique SST',
+        icon: IconCertificate,
         color: 'text-teal-600',
     },
     {
@@ -465,6 +475,7 @@ export const menuIdToUrl: Record<string, string> = {
     // Home
     home: "/",
     dashboard: "/dashboard",
+    "hs-policy": "/hs-policy",
 
     // Prevention Activities
     "non-conformity": "/non-conformity",
@@ -714,7 +725,7 @@ const Sidebar = () => {
     // LOT 48 P6.f — Modules administration toujours accessibles (ne necessitent pas
     // de souscription module — ils gerent la configuration meme de la plateforme).
     const ALWAYS_ACCESSIBLE = new Set([
-        'home', 'users', 'settings',
+        'home', 'hs-policy', 'users', 'settings',
         'admin', 'parameters', 'users-management-hub', 'modules-management',
         'target-forecast', 'operational-references', 'system-settings',
         'param-sites-environment', 'param-incidents', 'param-tools-templates',

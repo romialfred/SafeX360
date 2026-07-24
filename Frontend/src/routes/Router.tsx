@@ -162,6 +162,7 @@ const IsoMappingPage = lazy(() => import('../pages/dashboard/IsoMappingPage'));
 // LOT 49 — Module Gestion Utilisateurs
 const UsersAdminPage = lazy(() => import('../components/NewComponents/UsersManagement/UsersAdminPage'));
 const UserProfilePage = lazy(() => import('../components/NewComponents/UsersManagement/UserProfilePage'));
+const HsPolicyPage = lazy(() => import('../components/NewComponents/HsPolicy/HsPolicyPage'));
 const LegacyUserRedirect = lazy(() => import('./LegacyUserRedirect'));
 const FirstLoginPasswordChange = lazy(() => import('../pages/auth/FirstLoginPasswordChange'));
 // LOT — Module Dosimetrie & Expositions (2026-06-07: code-splitting actif)
@@ -424,6 +425,9 @@ const router = createBrowserRouter([
             { path: '', element: <HomePage /> },
             { path: 'module-not-found', element: <ModuleNotFoundPage /> },
             { path: 'dashboard', element: <OhsDashboardPage /> },
+            // Politique SST (ISO 45001 §5.2/§5.4) — lecture ouverte à tous ; la gestion
+            // est gardée côté serveur (@PreAuthorize HS_POLICY_MANAGE).
+            { path: 'hs-policy', element: <HsPolicyPage /> },
             { path: 'profile', element: <ProfilePage /> },
             { path: 'about', element: <AboutPage /> },
             { path: 'iso-mapping', element: <IsoMappingPage /> },

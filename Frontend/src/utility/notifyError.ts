@@ -92,6 +92,15 @@ const CODE_MESSAGES: Record<string, string> = {
   INJURY_NOT_FOUND: "La lésion est introuvable. Rechargez la page puis réessayez.",
   WORKED_HOURS_PERIOD_INVALID: "Choisissez un mois valide (1 à 12) et une année.",
   WORKED_HOURS_INVALID: "Le nombre d'heures travaillées doit être positif.",
+  // Politique SST (ISO 45001 §5.2 · §5.4).
+  COMPANY_REQUIRED: "Sélectionnez une mine active avant de continuer.",
+  POLICY_NOT_FOUND: "La politique est introuvable. Rechargez la page puis réessayez.",
+  POLICY_LOCKED: "Cette politique est publiée : elle n'est plus modifiable. Créez une nouvelle version pour la réviser.",
+  POLICY_ALREADY_PUBLISHED: "Cette politique est déjà publiée.",
+  POLICY_NOT_PUBLISHED: "Cette politique n'est pas en vigueur : la prise de connaissance n'est possible que sur la version publiée.",
+  SIGNATORY_REQUIRED: "Indiquez le nom du signataire (direction) avant de publier.",
+  POLICY_HAS_NO_ARTICLE: "Ajoutez au moins un engagement avant de publier : une politique sans engagement n'engage rien.",
+  IDENTITY_REQUIRED: "Votre session n'est pas identifiée. Reconnectez-vous puis réessayez.",
   // Intégrité de l'enquête (ISO 45001 §10.2 · SPEC « obligatoire = persisté »).
   INCIDENT_ID_REQUIRED:
     "Cette enquête doit être rattachée à un incident. Rouvrez-la depuis la fiche de l'incident concerné.",
