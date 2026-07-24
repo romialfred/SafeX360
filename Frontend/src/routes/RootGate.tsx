@@ -1,9 +1,14 @@
 import { Center, Loader } from '@mantine/core';
-import { JSX } from 'react';
+import { JSX, lazy, Suspense } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import LandingPage from '../components/NewComponents/LandingPage/LandingPage';
 import { isNativePlatform } from '../m/utils/capacitorBridge';
+import { PageLoader } from '../components/UtilityComp/SandglassLoader';
+
+// VITRINE CHARGEE A LA DEMANDE : elle ne concerne que les visiteurs anonymes,
+// mais son import direct la placait dans le chunk d'entree — chaque utilisateur
+// connecte telechargeait une page qu'il ne verra jamais.
+const LandingPage = lazy(() => import('../components/NewComponents/LandingPage/LandingPage'));
 
 /**
  * RootGate — Gate pour la route racine '/'.
@@ -34,7 +39,11 @@ const RootGate: React.FC<RootGateProps> = ({ children }) => {
         if (isNativePlatform()) {
             return <Navigate to="/login" replace />;
         }
-        return <LandingPage />;
+        return (
+            <Suspense fallback={<PageLoader label="Chargement…" minHeight="100vh" />}>
+                <LandingPage />
+            </Suspense>
+        );
     }
 
     return children;

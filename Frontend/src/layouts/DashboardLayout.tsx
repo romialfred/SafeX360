@@ -10,6 +10,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { loadModuleFlagsOnce } from "../components/NewComponents/data/ModuleConfig";
 import InactivityHandler from "../components/UtilityComp/InactivityHandler";
 import { usePageTracking } from "../hooks/usePageTracking";
+import { Suspense } from "react";
+import { useLocation } from "react-router-dom";
+import AppErrorBoundary from "../components/UtilityComp/AppErrorBoundary";
+import { PageLoader } from "../components/UtilityComp/SandglassLoader";
 import { EmergencyWebSocketProvider } from "../components/EmergencyManagement/Sos/EmergencyWebSocketProvider";
 import CoordinatorAlertListener from "../components/EmergencyManagement/Sos/CoordinatorAlertListener";
 import GeneralAlertListener from "../components/EmergencyManagement/GeneralAlert/GeneralAlertListener";
@@ -36,6 +40,7 @@ const DashboardLayout = () => {
     // authentifiées et nulle part ailleurs : un traqueur par page se serait
     // fatalement retrouvé absent de certaines.
     usePageTracking(true);
+    const location = useLocation();
     const overlay = useAppSelector((state) => state.overlay);
     const selectedCompanyId = useAppSelector((s) => s.companySelection?.selectedCompanyId ?? null);
     const [flagsLoaded, setFlagsLoaded] = useState(false);
@@ -150,7 +155,22 @@ const DashboardLayout = () => {
                         {/* LOT Dosimetrie Phase 5 — Bandeau global d'alertes critiques.
                             Auto-masque hors routes /dosimetry/* et sur /dosimetry/alerts. */}
                         <DosimetryAlertsBanner />
-                        <Outlet />
+                        {/* FRONTIÈRE DE CHARGEMENT AU NIVEAU DU CONTENU.
+                            Sans elle, le chargement d'une page se propageait jusqu'au
+                            <Suspense> racine (au-dessus du RouterProvider) : React
+                            démontait TOUTE l'application — barre latérale, en-tête,
+                            pied de page — pour afficher le loader. D'où l'impression,
+                            à chaque navigation, que la plateforme entière se recharge.
+                            Ici, seule la zone de contenu attend ; le reste de l'écran
+                            ne bouge pas.
+                            La frontière d'erreur est au même niveau et se réarme à
+                            chaque changement de route : une page en échec n'empêche
+                            plus d'en ouvrir une autre. */}
+                        <AppErrorBoundary resetKey={location.pathname} context={location.pathname}>
+                            <Suspense fallback={<PageLoader label="Chargement de la page…" minHeight="60vh" delay={120} />}>
+                                <Outlet />
+                            </Suspense>
+                        </AppErrorBoundary>
                     </main>
 
                     {/* LOT 41 — Footer institutionnel pleine largeur */}

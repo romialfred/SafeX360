@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 
+import SafeXBrandMark from './SafeXBrandMark';
+
 /**
  * SandglassLoader — sablier d'attente raffiné de la plateforme.
  *
@@ -146,14 +148,26 @@ export const SandglassLoader = ({ size = 'md' as SandglassSize, label, sublabel,
 
 /**
  * PageLoader — attente pleine zone (fallback Suspense, chargement de page).
+ *
+ * Porte la MARQUE : sans repere visuel, une zone vide le temps du chargement se
+ * lit comme une panne. Le bouclier SafeX au-dessus du sablier dit « l'application
+ * travaille », pas « l'application a disparu ».
+ *
+ * `delay` est expose : sur un fallback de ROUTE on veut zero attente avant
+ * d'afficher quelque chose (c'est precisement la que l'ecran blanc se voyait),
+ * alors qu'un chargement inline supporte un court delai anti-clignotement.
  */
-export const PageLoader = ({ label = 'Chargement de la page…', sublabel, minHeight = '60vh' }: {
+export const PageLoader = ({ label = 'Chargement de la page…', sublabel, minHeight = '60vh', delay = 0 }: {
     label?: string;
     sublabel?: string;
     minHeight?: string;
+    delay?: number;
 }) => (
     <div className="flex items-center justify-center bg-[#FAF8F3] w-full" style={{ minHeight }}>
-        <SandglassLoader size="lg" label={label} sublabel={sublabel} />
+        <div className="flex flex-col items-center gap-5" style={{ animation: 'sx-fade-in 0.3s ease-out both' }}>
+            <SafeXBrandMark variant="stack" tone="dark" size={38} />
+            <SandglassLoader size="lg" label={label} sublabel={sublabel} delay={delay} />
+        </div>
     </div>
 );
 

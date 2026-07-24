@@ -1,5 +1,6 @@
 ﻿import { lazy, Suspense } from 'react';
 import { PageLoader } from '../components/UtilityComp/SandglassLoader';
+import AppErrorBoundary from '../components/UtilityComp/AppErrorBoundary';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoutes';
 import PublicRoutes from './PublicRoutes';
@@ -775,8 +776,13 @@ const router = createBrowserRouter([
 
 export function Router() {
     return (
-        <Suspense fallback={<PageLoader label="Chargement de la page…" sublabel="SafeX" />}>
-            <RouterProvider router={router} />
-        </Suspense>
+        // Frontiere RACINE : dernier filet avant la page blanche. Elle couvre ce qui
+        // vit HORS du layout applicatif (connexion, vitrine, 404) ; a l'interieur,
+        // DashboardLayout pose sa propre frontiere pour ne jamais demonter la coque.
+        <AppErrorBoundary fullHeight>
+            <Suspense fallback={<PageLoader label="Chargement de la plateforme…" minHeight="100vh" />}>
+                <RouterProvider router={router} />
+            </Suspense>
+        </AppErrorBoundary>
     );
 }
