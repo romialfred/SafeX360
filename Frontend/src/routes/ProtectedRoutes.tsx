@@ -1,4 +1,4 @@
-import { Center, Loader } from "@mantine/core";
+import { PageLoader } from "../components/UtilityComp/SandglassLoader";
 import { JSX } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
@@ -10,11 +10,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     const { user, loading } = useAuth();
 
     if (loading) {
-        return (
-            <Center h="100vh">
-                <Loader />
-            </Center>
-        );
+        return <PageLoader minHeight="100vh" delay={150} />;
     }
 
     if (!user) {

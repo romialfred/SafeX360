@@ -1,4 +1,3 @@
-import { Center, Loader } from '@mantine/core';
 import { JSX, lazy, Suspense } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -28,11 +27,7 @@ const RootGate: React.FC<RootGateProps> = ({ children }) => {
     const { user, loading } = useAuth();
 
     if (loading) {
-        return (
-            <Center h="100vh">
-                <Loader />
-            </Center>
-        );
+        return <PageLoader minHeight="100vh" delay={150} />;
     }
 
     if (!user) {

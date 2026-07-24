@@ -34,24 +34,7 @@ import frRisk from './locales/fr/risk.json';
 import frCommunications from './locales/fr/communications.json';
 import frCorrective from './locales/fr/corrective.json';
 
-// === EN ===
-import enCommon from './locales/en/common.json';
-import enNavigation from './locales/en/navigation.json';
-import enHse from './locales/en/hse.json';
-import enNonConformity from './locales/en/nonConformity.json';
-import enEmergency from './locales/en/emergency.json';
-import enModuleManager from './locales/en/moduleManager.json';
-import enDosimetry from './locales/en/dosimetry.json';
-import enBlast from './locales/en/blast.json';
-import enInspection from './locales/en/inspection.json';
-import enHome from './locales/en/home.json';
-import enIncidents from './locales/en/incidents.json';
-import enAdhoc from './locales/en/adhoc.json';
-import enAudits from './locales/en/audits.json';
-import enPpe from './locales/en/ppe.json';
-import enRisk from './locales/en/risk.json';
-import enCommunications from './locales/en/communications.json';
-import enCorrective from './locales/en/corrective.json';
+// === EN : chargé à la demande (voir ensureLanguageResources), pas ici ===
 
 export const SUPPORTED_LANGUAGES = ['fr', 'en'] as const;
 export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
@@ -85,26 +68,12 @@ i18n
                 communications: frCommunications,
                 corrective: frCorrective,
             },
-            en: {
-                common: enCommon,
-                navigation: enNavigation,
-                hse: enHse,
-                nonConformity: enNonConformity,
-                emergency: enEmergency,
-                moduleManager: enModuleManager,
-                dosimetry: enDosimetry,
-                blast: enBlast,
-                inspection: enInspection,
-                home: enHome,
-                incidents: enIncidents,
-                adhoc: enAdhoc,
-                audits: enAudits,
-                ppe: enPpe,
-                risk: enRisk,
-                communications: enCommunications,
-                corrective: enCorrective,
-            },
+            // EN absent au boot : enregistré à la demande par ensureLanguageResources.
         },
+        // Indispensable avec des ressources partielles : sans cela i18next
+        // considère qu'une langue « connue » (EN) est déjà complètement chargée
+        // et n'accepterait pas l'ajout ultérieur des namespaces.
+        partialBundledLanguages: true,
         fallbackLng: 'fr',
         supportedLngs: SUPPORTED_LANGUAGES as unknown as string[],
 
@@ -136,6 +105,36 @@ i18n
             }
         },
     });
+
+// ─── Chargement à la demande des langues non embarquées (EN) ──────────
+// Le FR est embarqué (langue par défaut) ; les autres sont chargées par
+// import() dynamique la première fois qu'on en a besoin. Idempotent : un
+// second appel ne recharge rien.
+const loadedLanguages = new Set<string>(['fr']);
+
+/**
+ * Garantit que les ressources de `lng` sont enregistrées AVANT de basculer
+ * dessus — sinon l'IHM afficherait des clés brutes le temps du chargement.
+ * À appeler avant tout `changeLanguage` vers une langue non-FR.
+ */
+export async function ensureLanguageResources(lng: string): Promise<void> {
+    const base = (lng || '').split('-')[0].toLowerCase();
+    if (base !== 'en' || loadedLanguages.has(base)) {
+        return;
+    }
+    const { default: enResources } = await import('./enBundle');
+    Object.entries(enResources).forEach(([ns, bundle]) => {
+        // deep=true, overwrite=true : namespace complet, remplace un éventuel repli.
+        i18n.addResourceBundle('en', ns, bundle, true, true);
+    });
+    loadedLanguages.add(base);
+}
+
+// Au boot : si la langue résolue (localStorage/navigateur) est déjà l'anglais,
+// on charge son bundle puis on rafraîchit — l'utilisateur EN retrouve sa langue.
+if ((i18n.resolvedLanguage || i18n.language || '').split('-')[0].toLowerCase() === 'en') {
+    void ensureLanguageResources('en').then(() => i18n.changeLanguage('en'));
+}
 
 // ─── Sync <html lang="..."> avec la langue résolue ───────────────────
 // Rigueur i18n (LOT 49) : la balise <html lang> sert pour l'accessibilité,

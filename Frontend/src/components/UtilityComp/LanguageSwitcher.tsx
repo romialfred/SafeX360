@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Menu } from '@mantine/core';
 import { IconChevronDown, IconWorld } from '@tabler/icons-react';
-import { LANGUAGE_LABELS, SUPPORTED_LANGUAGES, type SupportedLanguage } from '../../i18n';
+import { LANGUAGE_LABELS, SUPPORTED_LANGUAGES, ensureLanguageResources, type SupportedLanguage } from '../../i18n';
 
 /**
  * LanguageSwitcher — Sélecteur de langue (LOT 44 — P0).
@@ -25,7 +25,10 @@ export default function LanguageSwitcher({ variant = 'default', tone = 'light' }
     const current = (i18n.resolvedLanguage || i18n.language || 'fr').split('-')[0] as SupportedLanguage;
     const currentInfo = LANGUAGE_LABELS[current] || LANGUAGE_LABELS.fr;
 
-    const change = (lng: SupportedLanguage) => {
+    const change = async (lng: SupportedLanguage) => {
+        // On charge les ressources de la langue AVANT de basculer : ainsi l'IHM ne
+        // montre jamais de clés brutes (l'anglais est téléchargé à la demande).
+        await ensureLanguageResources(lng);
         i18n.changeLanguage(lng);
         // Mettre à jour <html lang="..."> pour l'accessibilité
         if (typeof document !== 'undefined') {

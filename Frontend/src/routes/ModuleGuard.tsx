@@ -1,4 +1,4 @@
-import { Center, Loader } from '@mantine/core';
+import { PageLoader } from '../components/UtilityComp/SandglassLoader';
 import { JSX, useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { isModuleEnabled, loadModuleFlagsOnce } from '../components/NewComponents/data/ModuleConfig';
@@ -23,9 +23,7 @@ export default function ModuleGuard({ moduleId, children }: ModuleGuardProps) {
 
   if (!ready) {
     return (
-      <Center h="60vh">
-        <Loader />
-      </Center>
+      <PageLoader minHeight="60vh" delay={150} />
     );
   }
 
