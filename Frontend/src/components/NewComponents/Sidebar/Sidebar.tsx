@@ -822,6 +822,10 @@ const Sidebar = () => {
             if (!item.subItems) {
                 return isVisible(item.id) ? item : null;
             }
+            // Cloisonnement per-mine au niveau du PARENT : si le module lui-même
+            // (ex. « Planification ») est désactivé sur la mine, tout le groupe
+            // disparaît — sinon un parent à sous-items n'était jamais évalué.
+            if (!isActiveForMine(item.id)) return null;
             const subItems = item.subItems.filter((sub) => isVisible(sub.id));
             if (subItems.length === 0) return null;
             // Le parent reste visible dès qu'au moins un enfant l'est

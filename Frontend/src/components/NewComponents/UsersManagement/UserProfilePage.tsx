@@ -245,7 +245,8 @@ export default function UserProfilePage() {
     const saveRights = async () => {
         setSavingRights(true);
         try {
-            await updateAccountModules(accountId, Array.from(granted), overview?.role, overview?.companyId);
+            await updateAccountModules(accountId, Array.from(granted), overview?.role,
+                overview?.allMinesAccess ? null : overview?.companyId);
             setInitialGranted(new Set(granted));
             successNotification('Droits enregistrés : les modules autorisés ont été mis à jour.');
         } catch (e: any) {

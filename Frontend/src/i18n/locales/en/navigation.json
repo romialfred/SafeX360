@@ -266,7 +266,9 @@
         "compliance": "Compliance",
         "documentation": "Documentation",
         "communication": "Communication",
-        "administration": "Administration"
+        "administration": "Administration",
+        "performance": "Performance",
+        "mineManaged": "Mine-managed modules"
       },
       "modules": {
         "home": "Home / Dashboard",
@@ -304,7 +306,19 @@
         "commDashboard": "Communication dashboard",
         "employeeComm": "Employee communication",
         "usersManagement": "User management",
-        "settings": "Settings"
+        "settings": "Settings",
+        "equipmentRegistry": "Equipment register",
+        "riskOpportunities": "OHS opportunities",
+        "auditProgram": "Audit programme",
+        "isoDocuments": "ISO documents",
+        "processDocs": "Process documents",
+        "targetForecast": "Targets & forecasts",
+        "modulesManagement": "Module management",
+        "emergency": "Emergency management",
+        "dosimetry": "Dosimetry & exposures",
+        "blast": "Blast management",
+        "planning": "Annual planning",
+        "reports": "Reports & analytics"
       }
     },
     "firstLogin": {

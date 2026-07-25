@@ -266,7 +266,9 @@
         "compliance": "Conformité",
         "documentation": "Documentation",
         "communication": "Communication",
-        "administration": "Administration"
+        "administration": "Administration",
+        "performance": "Performance",
+        "mineManaged": "Modules par mine"
       },
       "modules": {
         "home": "Accueil / Dashboard",
@@ -304,7 +306,19 @@
         "commDashboard": "Dashboard communication",
         "employeeComm": "Communication employés",
         "usersManagement": "Gestion utilisateurs",
-        "settings": "Paramètres"
+        "settings": "Paramètres",
+        "equipmentRegistry": "Registre des équipements",
+        "riskOpportunities": "Opportunités SST",
+        "auditProgram": "Programme d'audit",
+        "isoDocuments": "Documents ISO",
+        "processDocs": "Documents de processus",
+        "targetForecast": "Cibles & prévisions",
+        "modulesManagement": "Gestion des modules",
+        "emergency": "Gestion des urgences",
+        "dosimetry": "Dosimétrie & expositions",
+        "blast": "Gestion des dynamitages",
+        "planning": "Planification annuelle",
+        "reports": "Rapports & analytics"
       }
     },
     "firstLogin": {

@@ -285,7 +285,10 @@ public class AdminUserController {
 
         // ─── 5. Init du PermissionProfile cote HSE — STRICT (LOT 52) :
         // un echec annule TOUTE la creation (rollback transactionnel). ───
-        boolean permissionsInit = initPermissionsHSE(saved.getId(), req.getRole(), req.getAllowedModules(), req.getCompanyId());
+        // Accès toutes mines → pas de clamp sur une mine unique (un module actif
+        // ailleurs ne doit pas être retiré). Sinon, enforcement sur la mine de rattachement.
+        boolean permissionsInit = initPermissionsHSE(saved.getId(), req.getRole(),
+                req.getAllowedModules(), allMines ? null : req.getCompanyId());
         if (!permissionsInit) {
             throw new HRMSException("PERMISSIONS_INIT_FAILED");
         }
