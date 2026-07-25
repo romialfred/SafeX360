@@ -17,6 +17,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Africa from '@react-map/africa';
 import { useAuth } from '../../../hooks/useAuth';
+import SafeXLogoColor from '../../UtilityComp/SafeXLogoColor';
 
 const PHOTO_FIELD = '/hero/workers-loto.png';
 
@@ -99,12 +100,17 @@ const COUNTRY_COLORS: Record<string, string> = COUNTRIES.reduce((acc, c) => {
 const CSS = `
   .lp{--ink:#12233D;--navy:#0B1E3A;--muted:#5B6a7d;--faint:#93A0AF;--bg:#FFFFFF;--bg2:#F4F8FC;
     --line:#E2EAF2;--card:#FFFFFF;--amber:#F5A623;--amber-d:#DE8E0C;--blue:#2563EB;--teal:#0F9E8E;
-    --good:#12A150;--sans:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    --good:#12A150;
+    --sans:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    --serif:'Source Serif 4','Source Serif Pro',Georgia,'Times New Roman',serif;
     --sh:0 12px 30px -18px rgba(18,35,61,.35);
-    background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+    background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
   .lp *{box-sizing:border-box}
   .lp .wrap{max-width:1180px;margin:0 auto;padding:0 22px}
-  .lp h1,.lp h2,.lp h3,.lp h4{margin:0;font-weight:800;letter-spacing:-.02em;line-height:1.12;text-wrap:balance}
+  /* Titres d'affichage en serif éditorial (Source Serif 4) — allure de vitrine
+     professionnelle, plus le faux-gras 800 de system-ui qui faisait « IA ». */
+  .lp h1,.lp h2,.lp h3,.lp h4{margin:0;font-weight:600;letter-spacing:-.01em;line-height:1.15;text-wrap:balance}
+  .lp h1,.lp h2{font-family:var(--serif);letter-spacing:-.005em}
   .lp p{margin:0}
   .lp a{text-decoration:none;color:inherit}
   .lp .over{font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:800;color:var(--blue)}
@@ -165,7 +171,7 @@ const CSS = `
   .lp .badge{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--amber-d);background:#FDF3E1;border:1px solid #F6DFB3;padding:7px 13px;border-radius:999px}
   /* Titre : 3 lignes noires (chacune sur une ligne, sans retour parasite) + 1
      ligne ambre. Interligne resserré pour ne pas allonger la hauteur. */
-  .lp .hero h1{font-size:clamp(27px,3.3vw,42px);color:var(--ink);line-height:1.08}
+  .lp .hero h1{font-size:clamp(26px,3.05vw,40px);color:var(--ink);line-height:1.12}
   .lp .hero .hero-title .hl,.lp .hero .hero-title .rot{display:block;white-space:nowrap}
   .lp .hero h1 .y{color:var(--amber-d)}
   @media(max-width:560px){.lp .hero .hero-title .hl,.lp .hero .hero-title .rot{white-space:normal}}
@@ -391,14 +397,10 @@ export default function LandingPage() {
 
             {/* NAV */}
             <nav className="nav"><div className="wrap">
-                <div className="logo">
-                    {/* translate="no" : un nom de marque ne se traduit pas — et un
-                        traducteur automatique qui remplace ces noeuds fait planter
-                        le rendu React. */}
-                    <span className="wordmark" translate="no" aria-label="SafeX 360">
-                        <span className="safe">SafeX</span>
-                        <span className="num"><span className="n3">3</span><span className="n6">6</span><span className="n0">0</span></span>
-                    </span>
+                <div className="logo" translate="no">
+                    {/* Logo unifié de la plateforme (identique à la page de connexion) :
+                        bouclier dégradé teal→rouge + wordmark Safe[X]360. */}
+                    <SafeXLogoColor variant="full" tone="light" size={34} />
                     <span className="logo-sub">Digital HSE Platform</span>
                 </div>
                 <div className="menu">
@@ -637,12 +639,9 @@ export default function LandingPage() {
             {/* FOOTER */}
             <footer><div className="wrap">
                 <div className="fcols">
-                    <div>
-                        <span className="wordmark" translate="no" aria-label="SafeX 360" style={{ fontSize: 28 }}>
-                            <span className="safe">SafeX</span>
-                            <span className="num"><span className="n3">3</span><span className="n6">6</span><span className="n0">0</span></span>
-                        </span>
-                        <p className="desc">La plateforme de pilotage de la Santé, de la Sécurité et de l’Environnement pour l’industrie minière et industrielle.</p>
+                    <div translate="no">
+                        <SafeXLogoColor variant="full" tone="light" size={32} />
+                        <p className="desc" style={{ marginTop: 14 }}>La plateforme de pilotage de la Santé, de la Sécurité et de l’Environnement pour l’industrie minière et industrielle.</p>
                     </div>
                     <div><h5>Solution</h5><ul><li><a onClick={() => goTo('features')}>Fonctionnalités</a></li><li><a onClick={() => goTo('modules')}>Modules</a></li><li><a onClick={() => goTo('secteurs')}>Secteurs</a></li><li><a onClick={() => goTo('demo')}>Tarifs</a></li></ul></div>
                     <div><h5>Ressources</h5><ul><li><a>Centre d’aide</a></li><li><a>Documentation</a></li><li><a>FAQ</a></li><li><a>Actualités</a></li></ul></div>
