@@ -128,7 +128,9 @@ public class AdminUserController {
 
     @Value("${spring.mail.username:noreply@safex360.com}")
     private String fromEmail;
-    @Value("${loginUrl:http://localhost:5173}")
+    // Repli si l'en-tête Origin est absent : JAMAIS localhost (un e-mail envoyé à
+    // l'utilisateur doit pointer vers la plateforme réelle, pas le poste de l'admin).
+    @Value("${loginUrl:https://safex360.data-univers.com}")
     private String loginUrl;
     // LOT 52 : appel direct service-à-service vers Health-Safety (8081), sans
     // repasser par le gateway. En prod Render, surcharger via la variable
@@ -296,9 +298,11 @@ public class AdminUserController {
                         + ", modules=" + countModules(req.getAllowedModules())));
 
         // ─── 7. Email ───
+        // Lien = l'URL RÉELLE d'où la demande est faite (en-tête Origin), repli config.
+        String linkUrl = resolveLoginUrl(httpRequest);
         boolean emailSent = isAd
-                ? sendAdWelcomeEmail(req.getEmail(), req.getName(), req.getLogin())
-                : sendCreationEmail(req.getEmail(), req.getName(), req.getLogin(), tempPassword);
+                ? sendAdWelcomeEmail(req.getEmail(), req.getName(), req.getLogin(), linkUrl)
+                : sendCreationEmail(req.getEmail(), req.getName(), req.getLogin(), tempPassword, linkUrl);
 
         return new ResponseEntity<>(new CreateUserResponse(
                 saved.getId(),
@@ -594,7 +598,7 @@ public class AdminUserController {
         }
     }
 
-    private boolean sendCreationEmail(String to, String name, String login, String tempPassword) {
+    private boolean sendCreationEmail(String to, String name, String login, String tempPassword, String baseUrl) {
         try {
             MimeMessage mm = mailSender.createMimeMessage();
             MimeMessageHelper message = new MimeMessageHelper(mm, true);
@@ -602,7 +606,7 @@ public class AdminUserController {
             message.setFrom(fromEmail);
             message.setSubject("SafeX 360 — Bienvenue, vos identifiants de connexion");
             message.setText(buildEmailBody(name, login, tempPassword,
-                    "Bienvenue sur la plateforme SafeX 360. Voici vos identifiants temporaires de connexion."), true);
+                    "Bienvenue sur la plateforme SafeX 360. Voici vos identifiants temporaires de connexion.", baseUrl), true);
             mailSender.send(mm);
             return true;
         } catch (Exception e) {
@@ -611,8 +615,37 @@ public class AdminUserController {
         }
     }
 
+    /**
+     * URL de la plateforme pour les liens d'e-mail : on privilégie l'en-tête
+     * {@code Origin} de la requête (le domaine RÉEL d'où l'admin a créé le compte),
+     * puis {@code Referer}, et à défaut la config {@code loginUrl}. On refuse toute
+     * origine localhost / non-https : un e-mail envoyé à l'utilisateur ne doit
+     * jamais pointer vers le poste local de l'administrateur.
+     */
+    private String resolveLoginUrl(HttpServletRequest req) {
+        String origin = req != null ? req.getHeader("Origin") : null;
+        if ((origin == null || origin.isBlank()) && req != null) {
+            String ref = req.getHeader("Referer");
+            if (ref != null && ref.startsWith("http")) {
+                int scheme = ref.indexOf("://");
+                int slash = scheme > 0 ? ref.indexOf('/', scheme + 3) : -1;
+                origin = slash > 0 ? ref.substring(0, slash) : ref;
+            }
+        }
+        if (origin != null) {
+            origin = origin.trim().replaceAll("/+$", "");
+            String lower = origin.toLowerCase();
+            boolean local = lower.contains("localhost") || lower.contains("127.0.0.1")
+                    || lower.contains("0.0.0.0") || lower.contains("localtest.me");
+            if (origin.startsWith("https://") && !local) {
+                return origin;
+            }
+        }
+        return loginUrl;
+    }
+
     /** Email de bienvenue pour un compte importé d'Active Directory (aucun mot de passe transmis). */
-    private boolean sendAdWelcomeEmail(String to, String name, String login) {
+    private boolean sendAdWelcomeEmail(String to, String name, String login, String baseUrl) {
         try {
             MimeMessage mm = mailSender.createMimeMessage();
             MimeMessageHelper message = new MimeMessageHelper(mm, true);
@@ -628,7 +661,7 @@ public class AdminUserController {
                     + "  <p>Votre accès SafeX 360 a été activé. Connectez-vous avec votre identifiant "
                     + "<code style='background:#f3f4f6;padding:2px 6px;border-radius:3px'>" + escapeHtml(login) + "</code> "
                     + "et votre <strong>mot de passe Active Directory habituel</strong> (celui de votre session Windows).</p>"
-                    + "  <a href='" + loginUrl + "' style='display:inline-block;background:#0F766E;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;margin-top:8px'>Se connecter à SafeX 360</a>"
+                    + "  <a href='" + baseUrl + "' style='display:inline-block;background:#0F766E;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;margin-top:8px'>Accéder à SafeX 360</a>"
                     + "</div></body></html>", true);
             mailSender.send(mm);
             return true;
@@ -646,7 +679,7 @@ public class AdminUserController {
             message.setFrom(fromEmail);
             message.setSubject("SafeX 360 — Reinitialisation de votre mot de passe");
             message.setText(buildEmailBody(name, login, tempPassword,
-                    "Votre mot de passe a ete reinitialise par un administrateur. Voici vos nouveaux identifiants temporaires."), true);
+                    "Votre mot de passe a ete reinitialise par un administrateur. Voici vos nouveaux identifiants temporaires.", loginUrl), true);
             mailSender.send(mm);
             return true;
         } catch (Exception e) {
@@ -655,7 +688,7 @@ public class AdminUserController {
         }
     }
 
-    private String buildEmailBody(String name, String login, String tempPassword, String intro) {
+    private String buildEmailBody(String name, String login, String tempPassword, String intro, String baseUrl) {
         return "<html><body style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px'>"
             + "<div style='background:#0F766E;color:white;padding:20px;border-radius:8px 8px 0 0'>"
             + "  <h2 style='margin:0'>SafeX 360</h2>"
@@ -672,7 +705,7 @@ public class AdminUserController {
             + "  <p style='background:#fef3c7;border-left:4px solid #f59e0b;padding:12px;font-size:13px'>"
             + "    <strong>Important :</strong> ce mot de passe est temporaire. Vous serez invite a le changer obligatoirement lors de votre premiere connexion."
             + "  </p>"
-            + "  <a href='" + loginUrl + "' style='display:inline-block;background:#0F766E;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;margin-top:8px'>Se connecter a SafeX 360</a>"
+            + "  <a href='" + baseUrl + "' style='display:inline-block;background:#0F766E;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;margin-top:8px'>Acceder a SafeX 360</a>"
             + "  <hr style='border:none;border-top:1px solid #e5e7eb;margin:24px 0'>"
             + "  <p style='color:#6b7280;font-size:12px'>Si vous n'etes pas a l'origine de cette creation de compte, contactez votre administrateur HSE.</p>"
             + "  <p style='color:#6b7280;font-size:12px'>Data Universe — Plateforme SafeX 360</p>"

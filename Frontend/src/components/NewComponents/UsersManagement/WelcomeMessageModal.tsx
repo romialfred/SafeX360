@@ -28,10 +28,21 @@ import { successNotification, errorNotification, extractErrorMessage } from '../
 // CONSTANTES PROD
 // ─────────────────────────────────────────────────────────────────────────
 
-/** URL de connexion en production. */
-export const LOGIN_URL = 'https://safex360.data-univers.com';
-/** Logo SafeX en URL ABSOLUE prod (s'affiche au collage dans Outlook). */
-export const LOGO_URL = 'https://safex360.data-univers.com/safex-logo.png';
+/** URL de repli — utilisée UNIQUEMENT si l'admin est sur localhost (le lien d'un
+ *  message envoyé à l'utilisateur ne doit jamais pointer vers un poste local). */
+const PROD_FALLBACK_URL = 'https://safex360.data-univers.com';
+const isLocalOrigin = (o: string) => /localhost|127\.0\.0\.1|0\.0\.0\.0|localtest\.me/i.test(o);
+
+/** URL RÉELLE de la plateforme d'où la demande est faite (origine courante),
+ *  avec repli prod si on est en local. Jamais localhost dans le message. */
+export const resolvePlatformUrl = (): string => {
+    try {
+        const o = window.location.origin;
+        return o && !isLocalOrigin(o) ? o.replace(/\/+$/, '') : PROD_FALLBACK_URL;
+    } catch {
+        return PROD_FALLBACK_URL;
+    }
+};
 
 // Palette teal SafeX
 const TEAL = '#0F766E';
@@ -56,6 +67,10 @@ export default function WelcomeMessageModal({
     opened, onClose, name, login, temporaryPassword, email,
 }: Props) {
     const { t } = useTranslation('navigation');
+
+    // Lien = URL réelle d'où l'on est (jamais localhost). Logo en absolu pour Outlook.
+    const LOGIN_URL = useMemo(resolvePlatformUrl, []);
+    const LOGO_URL = `${LOGIN_URL}/safex-logo.png`;
 
     // ─────────────────────────────────────────────────────────────────────
     // GENERATION DU MESSAGE (HTML riche + texte brut), memoise
@@ -86,6 +101,15 @@ export default function WelcomeMessageModal({
         const help = t('userMgmt.welcome.helpNote');
         const signature = t('userMgmt.welcome.signature');
         const teamName = t('userMgmt.welcome.teamName');
+        const company = t('userMgmt.welcome.company');
+        const secTitle = t('userMgmt.welcome.securityTitle');
+        const secIntro = t('userMgmt.welcome.securityIntro');
+        const secB1 = t('userMgmt.welcome.securityBullet1');
+        const secB2 = t('userMgmt.welcome.securityBullet2');
+        const secB3 = t('userMgmt.welcome.securityBullet3');
+        const flTitle = t('userMgmt.welcome.firstLoginTitle');
+        const flText = t('userMgmt.welcome.firstLoginText');
+        const thanks = t('userMgmt.welcome.thanksNote');
 
         // HTML autoporteur : table layout + styles inline (compatible Outlook/Word).
         return `<!--[if mso]><style>table{border-collapse:collapse}</style><![endif]-->
@@ -123,7 +147,24 @@ export default function WelcomeMessageModal({
     </td>
   </tr>
   <tr>
-    <td style="padding:24px 32px 4px 32px;" align="center">
+    <td style="padding:22px 32px 0 32px;">
+      <p style="margin:0 0 6px 0;font-size:13px;letter-spacing:.05em;text-transform:uppercase;font-weight:700;color:${TEAL};">${secTitle}</p>
+      <p style="margin:0 0 8px 0;font-size:14px;line-height:1.6;color:#334155;">${secIntro}</p>
+      <ul style="margin:0;padding-left:20px;font-size:14px;line-height:1.7;color:#334155;">
+        <li>${secB1}</li>
+        <li>${secB2}</li>
+        <li>${secB3}</li>
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:20px 32px 0 32px;">
+      <p style="margin:0 0 4px 0;font-size:13px;letter-spacing:.05em;text-transform:uppercase;font-weight:700;color:${TEAL};">${flTitle}</p>
+      <p style="margin:0;font-size:14px;line-height:1.6;color:#334155;">${flText}</p>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:16px 32px 4px 32px;" align="center">
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
         <tr>
           <td style="border-radius:8px;background:${TEAL};background-color:${TEAL};">
@@ -150,12 +191,14 @@ export default function WelcomeMessageModal({
   <tr>
     <td style="padding:18px 32px 0 32px;">
       <p style="margin:0;font-size:13px;line-height:1.5;color:#64748b;">${help}</p>
+      <p style="margin:12px 0 0 0;font-size:14px;line-height:1.6;color:#334155;">${thanks}</p>
     </td>
   </tr>
   <tr>
     <td style="padding:24px 32px 28px 32px;border-top:1px solid #e2e8f0;">
       <p style="margin:14px 0 0 0;font-size:14px;color:#334155;">${signature}</p>
       <p style="margin:2px 0 0 0;font-size:14px;font-weight:700;color:${TEAL};">${teamName}</p>
+      <p style="margin:2px 0 0 0;font-size:13px;color:#64748b;">${company}</p>
     </td>
   </tr>
 </table>`.trim();
@@ -172,14 +215,25 @@ export default function WelcomeMessageModal({
             `${t('userMgmt.welcome.loginLabel')} ${login}`,
             `${t('userMgmt.welcome.passwordLabel')} ${pwd}`,
             '',
+            t('userMgmt.welcome.securityTitle'),
+            t('userMgmt.welcome.securityIntro'),
+            `- ${t('userMgmt.welcome.securityBullet1')}`,
+            `- ${t('userMgmt.welcome.securityBullet2')}`,
+            `- ${t('userMgmt.welcome.securityBullet3')}`,
+            '',
+            t('userMgmt.welcome.firstLoginTitle'),
+            t('userMgmt.welcome.firstLoginText'),
             `${t('userMgmt.welcome.ctaConnect')} : ${LOGIN_URL}`,
             '',
             t('userMgmt.welcome.expiryNotice'),
             '',
             t('userMgmt.welcome.helpNote'),
             '',
+            t('userMgmt.welcome.thanksNote'),
+            '',
             t('userMgmt.welcome.signature'),
             t('userMgmt.welcome.teamName'),
+            t('userMgmt.welcome.company'),
         ];
         return lines.join('\n');
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -362,6 +416,19 @@ export default function WelcomeMessageModal({
                                     </CopyButton>
                                 )}
                             </Group>
+                        </Stack>
+                    </Paper>
+
+                    {/* Sécurité du compte */}
+                    <Paper p="md" radius="md" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                        <Text size="xs" fw={700} tt="uppercase" c={TEAL} mb={8} style={{ letterSpacing: '0.06em' }}>
+                            {t('userMgmt.welcome.securityTitle')}
+                        </Text>
+                        <Text size="sm" c="dimmed" mb={6}>{t('userMgmt.welcome.securityIntro')}</Text>
+                        <Stack gap={4}>
+                            <Text size="sm" c="#334155">• {t('userMgmt.welcome.securityBullet1')}</Text>
+                            <Text size="sm" c="#334155">• {t('userMgmt.welcome.securityBullet2')}</Text>
+                            <Text size="sm" c="#334155">• {t('userMgmt.welcome.securityBullet3')}</Text>
                         </Stack>
                     </Paper>
 
