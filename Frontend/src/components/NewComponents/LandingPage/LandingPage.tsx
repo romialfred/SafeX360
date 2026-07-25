@@ -73,8 +73,8 @@ const COUNTRIES: Country[] = [
     { key: 'Senegal', label: 'Sénégal', color: '#16A34A' },
     { key: 'Liberia', label: 'Liberia', color: '#E5484D' },
     { key: 'CôtedIvoire', label: "Côte d'Ivoire", color: '#EC4899' },
-    // « Congo » = République du Congo (Brazzaville). Pour la RDC : 'DemocraticRepublicofCongo'.
-    { key: 'RepublicofCongo', label: 'Congo', color: '#0EA5E9' },
+    // RDC (Congo-Kinshasa). Pour le Congo-Brazzaville : 'RepublicofCongo'.
+    { key: 'DemocraticRepublicofCongo', label: 'RD Congo', color: '#0EA5E9' },
 ];
 // La librairie accepte la clé avec ou sans espace : on fournit les deux graphies.
 const COUNTRY_COLORS: Record<string, string> = COUNTRIES.reduce((acc, c) => {
