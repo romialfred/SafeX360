@@ -49,6 +49,7 @@ import {
     DirectoryStatus, DirectoryUser,
 } from '../../../services/DirectoryService';
 import { getAllCompanies, getDepartmentsByCompany } from '../../../services/HrmsService';
+import { getActiveModulesForCompany } from '../../../services/ModuleManagementService';
 import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
 import WelcomeMessageModal from './WelcomeMessageModal';
 
@@ -144,19 +145,23 @@ interface ModuleCategory {
     modules: string[];
 }
 
+// Parité stricte avec le catalogue serveur ModuleCatalog (source unique) : toute
+// clé du catalogue est attribuable ici. Un test de garde (moduleCatalogParity)
+// casse le build si cette liste diverge du catalogue.
 const MODULE_CATEGORIES: ModuleCategory[] = [
     { key: 'general', color: 'gray', modules: ['home', 'notifications'] },
     { key: 'incidents', color: 'orange', modules: ['incidentManagement', 'investigations', 'actionPlansInc', 'nonConformity'] },
     { key: 'errorManagement', color: 'indigo', modules: ['errorManagement'] },
-    { key: 'preventive', color: 'teal', modules: ['inspections', 'meetings', 'managementTour'] },
+    { key: 'preventive', color: 'teal', modules: ['inspections', 'meetings', 'managementTour', 'equipmentRegistry'] },
     { key: 'corrective', color: 'cyan', modules: ['pendingActions', 'actionPlan', 'recommendations', 'adhocActions'] },
-    { key: 'risks', color: 'red', modules: ['riskOverview', 'riskRegister', 'riskAssessment', 'chemicalRegister'] },
+    { key: 'risks', color: 'red', modules: ['riskOverview', 'riskRegister', 'riskAssessment', 'chemicalRegister', 'riskOpportunities'] },
     { key: 'ppe', color: 'yellow', modules: ['ppeOverview', 'ppeMonitoring', 'ppeRequest'] },
-    { key: 'audits', color: 'indigo', modules: ['auditPlan', 'audits', 'auditRecommendations'] },
+    { key: 'audits', color: 'indigo', modules: ['auditProgram', 'auditPlan', 'audits', 'auditRecommendations'] },
     { key: 'compliance', color: 'green', modules: ['complianceDashboard', 'requirements', 'positionAssignments', 'employeeAssignments'] },
-    { key: 'documentation', color: 'violet', modules: ['documents', 'documentValidation', 'lessonsLearned', 'documentManager'] },
+    { key: 'documentation', color: 'violet', modules: ['documents', 'documentValidation', 'lessonsLearned', 'documentManager', 'isoDocuments', 'processDocs'] },
     { key: 'communication', color: 'pink', modules: ['commDashboard', 'employeeComm'] },
-    { key: 'administration', color: 'red', modules: ['usersManagement', 'settings'] },
+    { key: 'performance', color: 'blue', modules: ['targetForecast'] },
+    { key: 'administration', color: 'red', modules: ['usersManagement', 'settings', 'modulesManagement'] },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -209,6 +214,9 @@ export default function CreateUserPage() {
     const [step, setStep] = useState(0);
     const [identitySource, setIdentitySource] = useState<IdentitySource>('LOCAL');
     const [selectedModules, setSelectedModules] = useState<Set<string>>(new Set());
+    // Modules ACTIFS sur la mine sélectionnée (cloisonnement per-mine).
+    // null = pas de filtre (accès toutes mines, ou chargement) → on montre tout.
+    const [activeModules, setActiveModules] = useState<Set<string> | null>(null);
     const [submitting, setSubmitting] = useState(false);
     const [createdResponse, setCreatedResponse] = useState<CreateUserResponse | null>(null);
     const [cancelConfirm, setCancelConfirm] = useState(false);
@@ -296,6 +304,33 @@ export default function CreateUserPage() {
             .then((res: DepartmentOption[]) => setDepartments(Array.isArray(res) ? res : []))
             .catch(() => setDepartments([]));
     }, [form.values.companyId]);
+
+    // ── Modules actifs de la mine (cloisonnement per-mine) ──
+    // Accès toutes mines → aucun filtre (union). Sinon on charge les modules
+    // actifs de la mine principale et on retire de la sélection ceux qui y sont
+    // désactivés (on ne peut pas accorder un droit sur un module éteint sur la mine).
+    useEffect(() => {
+        if (form.values.allMinesAccess || !form.values.companyId) {
+            setActiveModules(null);
+            return;
+        }
+        let cancelled = false;
+        getActiveModulesForCompany(Number(form.values.companyId))
+            .then((keys) => {
+                if (cancelled) return;
+                const set = new Set(keys);
+                setActiveModules(set);
+                setSelectedModules((prev) => {
+                    const next = new Set(Array.from(prev).filter((m) => set.has(m)));
+                    return next.size === prev.size ? prev : next;
+                });
+            })
+            .catch(() => { if (!cancelled) setActiveModules(null); });
+        return () => { cancelled = true; };
+    }, [form.values.companyId, form.values.allMinesAccess]);
+
+    /** Un module est proposable ssi actif sur la mine (ou pas de filtre). */
+    const moduleActiveForMine = (moduleKey: string) => activeModules === null || activeModules.has(moduleKey);
 
     // ─────────────────────────────────────────────────────────────────────
     // HELPERS
@@ -1022,15 +1057,20 @@ export default function CreateUserPage() {
 
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
                     {MODULE_CATEGORIES.map((cat) => {
-                        const catSelectedCount = cat.modules.filter((m) => selectedModules.has(m)).length;
-                        const allSelected = catSelectedCount === cat.modules.length;
+                        // Cloisonnement per-mine : on ne montre que les modules ACTIFS
+                        // sur la mine sélectionnée. Une catégorie entièrement désactivée
+                        // pour la mine disparaît.
+                        const mods = cat.modules.filter(moduleActiveForMine);
+                        if (mods.length === 0) return null;
+                        const catSelectedCount = mods.filter((m) => selectedModules.has(m)).length;
+                        const allSelected = catSelectedCount === mods.length;
                         return (
                             <Paper key={cat.key} p="sm" radius="md" style={{ border: '1px solid #E2E8F0' }}>
                                 <Group justify="space-between" mb={8} wrap="nowrap">
                                     <Group gap={6} wrap="nowrap">
                                         <Badge color={cat.color} variant="dot" size="sm">{categoryLabel(cat.key)}</Badge>
                                         <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
-                                            {catSelectedCount}/{cat.modules.length}
+                                            {catSelectedCount}/{mods.length}
                                         </Text>
                                     </Group>
                                     <Switch
@@ -1038,11 +1078,11 @@ export default function CreateUserPage() {
                                         color={cat.color}
                                         label={allSelected ? t('userMgmt.create.toggleAllOff') : t('userMgmt.create.toggleAllOn')}
                                         checked={allSelected}
-                                        onChange={(e) => toggleCategory(cat, e.currentTarget.checked)}
+                                        onChange={(e) => toggleCategory({ ...cat, modules: mods }, e.currentTarget.checked)}
                                     />
                                 </Group>
                                 <Stack gap={6}>
-                                    {cat.modules.map((m) => (
+                                    {mods.map((m) => (
                                         <Checkbox
                                             key={m}
                                             size="sm"
@@ -1072,7 +1112,7 @@ export default function CreateUserPage() {
                             <IconBuildingFactory2 size={15} className="text-slate-400" />
                         </Group>
                         <Stack gap={6}>
-                            {MINE_MANAGED_MODULES.map((m) => (
+                            {MINE_MANAGED_MODULES.filter((m) => moduleActiveForMine(m.key)).map((m) => (
                                 <Group key={m.key} justify="space-between" wrap="nowrap" gap={8}>
                                     <Text size="sm" c="dimmed">
                                         {t(`userMgmt.create.mineModules.${m.key}`, { defaultValue: m.fr })}
@@ -1082,6 +1122,11 @@ export default function CreateUserPage() {
                                     </Badge>
                                 </Group>
                             ))}
+                            {MINE_MANAGED_MODULES.filter((m) => moduleActiveForMine(m.key)).length === 0 && (
+                                <Text size="xs" c="dimmed">
+                                    {t('userMgmt.create.mineModulesNone', { defaultValue: 'Aucun module par mine actif sur cette mine.' })}
+                                </Text>
+                            )}
                         </Stack>
                         <Text size="xs" c="dimmed" mt={8}>
                             {t('userMgmt.create.mineModulesHint', {

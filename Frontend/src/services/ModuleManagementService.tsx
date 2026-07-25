@@ -54,6 +54,42 @@ const getAllModuleFeatures = async () => {
     .then((res) => res.data as ModuleFeatureDto[]);
 };
 
+// ── Activation PAR MINE (cloisonnement tenant) ──────────────────────────────
+
+export interface CompanyModuleActivation {
+  companyId: number;
+  module: string;
+  status: ModuleStatus;
+}
+
+/** Toutes les désactivations explicites, toutes mines confondues (matrice). */
+const getCompanyActivations = async () => {
+  return axiosInstance
+    .get(`${baseUrl}/company/activations`)
+    .then((res) => res.data as CompanyModuleActivation[]);
+};
+
+/** Statut de chaque module du catalogue pour une mine (défaut ACTIVE). */
+const getCompanyModuleStatuses = async (companyId: number) => {
+  return axiosInstance
+    .get(`${baseUrl}/company/${companyId}/statuses`)
+    .then((res) => res.data as CompanyModuleActivation[]);
+};
+
+/** Clés des modules ACTIFS pour une mine (grille de création + menu). */
+const getActiveModulesForCompany = async (companyId: number) => {
+  return axiosInstance
+    .get(`${baseUrl}/company/${companyId}/active`)
+    .then((res) => res.data as string[]);
+};
+
+/** Active/désactive un module pour une mine. */
+const setCompanyModuleStatus = async (companyId: number, module: string, status: ModuleStatus) => {
+  return axiosInstance
+    .put(`${baseUrl}/company/${companyId}/${module}`, null, { params: { status } })
+    .then((res) => res.data as CompanyModuleActivation);
+};
+
 export {
   createModuleFeature,
   updateModuleFeature,
@@ -61,5 +97,9 @@ export {
   getModuleFeature,
   getModuleFeatureByKey,
   getAllModuleFeatures,
+  getCompanyActivations,
+  getCompanyModuleStatuses,
+  getActiveModulesForCompany,
+  setCompanyModuleStatus,
 };
 

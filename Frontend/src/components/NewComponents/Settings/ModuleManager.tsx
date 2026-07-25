@@ -12,14 +12,11 @@ import {
     IconStack3,
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
-import { moduleConfigurations, updateModuleStatus as updateModuleStatusLocal } from '../data/ModuleConfig';
 import {
-    createModuleFeature,
-    getAllModuleFeatures,
-    getModuleFeatureByKey,
-    updateModuleFeatureStatus,
-    type ModuleFeatureDto,
+    getCompanyActivations,
+    setCompanyModuleStatus,
 } from '../../../services/ModuleManagementService';
+import { getModuleCatalog, type ModuleCatalogCategory } from '../../../services/UserTraceabilityService';
 import { getAllCompanies } from '../../../services/HrmsService';
 import { errorNotification, successNotification, extractErrorMessage } from '../../../utility/NotificationUtility';
 
@@ -28,22 +25,16 @@ interface ModuleManagerProps {
 }
 
 /* ============================================================================
-   LOT 46 — Module Manager v2 — Matrice mines × modules
+   Module Manager — Matrice mines × modules (activation PAR MINE)
    ----------------------------------------------------------------------------
-   Refonte complète : passage d'une liste plate à une matrice 2D où :
-     • Colonnes = Mines (sticky droite, header sticky top)
-     • Lignes   = Modules groupés par catégorie collapsible
-     • Cellules = Toggles individuels (mineId, moduleId) → ACTIVE/INACTIVE
-
-   État persistant :
-     • localStorage key `safex360-module-matrix` → Map<"mineId:moduleId", bool>
-     • Init via API getAllModuleFeatures (état global du module pour toutes mines)
-     • Au toggle d'une cellule : update locale immédiate, persist en localStorage,
-       puis save API si toutes les mines convergent vers le même état (sinon en
-       attente d'évolution backend pour stockage par mine).
-
-   Design : matrice sticky, KPIs premium, recherche, filtres catégorie/mine,
-            actions de masse (Tout activer/désactiver par mine ou catégorie).
+     • Colonnes = Mines · Lignes = modules du ModuleCatalog (source unique) par
+       catégorie collapsible · Cellules = toggles (mineId, moduleKey).
+     • Persistance SERVEUR par mine : GET /modules/company/activations charge la
+       matrice ; chaque toggle → PUT /modules/company/{mineId}/{module}?status=.
+       Défaut ACTIF (absence de ligne = actif). Fini le localStorage et le flag
+       global : une mine peut avoir un jeu de modules différent d'une autre.
+     • Les modules activés ici pilotent la grille de création d'utilisateurs et
+       la visibilité du menu (mêmes clés de catalogue partout).
    ========================================================================= */
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -69,9 +60,6 @@ type ModuleDef = {
 // Helpers
 // ────────────────────────────────────────────────────────────────────────────
 
-const MATRIX_STORAGE_KEY = 'safex360-module-matrix';
-const idToKey = (id: string) => id.replace(/-/g, '_');
-
 const buildCellKey = (mineId: number, moduleId: string) => `${mineId}:${moduleId}`;
 
 const resolveMineName = (m: Mine) => m.name || m.shortName || `Mine #${m.id}`;
@@ -82,79 +70,22 @@ const resolveMineCode = (m: Mine) => {
     return name.slice(0, 3).toUpperCase();
 };
 
-const loadMatrixFromStorage = (): Record<string, boolean> => {
-    try {
-        const raw = localStorage.getItem(MATRIX_STORAGE_KEY);
-        if (!raw) return {};
-        return JSON.parse(raw);
-    } catch {
-        return {};
-    }
-};
-
-const saveMatrixToStorage = (matrix: Record<string, boolean>) => {
-    try {
-        localStorage.setItem(MATRIX_STORAGE_KEY, JSON.stringify(matrix));
-    } catch {
-        /* storage error — ignore silently */
-    }
-};
-
-// Palette catégories — accents subtils pour différencier visuellement les sections
+// Palette catégories — clés du ModuleCatalog serveur (source unique).
 const CATEGORY_TONES: Record<string, { dot: string; bgRow: string; ringActive: string }> = {
-    'Prevention Activities':  { dot: 'bg-emerald-500', bgRow: 'bg-emerald-50/30', ringActive: 'ring-emerald-300' },
-    'Monitoring Activities':  { dot: 'bg-sky-500',     bgRow: 'bg-sky-50/30',     ringActive: 'ring-sky-300' },
-    'Actions Managers':       { dot: 'bg-orange-500',  bgRow: 'bg-orange-50/30',  ringActive: 'ring-orange-300' },
-    'Risk Management':        { dot: 'bg-red-500',     bgRow: 'bg-red-50/30',     ringActive: 'ring-red-300' },
-    'PPE Management':         { dot: 'bg-amber-500',   bgRow: 'bg-amber-50/30',   ringActive: 'ring-amber-300' },
-    'Audits Management':      { dot: 'bg-indigo-500',  bgRow: 'bg-indigo-50/30',  ringActive: 'ring-indigo-300' },
-    'Compliance Management':  { dot: 'bg-green-600',   bgRow: 'bg-green-50/30',   ringActive: 'ring-green-300' },
-    'Knowledge Center':       { dot: 'bg-cyan-500',    bgRow: 'bg-cyan-50/30',    ringActive: 'ring-cyan-300' },
-    'Safety Communication':   { dot: 'bg-pink-500',    bgRow: 'bg-pink-50/30',    ringActive: 'ring-pink-300' },
-    // LOT 48 — Catégorie urgences : rouge profond pour la distinguer de Risk (rouge clair)
-    'Emergency Management':   { dot: 'bg-red-700',     bgRow: 'bg-red-50/40',     ringActive: 'ring-red-400' },
-    // LOT Dosimétrie & Expositions — violet/indigo signature radioprotection
-    'Dosimetry & Exposures':  { dot: 'bg-violet-600',  bgRow: 'bg-violet-50/30',  ringActive: 'ring-violet-300' },
-    // LOT Blast Management — navy + amber : amber profond pour le risque, navy
-    // pour la rigueur reglementaire. Choix esthetique pour eviter le rouge
-    // (deja pris par Risk + Emergency) tout en signalant la criticite.
-    'Blast Management':       { dot: 'bg-amber-700',   bgRow: 'bg-amber-50/30',   ringActive: 'ring-amber-400' },
-};
-
-const CATEGORY_FR: Record<string, string> = {
-    'Prevention Activities': 'Activités Préventives',
-    'Monitoring Activities': 'Surveillance des Activités',
-    'Actions Managers': 'Actions Correctives',
-    'Risk Management': 'Gestion des Risques',
-    'PPE Management': 'Gestion des EPI',
-    'Audits Management': 'Gestion des Audits',
-    'Compliance Management': 'Conformité Réglementaire',
-    'Knowledge Center': 'Centre de Connaissances',
-    'Safety Communication': 'Communication Sécurité',
-    'Emergency Management': 'Gestion des Urgences',
-    'Dosimetry & Exposures': 'Dosimétrie & Expositions',
-    'Blast Management': 'Gestion des Dynamitages',
-};
-
-const MODULE_FR: Record<string, string> = {
-    'Central Findings': 'Constats centraux',
-    'Inspections Managers': 'Inspections HSE',
-    'Meeting Managers': 'Réunions sécurité',
-    'Leadership Walk': 'Tournées Leadership',
-    'Incidents Management': 'Gestion des Incidents',
-    'Investigations': 'Investigations',
-    'Action Plans': "Plans d'actions",
-    'Pending Actions': 'Actions en attente',
-    'Action Plan': "Plan d'actions",
-    'Recommendations': 'Recommandations',
-    'Improvement Ideas': "Suggestions d'amélioration",
-    'Risk Overview': "Vue d'ensemble risques",
-    'Risk Register': 'Registre des risques',
-    // LOT 48 — Sous-modules Emergency (mêmes libellés FR que dans la sidebar)
-    'Emergency Dashboard': 'Tableau de bord',
-    'SOS Tracking': 'Suivi SOS',
-    'Assembly Points': 'Points de rassemblement',
-    'Emergency Settings': 'Paramètres Urgences',
+    general:         { dot: 'bg-slate-500',   bgRow: 'bg-slate-50/40',   ringActive: 'ring-slate-300' },
+    incidents:       { dot: 'bg-orange-500',  bgRow: 'bg-orange-50/30',  ringActive: 'ring-orange-300' },
+    errorManagement: { dot: 'bg-indigo-500',  bgRow: 'bg-indigo-50/30',  ringActive: 'ring-indigo-300' },
+    preventive:      { dot: 'bg-emerald-500', bgRow: 'bg-emerald-50/30', ringActive: 'ring-emerald-300' },
+    corrective:      { dot: 'bg-cyan-500',    bgRow: 'bg-cyan-50/30',    ringActive: 'ring-cyan-300' },
+    risks:           { dot: 'bg-red-500',     bgRow: 'bg-red-50/30',     ringActive: 'ring-red-300' },
+    ppe:             { dot: 'bg-amber-500',   bgRow: 'bg-amber-50/30',   ringActive: 'ring-amber-300' },
+    audits:          { dot: 'bg-indigo-500',  bgRow: 'bg-indigo-50/30',  ringActive: 'ring-indigo-300' },
+    compliance:      { dot: 'bg-green-600',   bgRow: 'bg-green-50/30',   ringActive: 'ring-green-300' },
+    documentation:   { dot: 'bg-violet-600',  bgRow: 'bg-violet-50/30',  ringActive: 'ring-violet-300' },
+    communication:   { dot: 'bg-pink-500',    bgRow: 'bg-pink-50/30',    ringActive: 'ring-pink-300' },
+    performance:     { dot: 'bg-blue-500',    bgRow: 'bg-blue-50/30',    ringActive: 'ring-blue-300' },
+    administration:  { dot: 'bg-red-600',     bgRow: 'bg-red-50/30',     ringActive: 'ring-red-300' },
+    mineManaged:     { dot: 'bg-amber-700',   bgRow: 'bg-amber-50/30',   ringActive: 'ring-amber-400' },
 };
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -206,20 +137,19 @@ function ToggleSwitch({
 // ────────────────────────────────────────────────────────────────────────────
 
 const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
-    const moduleDefs: ModuleDef[] = moduleConfigurations as ModuleDef[];
-
-    // LOT 48 P6.h — i18n complet : namespace 'moduleManager' charge en FR/EN.
-    // Helpers tcat/tmodN/tmodD : renvoient la traduction si presente, sinon fallback
-    // au libelle anglais original de moduleConfigurations.
+    // Chrome de l'écran : namespace 'moduleManager'. Libellés catégories/modules :
+    // namespace 'navigation' (mêmes clés que la grille de création → source unique).
     const { t } = useTranslation('moduleManager');
-    const tcat = (categoryEn: string) => t(`categories.${categoryEn}`, categoryEn);
-    const tmodN = (moduleId: string, nameEn: string) => t(`modules.${moduleId}.name`, nameEn);
-    const tmodD = (moduleId: string, descEn: string) => t(`modules.${moduleId}.description`, descEn);
+    const tMsg = t;
+    const tNav = useTranslation('navigation').t;
+    const tcat = (category: string) => tNav(`userMgmt.create.categories.${category}`, { defaultValue: category });
+    const tmodN = (moduleId: string) => tNav(`userMgmt.create.modules.${moduleId}`, { defaultValue: moduleId });
 
     // ── Données ──
     const [mines, setMines] = useState<Mine[]>([]);
-    const [remoteMap, setRemoteMap] = useState<Record<string, ModuleFeatureDto>>({});
-    const [matrix, setMatrix] = useState<Record<string, boolean>>(loadMatrixFromStorage());
+    const [catalog, setCatalog] = useState<ModuleCatalogCategory[]>([]);
+    // Matrice mine×module : true = ACTIF. Persistée côté serveur (per-mine).
+    const [matrix, setMatrix] = useState<Record<string, boolean>>({});
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState<Record<string, boolean>>({});
 
@@ -229,43 +159,42 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
     const [selectedMineFilter, setSelectedMineFilter] = useState<number | 'all'>('all');
     const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set());
 
-    // ── Chargement initial : mines + flags modules ──
+    // Modules à plat, dérivés du catalogue serveur (id = clé du ModuleCatalog).
+    const moduleDefs: ModuleDef[] = useMemo(
+        () => catalog.flatMap((c) => c.modules.map((m) => ({
+            id: m.key, name: m.key, category: c.category, description: '',
+        }))),
+        [catalog],
+    );
+
+    // ── Chargement initial : mines + catalogue + activations par mine ──
     useEffect(() => {
         const load = async () => {
             setLoading(true);
             try {
-                const [companiesRes, modulesRes] = await Promise.all([
+                const [companiesRes, catRes, activations] = await Promise.all([
                     getAllCompanies().catch(() => []),
-                    getAllModuleFeatures().catch(() => []),
+                    getModuleCatalog().catch(() => [] as ModuleCatalogCategory[]),
+                    getCompanyActivations().catch(() => []),
                 ]);
                 const minesList: Mine[] = Array.isArray(companiesRes) ? companiesRes : [];
                 setMines(minesList);
+                setCatalog(Array.isArray(catRes) ? catRes : []);
 
-                const map: Record<string, ModuleFeatureDto> = {};
-                modulesRes.forEach((m) => {
-                    map[m.module] = m;
-                });
-                setRemoteMap(map);
-
-                // Initialiser la matrice : pour chaque (mine, module), s'il n'y a pas de valeur en localStorage,
-                // on utilise l'état global du module en backend (toutes mines = même état).
-                setMatrix((prev) => {
-                    const init = { ...prev };
-                    minesList.forEach((mine) => {
-                        moduleDefs.forEach((mod) => {
-                            const key = buildCellKey(mine.id, mod.id);
-                            if (init[key] === undefined) {
-                                const apiKey = idToKey(mod.id);
-                                const remote = map[apiKey];
-                                init[key] = remote ? remote.status === 'ACTIVE' : true;
-                            }
-                        });
+                // Défaut ACTIF ; on n'écrase que par les désactivations/réactivations
+                // explicites renvoyées par le serveur.
+                const init: Record<string, boolean> = {};
+                minesList.forEach((mine) => {
+                    (Array.isArray(catRes) ? catRes : []).forEach((c) => {
+                        c.modules.forEach((m) => { init[buildCellKey(mine.id, m.key)] = true; });
                     });
-                    saveMatrixToStorage(init);
-                    return init;
                 });
+                activations.forEach((a) => {
+                    init[buildCellKey(a.companyId, a.module)] = a.status === 'ACTIVE';
+                });
+                setMatrix(init);
             } catch (err) {
-                errorNotification(extractErrorMessage(err, t('messages.updateFailed')));
+                errorNotification(extractErrorMessage(err, tMsg('messages.updateFailed')));
             } finally {
                 setLoading(false);
             }
@@ -283,11 +212,10 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
     const filteredModules = useMemo(() => {
         const term = searchTerm.trim().toLowerCase();
         return moduleDefs.filter((m) => {
-            const nameFr = tmodN(m.id, m.name).toLowerCase();
+            const nameFr = tmodN(m.id).toLowerCase();
             const matchesSearch = !term
                 || nameFr.includes(term)
-                || m.name.toLowerCase().includes(term)
-                || m.description.toLowerCase().includes(term);
+                || m.id.toLowerCase().includes(term);
             const matchesCategory = selectedCategory === 'all' || m.category === selectedCategory;
             return matchesSearch && matchesCategory;
         });
@@ -352,89 +280,62 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
         return { active, total };
     };
 
-    // ── Toggle individuel ──
-    const handleToggleCell = async (mineId: number, moduleId: string) => {
+    // ── Toggle individuel — persistance PAR MINE côté serveur ──
+    const persistCell = async (mineId: number, moduleId: string, enabled: boolean) => {
         const key = buildCellKey(mineId, moduleId);
-        const current = matrix[key] ?? true;
-        const next = !current;
-
-        // Optimistic update
-        const optimisticMatrix = { ...matrix, [key]: next };
-        setMatrix(optimisticMatrix);
-        saveMatrixToStorage(optimisticMatrix);
-
-        // Synchroniser le backend : on met à jour le module globalement si toutes les mines convergent
-        const allMinesConverge = mines.every((m) => optimisticMatrix[buildCellKey(m.id, moduleId)] === next);
-        if (allMinesConverge) {
-            await persistModuleStatus(moduleId, next, key);
-        }
-    };
-
-    // ── Persistance backend (status global du module) ──
-    const persistModuleStatus = async (moduleId: string, enabled: boolean, cellKey: string) => {
-        const apiKey = idToKey(moduleId);
-        const existing = remoteMap[apiKey];
-        setSaving((prev) => ({ ...prev, [cellKey]: true }));
-
+        setSaving((prev) => ({ ...prev, [key]: true }));
         try {
-            let updated: ModuleFeatureDto;
-            const nextStatus = enabled ? 'ACTIVE' : 'INACTIVE';
-            if (existing) {
-                updated = await updateModuleFeatureStatus(existing.id, nextStatus);
-            } else {
-                try {
-                    updated = await createModuleFeature({ module: apiKey, status: nextStatus });
-                } catch (err: any) {
-                    if (err?.response?.status === 409) {
-                        const found = await getModuleFeatureByKey(apiKey);
-                        updated = await updateModuleFeatureStatus(found.id, nextStatus);
-                    } else {
-                        throw err;
-                    }
-                }
-            }
-            setRemoteMap((prev) => ({ ...prev, [updated.module]: updated }));
-            updateModuleStatusLocal(moduleId, enabled);
+            await setCompanyModuleStatus(mineId, moduleId, enabled ? 'ACTIVE' : 'INACTIVE');
+            return true;
         } catch (e: any) {
-            errorNotification(e?.response?.data?.message || t('messages.updateFailed'));
+            // Rollback optimiste : on remet l'état précédent sur échec.
+            setMatrix((prev) => ({ ...prev, [key]: !enabled }));
+            errorNotification(e?.response?.data?.message || tMsg('messages.updateFailed'));
+            return false;
         } finally {
             setSaving((prev) => {
                 const copy = { ...prev };
-                delete copy[cellKey];
+                delete copy[key];
                 return copy;
             });
         }
     };
 
-    // ── Actions de masse ──
-    const handleToggleMineColumn = (mineId: number, enable: boolean) => {
-        const updated = { ...matrix };
-        moduleDefs.forEach((m) => {
-            updated[buildCellKey(mineId, m.id)] = enable;
+    const handleToggleCell = async (mineId: number, moduleId: string) => {
+        const key = buildCellKey(mineId, moduleId);
+        const next = !(matrix[key] ?? true);
+        setMatrix((prev) => ({ ...prev, [key]: next })); // optimiste
+        await persistCell(mineId, moduleId, next);
+    };
+
+    // ── Actions de masse — chaque cellule est persistée côté serveur ──
+    const handleToggleMineColumn = async (mineId: number, enable: boolean) => {
+        setMatrix((prev) => {
+            const u = { ...prev };
+            moduleDefs.forEach((m) => { u[buildCellKey(mineId, m.id)] = enable; });
+            return u;
         });
-        setMatrix(updated);
-        saveMatrixToStorage(updated);
+        await Promise.all(moduleDefs.map((m) => persistCell(mineId, m.id, enable)));
         const mineName = resolveMineName(mines.find((mn) => mn.id === mineId)!);
         successNotification(
             enable
-                ? t('messages.enableAllMine', { mine: mineName })
-                : t('messages.disableAllMine', { mine: mineName })
+                ? tMsg('messages.enableAllMine', { mine: mineName })
+                : tMsg('messages.disableAllMine', { mine: mineName })
         );
     };
 
-    const handleToggleCategoryRow = (category: string, enable: boolean) => {
-        const updated = { ...matrix };
-        moduleDefs.filter((m) => m.category === category).forEach((m) => {
-            mines.forEach((mine) => {
-                updated[buildCellKey(mine.id, m.id)] = enable;
-            });
+    const handleToggleCategoryRow = async (category: string, enable: boolean) => {
+        const catMods = moduleDefs.filter((m) => m.category === category);
+        setMatrix((prev) => {
+            const u = { ...prev };
+            catMods.forEach((m) => { mines.forEach((mine) => { u[buildCellKey(mine.id, m.id)] = enable; }); });
+            return u;
         });
-        setMatrix(updated);
-        saveMatrixToStorage(updated);
+        await Promise.all(catMods.flatMap((m) => mines.map((mine) => persistCell(mine.id, m.id, enable))));
         successNotification(
             enable
-                ? t('messages.enableCategory', { category: tcat(category) })
-                : t('messages.disableCategory', { category: tcat(category) })
+                ? tMsg('messages.enableCategory', { category: tcat(category) })
+                : tMsg('messages.disableCategory', { category: tcat(category) })
         );
     };
 
@@ -445,18 +346,20 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
         setCollapsedCategories(next);
     };
 
-    const handleResetMatrix = () => {
-        const init: Record<string, boolean> = {};
-        mines.forEach((mine) => {
-            moduleDefs.forEach((m) => {
-                const apiKey = idToKey(m.id);
-                const remote = remoteMap[apiKey];
-                init[buildCellKey(mine.id, m.id)] = remote ? remote.status === 'ACTIVE' : true;
+    // Recharge la matrice depuis le serveur (tout est déjà persisté au toggle).
+    const handleResetMatrix = async () => {
+        try {
+            const activations = await getCompanyActivations();
+            const init: Record<string, boolean> = {};
+            mines.forEach((mine) => {
+                moduleDefs.forEach((m) => { init[buildCellKey(mine.id, m.id)] = true; });
             });
-        });
-        setMatrix(init);
-        saveMatrixToStorage(init);
-        successNotification(t('messages.matrixReset'));
+            activations.forEach((a) => { init[buildCellKey(a.companyId, a.module)] = a.status === 'ACTIVE'; });
+            setMatrix(init);
+            successNotification(tMsg('messages.matrixReset'));
+        } catch (e: any) {
+            errorNotification(e?.response?.data?.message || tMsg('messages.updateFailed'));
+        }
     };
 
     // ── Render ──
@@ -742,7 +645,7 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
 
                                         {/* Lignes modules (si catégorie non collapsée) */}
                                         {!isCollapsed && mods.map((mod, idx) => {
-                                            const moduleNameFr = tmodN(mod.id, mod.name);
+                                            const moduleNameFr = tmodN(mod.id);
                                             return (
                                                 <tr
                                                     key={mod.id}
@@ -760,9 +663,6 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
                                                             <div className="min-w-0 flex-1">
                                                                 <p className="text-[13px] text-slate-800 leading-tight">
                                                                     {moduleNameFr}
-                                                                </p>
-                                                                <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                                                                    {tmodD(mod.id, mod.description)}
                                                                 </p>
                                                             </div>
                                                         </div>
