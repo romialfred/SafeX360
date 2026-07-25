@@ -52,6 +52,7 @@ import {
 } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import { isModuleEnabled } from '../data/ModuleConfig';
+import { getActiveModulesForCompany } from '../../../services/ModuleManagementService';
 
 // LOT 44 — Mapping label FR → clé i18n pour traduction au rendu
 // (les menuItems restent statiques en FR, traduits dynamiquement via t() au render)
@@ -685,6 +686,39 @@ const permissionKeyFor = (menuId: string): string | null => {
     return PERMISSION_VOCABULARY.has(camel) ? camel : null;
 };
 
+/**
+ * Modules « gérés par mine » (ModuleCatalog.mineManaged) : leur menu et leurs
+ * sous-items sont préfixés par la clé du catalogue. Sert au cloisonnement
+ * per-mine (un module désactivé sur la mine active disparaît du menu).
+ */
+const MINE_MANAGED_PREFIX: Array<[string, string]> = [
+    ['emergency', 'emergency'], ['dosimetry', 'dosimetry'], ['blast', 'blast'],
+    ['planning', 'planning'], ['annual-planning', 'planning'], ['reports', 'reports'],
+];
+const mineManagedKey = (menuId: string): string | null => {
+    for (const [pfx, key] of MINE_MANAGED_PREFIX) {
+        if (menuId === pfx || menuId.startsWith(pfx + '-')) return key;
+    }
+    return null;
+};
+
+/** Clé de catalogue d'un item (droit OU module géré par mine), sinon null. */
+const catalogKeyFor = (menuId: string): string | null =>
+    permissionKeyFor(menuId) ?? mineManagedKey(menuId);
+
+/**
+ * Items TOUJOURS accessibles quel que soit l'état per-mine : accueil, politique
+ * SST (§5.4 non révocable) et l'administration/config de la plateforme. Les
+ * modules « métier » (y compris mineManaged) restent, eux, soumis à l'activation
+ * de la mine.
+ */
+const ALWAYS_ACTIVE_MINE = new Set([
+    'home', 'dashboard', 'hs-policy', 'users', 'settings', 'admin', 'parameters',
+    'users-management-hub', 'modules-management', 'operational-references',
+    'system-settings', 'param-sites-environment', 'param-incidents',
+    'param-tools-templates', 'users-list', 'roles-permissions',
+]);
+
 const Sidebar = () => {
     const [activeItem, setActiveItem] = useState<string>('home');
     const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
@@ -694,6 +728,21 @@ const Sidebar = () => {
     // de lecture DISPARAÎT du menu (rigueur stricte, pas de simple grisage).
     const perms = usePermissions();
     const collapsed = useAppSelector((state) => state.collapse);
+    // Cloisonnement per-mine : modules ACTIFS sur la mine active (clés catalogue).
+    // null = pas encore chargé / erreur → on ne masque rien (dégradation sûre).
+    const selectedCompanyId = useAppSelector((state: any) => state.companySelection?.selectedCompanyId ?? null);
+    const [activeMineModules, setActiveMineModules] = useState<Set<string> | null>(null);
+    useEffect(() => {
+        if (!selectedCompanyId || Number(selectedCompanyId) <= 0) {
+            setActiveMineModules(null);
+            return;
+        }
+        let cancelled = false;
+        getActiveModulesForCompany(Number(selectedCompanyId))
+            .then((keys) => { if (!cancelled) setActiveMineModules(new Set(keys)); })
+            .catch(() => { if (!cancelled) setActiveMineModules(null); });
+        return () => { cancelled = true; };
+    }, [selectedCompanyId]);
     const navigate = useNavigate();
     const location = useLocation();
     // LOT 44 — i18n : helper pour traduire les labels via le mapping FR → clé
@@ -751,13 +800,29 @@ const Sidebar = () => {
         return perms.canSee(key);
     };
 
+    /**
+     * Cloisonnement per-mine : un module désactivé sur la mine active est INVISIBLE
+     * (pour tous, y compris l'admin — c'est une décision de tenant). L'accueil, la
+     * politique SST et l'administration restent toujours accessibles.
+     */
+    const isActiveForMine = (menuId: string): boolean => {
+        if (ALWAYS_ACTIVE_MINE.has(menuId)) return true;
+        const key = catalogKeyFor(menuId);
+        if (key === null) return true; // pas un module du catalogue → non cloisonné
+        if (!activeMineModules) return true; // chargement / erreur → ne rien masquer
+        return activeMineModules.has(key);
+    };
+
+    /** Visible = droit utilisateur ET module actif sur la mine. */
+    const isVisible = (menuId: string): boolean => isItemVisible(menuId) && isActiveForMine(menuId);
+
     /** Items de menu filtrés : un parent sans aucun sous-item visible disparaît. */
     const visibleMenuItems = menuItems
         .map((item) => {
             if (!item.subItems) {
-                return isItemVisible(item.id) ? item : null;
+                return isVisible(item.id) ? item : null;
             }
-            const subItems = item.subItems.filter((sub) => isItemVisible(sub.id));
+            const subItems = item.subItems.filter((sub) => isVisible(sub.id));
             if (subItems.length === 0) return null;
             // Le parent reste visible dès qu'au moins un enfant l'est
             return { ...item, subItems };
@@ -766,8 +831,8 @@ const Sidebar = () => {
 
     const handleItemClick = (itemId: string) => {
         // LOT 52 A3 — défense en profondeur : même via un état périmé, aucun
-        // accès à un module non autorisé.
-        if (!isItemVisible(itemId)) {
+        // accès à un module non autorisé (droit utilisateur ET activation mine).
+        if (!isVisible(itemId)) {
             setSelectedModuleName(getModuleName(itemId));
             setShowModal(true);
             return;
@@ -784,7 +849,7 @@ const Sidebar = () => {
     };
 
     const handleSubItemClick = (subItemId: string) => {
-        if (!isItemVisible(subItemId)) {
+        if (!isVisible(subItemId)) {
             setSelectedModuleName(getModuleName(subItemId));
             setShowModal(true);
             return;

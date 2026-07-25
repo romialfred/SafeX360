@@ -65,6 +65,22 @@ public class AccountPermissionController {
     @Autowired
     private PermissionManagementRepository permissionRepository;
 
+    @Autowired
+    private com.minexpert.hns.service.featureflags.CompanyModuleActivationService activationService;
+
+    /**
+     * Ne conserve que les modules ACTIFS sur la mine. Sans companyId (compat
+     * ascendante) on ne filtre pas — l'appelant à jour transmet toujours la mine.
+     */
+    private Set<String> intersectWithMineActive(Set<String> modules, Long companyId) {
+        if (companyId == null || companyId <= 0) {
+            return modules;
+        }
+        Set<String> active = new HashSet<>(activationService.activeModulesForCompany(companyId));
+        return modules.stream().filter(active::contains)
+                .collect(java.util.stream.Collectors.toCollection(java.util.LinkedHashSet::new));
+    }
+
     // ─────────────────────────────────────────────────────────────────────
     // Garde par rôle des endpoints mutateurs (remédiation sécurité).
     //
@@ -142,6 +158,8 @@ public class AccountPermissionController {
         private String role;
         /** CSV des moduleIds autorises (vide => derive du role). */
         private String allowedModules;
+        /** Mine de rattachement : sert à refuser tout module désactivé sur la mine. */
+        private Long companyId;
     }
 
     @PostMapping("/init-for-account")
@@ -177,6 +195,10 @@ public class AccountPermissionController {
 
         // Les cles inconnues sont ecartees : un client ne peut pas inventer un module.
         finalModules = ModuleCatalog.sanitize(finalModules);
+        // Enforcement PAR MINE (serveur) : on ne peut pas accorder un module
+        // desactive sur la mine de rattachement — le filtrage IHM ne suffit pas
+        // (formulaire legacy, appel direct…). Le serveur tranche.
+        finalModules = intersectWithMineActive(finalModules, req.getCompanyId());
         // Colonne CSV = source de verite (accepte TOUS les modules du catalogue) ;
         // les colonnes historiques restent alimentees pour le code qui les lit.
         pm.setAllowedModules(String.join(",", finalModules));

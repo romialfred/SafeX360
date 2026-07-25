@@ -285,7 +285,7 @@ public class AdminUserController {
 
         // ─── 5. Init du PermissionProfile cote HSE — STRICT (LOT 52) :
         // un echec annule TOUTE la creation (rollback transactionnel). ───
-        boolean permissionsInit = initPermissionsHSE(saved.getId(), req.getRole(), req.getAllowedModules());
+        boolean permissionsInit = initPermissionsHSE(saved.getId(), req.getRole(), req.getAllowedModules(), req.getCompanyId());
         if (!permissionsInit) {
             throw new HRMSException("PERMISSIONS_INIT_FAILED");
         }
@@ -557,7 +557,7 @@ public class AdminUserController {
      * création par rollback transactionnel. Aucun compte sans profil de
      * permissions ne peut exister.
      */
-    private boolean initPermissionsHSE(Long accountId, String role, String allowedModules) {
+    private boolean initPermissionsHSE(Long accountId, String role, String allowedModules, Long companyId) {
         try {
             RestTemplate rest = new RestTemplate();
             org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
@@ -566,12 +566,15 @@ public class AdminUserController {
                     serviceTokenIssuer.issuePermissions(true));
 
             // Sérialisation Jackson : élimine toute injection JSON via role/allowedModules.
+            // companyId transmis pour l'enforcement per-mine côté HNS (un module
+            // désactivé sur la mine est refusé, quel que soit le formulaire).
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            String body = mapper.writeValueAsString(java.util.Map.of(
-                    "accountId", accountId,
-                    "role", role != null ? role : "EMPLOYEE",
-                    "allowedModules", allowedModules != null ? allowedModules : ""
-            ));
+            java.util.Map<String, Object> payload = new java.util.HashMap<>();
+            payload.put("accountId", accountId);
+            payload.put("role", role != null ? role : "EMPLOYEE");
+            payload.put("allowedModules", allowedModules != null ? allowedModules : "");
+            payload.put("companyId", companyId);
+            String body = mapper.writeValueAsString(payload);
 
             org.springframework.http.HttpEntity<String> entity = new org.springframework.http.HttpEntity<>(body, headers);
             String url = hsePermissionsUrl + "/init-for-account";
