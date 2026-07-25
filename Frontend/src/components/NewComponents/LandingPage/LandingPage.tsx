@@ -57,6 +57,32 @@ const SECTORS = ['⛏ Exploitation minière', '⛰ Carrières', '⚡ Énergie', 
 // Hero dynamique : le dernier mot défile.
 const HERO_WORDS = ['performance HSE.', 'conformité réglementaire.', 'sécurité au travail.', 'culture de prévention.'];
 
+// Bandeau défilant du hero (remplace les anciennes puces statiques).
+const HERO_TICKER = [
+    'Multi-sites', 'Temps réel', 'Mobile & Tablette', 'Données sécurisées',
+    'Aligné ISO 45001', 'Indicateurs LTIFR / TRIFR', 'Alertes terrain', 'Traçabilité auditable',
+];
+
+// Pilotage multi-sites : pays couverts (clé normalisée @react-map/africa → couleur).
+type Country = { key: string; label: string; color: string };
+const COUNTRIES: Country[] = [
+    { key: 'BurkinaFaso', label: 'Burkina Faso', color: '#F5A623' },
+    { key: 'Mali', label: 'Mali', color: '#0F9E8E' },
+    { key: 'Niger', label: 'Niger', color: '#2563EB' },
+    { key: 'Guinea', label: 'Guinée', color: '#7C3AED' },
+    { key: 'Senegal', label: 'Sénégal', color: '#16A34A' },
+    { key: 'Liberia', label: 'Liberia', color: '#E5484D' },
+    { key: 'CôtedIvoire', label: "Côte d'Ivoire", color: '#EC4899' },
+    // « Congo » = République du Congo (Brazzaville). Pour la RDC : 'DemocraticRepublicofCongo'.
+    { key: 'RepublicofCongo', label: 'Congo', color: '#0EA5E9' },
+];
+// La librairie accepte la clé avec ou sans espace : on fournit les deux graphies.
+const COUNTRY_COLORS: Record<string, string> = COUNTRIES.reduce((acc, c) => {
+    acc[c.key] = c.color;
+    acc[c.label] = c.color;
+    return acc;
+}, {} as Record<string, string>);
+
 const CSS = `
   .lp{--ink:#12233D;--navy:#0B1E3A;--muted:#5B6a7d;--faint:#93A0AF;--bg:#FFFFFF;--bg2:#F4F8FC;
     --line:#E2EAF2;--card:#FFFFFF;--amber:#F5A623;--amber-d:#DE8E0C;--blue:#2563EB;--teal:#0F9E8E;
@@ -114,8 +140,15 @@ const CSS = `
   @media(max-width:1080px){.lp .menu{gap:15px;font-size:13.5px;margin-left:10px}}
   @media(max-width:960px){.lp .menu,.lp .link-b,.lp .lang{display:none}}
 
-  .lp .hero{background:linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%);border-bottom:1px solid var(--line)}
-  .lp .hero .wrap{display:grid;grid-template-columns:1.02fr .98fr;gap:48px;align-items:center;padding:64px 22px 72px}
+  .lp .hero{position:relative;overflow:hidden;background:linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%);border-bottom:1px solid var(--line)}
+  /* Aurora douce et lente en fond — donne vie au hero sans distraire. */
+  .lp .hero::before{content:"";position:absolute;inset:-25% -12% auto -12%;height:560px;pointer-events:none;z-index:0;
+    background:radial-gradient(620px 320px at 16% 18%,rgba(245,166,35,.18),transparent 62%),
+               radial-gradient(560px 300px at 84% 6%,rgba(37,99,235,.15),transparent 60%),
+               radial-gradient(500px 260px at 62% 40%,rgba(15,158,142,.10),transparent 62%);
+    animation:lpAurora 18s ease-in-out infinite alternate}
+  @keyframes lpAurora{0%{transform:translate3d(-2%,0,0) scale(1)}100%{transform:translate3d(3%,3%,0) scale(1.1)}}
+  .lp .hero .wrap{position:relative;z-index:1;display:grid;grid-template-columns:1.02fr .98fr;gap:48px;align-items:center;padding:64px 22px 72px}
   .lp .badge{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--amber-d);background:#FDF3E1;border:1px solid #F6DFB3;padding:7px 13px;border-radius:999px}
   .lp .hero h1{font-size:clamp(32px,4.5vw,54px);margin-top:20px;color:var(--ink)}
   .lp .hero h1 .y{color:var(--amber-d)}
@@ -201,8 +234,8 @@ const CSS = `
   .lp .fc.map .sahel{fill:rgba(245,166,35,.22);stroke:var(--amber-d);stroke-width:1.2;stroke-linejoin:round}
   .lp .fc.map .plabel{font:800 9px var(--sans);fill:var(--ink)}
   .lp .fc.map .mlegend{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
-  .lp .fc.map .mlegend span{font-size:11px;font-weight:800;color:var(--ink);background:#FDF3E1;border:1px solid #F3DCAF;border-radius:999px;padding:4px 10px;display:inline-flex;align-items:center;gap:6px}
-  .lp .fc.map .mlegend i{width:8px;height:8px;border-radius:50%;display:block}
+  .lp .fc.map .mlegend span{font-size:10.5px;font-weight:700;color:var(--ink);background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:3px 9px;display:inline-flex;align-items:center;gap:5px}
+  .lp .fc.map .mlegend i{width:7px;height:7px;border-radius:50%;display:block}
   .lp .fc.vid .play{width:100%;height:110px;border-radius:10px;margin-top:12px;background:linear-gradient(135deg,#DDEAF9,#EAF2FB);display:flex;align-items:center;justify-content:center;border:1px solid var(--line)}
   .lp .fc.vid .pb{width:48px;height:48px;border-radius:50%;background:var(--amber);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 18px -6px var(--amber)}
   @media(max-width:900px){.lp .fgrid2{grid-template-columns:1fr 1fr}}
@@ -241,8 +274,19 @@ const CSS = `
   .lp .reveal.in{opacity:1;transform:none}
 
   /* HERO DYNAMIQUE */
-  .lp .hero h1 .rot{display:inline-block;color:var(--amber-d);animation:lpRot .55s cubic-bezier(.2,.7,.2,1)}
+  .lp .hero h1 .rot{display:inline-block;background:linear-gradient(92deg,var(--amber-d),var(--amber) 55%,#F6B84A);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:var(--amber-d);
+    animation:lpRot .55s cubic-bezier(.2,.7,.2,1)}
   @keyframes lpRot{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+  /* Bandeau défilant du hero (« défilant ») — remplace les puces statiques. */
+  .lp .hero-ticker{margin-top:26px;max-width:48ch;overflow:hidden;
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 86%,transparent);
+    mask-image:linear-gradient(90deg,transparent,#000 5%,#000 86%,transparent)}
+  .lp .ht-track{display:inline-flex;gap:24px;white-space:nowrap;animation:lpTicker 24s linear infinite;will-change:transform}
+  .lp .hero-ticker:hover .ht-track{animation-play-state:paused}
+  .lp .ht-track span{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:var(--muted)}
+  .lp .ht-track span::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--amber);flex:0 0 auto}
+  @keyframes lpTicker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
   .lp .hero-art .photo img{animation:lpKB 20s ease-in-out infinite alternate;will-change:transform}
   @keyframes lpKB{from{transform:scale(1)}to{transform:scale(1.09)}}
   .lp .fc1{animation:lpFloat 5.5s ease-in-out infinite}
@@ -264,7 +308,7 @@ const CSS = `
 
   @media(prefers-reduced-motion:reduce){
     .lp .reveal{opacity:1;transform:none;transition:none}
-    .lp .hero h1 .rot,.lp .hero-art .photo img,.lp .fc1,.lp .fc2,.lp .marq-track,.lp .hero-art .live i{animation:none}
+    .lp .hero::before,.lp .hero h1 .rot,.lp .hero-art .photo img,.lp .fc1,.lp .fc2,.lp .marq-track,.lp .ht-track,.lp .hero-art .live i{animation:none}
   }
 `;
 
@@ -354,19 +398,17 @@ export default function LandingPage() {
             {/* HERO */}
             <header className="hero"><div className="wrap">
                 <div className="reveal">
-                    <span className="badge">● Plateforme HSE dédiée à l’industrie minière &amp; industrielle</span>
                     <h1>Anticipez les risques.<br />Protégez vos équipes.<br />Pilotez votre <span className="y rot" key={wordIdx}>{HERO_WORDS[wordIdx]}</span></h1>
                     <p className="sub">SafeX 360 digitalise l’ensemble de vos processus Santé, Sécurité et Environnement, du terrain jusqu’au pilotage stratégique.</p>
                     <div className="cta">
                         <button className="btn btn-a" onClick={() => goTo('demo')}>Demander une démonstration &nbsp;→</button>
                         <button className="btn btn-o" onClick={() => goTo('modules')}>Découvrir la plateforme</button>
                     </div>
-                    <div className="pills">
-                        <span className="pill">◉ Multi-sites</span>
-                        <span className="pill">⏱ Temps réel</span>
-                        <span className="pill">📱 Mobile &amp; Tablette</span>
-                        <span className="pill">🔒 Sécurisé</span>
-                        <span className="pill">✔ Conforme</span>
+                    {/* Bandeau défilant (remplace les puces statiques) */}
+                    <div className="hero-ticker" aria-hidden="true">
+                        <div className="ht-track">
+                            {[...HERO_TICKER, ...HERO_TICKER].map((t, i) => <span key={i}>{t}</span>)}
+                        </div>
                     </div>
                 </div>
                 <div className="hero-art reveal">
@@ -505,14 +547,14 @@ export default function LandingPage() {
                                 hintTextColor="#ffffff"
                                 hintBackgroundColor="#0B1E3A"
                                 hintBorderRadius={8}
-                                cityColors={{ BurkinaFaso: '#F5A623', 'Burkina Faso': '#F5A623', Mali: '#0F9E8E', Niger: '#2563EB' }}
+                                cityColors={COUNTRY_COLORS}
                                 onSelect={() => { /* vitrine : survol interactif uniquement */ }}
                             />
                         </div>
                         <div className="mlegend">
-                            <span><i style={{ background: '#F5A623' }} />Burkina Faso</span>
-                            <span><i style={{ background: '#0F9E8E' }} />Mali</span>
-                            <span><i style={{ background: '#2563EB' }} />Niger</span>
+                            {COUNTRIES.map((c) => (
+                                <span key={c.key}><i style={{ background: c.color }} />{c.label}</span>
+                            ))}
                         </div>
                     </div>
                     <div className="fc reveal">
