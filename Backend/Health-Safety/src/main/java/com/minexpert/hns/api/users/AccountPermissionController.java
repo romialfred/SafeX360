@@ -290,6 +290,7 @@ public class AccountPermissionController {
     public static class UpdateModulesRequest {
         private String allowedModules; // CSV des moduleIds
         private String role; // optionnel, change le role
+        private Long companyId; // mine de rattachement (enforcement per-mine)
     }
 
     @PostMapping("/update-modules/{accountId}")
@@ -321,6 +322,9 @@ public class AccountPermissionController {
                     .forEach(finalModules::add);
         }
         finalModules = ModuleCatalog.sanitize(finalModules);
+        // Enforcement per-mine aussi à l'ÉDITION : on ne peut pas accorder un
+        // module désactivé sur la mine de rattachement du compte.
+        finalModules = intersectWithMineActive(finalModules, req.getCompanyId());
         pm.setAllowedModules(String.join(",", finalModules));
         applyModuleFlags(pm, finalModules);
         pm.setUpdatedAt(LocalDateTime.now());

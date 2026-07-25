@@ -14,6 +14,7 @@ import {
     getUserOverview, getUserSessions, resetUserMfa, updateAccountModules,
     type ModuleCatalogCategory, type UserActivityRow, type UserOverview, type UserSessionRow,
 } from '../../../services/UserTraceabilityService';
+import { getActiveModulesForCompany } from '../../../services/ModuleManagementService';
 import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
 
 /**
@@ -122,6 +123,9 @@ export default function UserProfilePage() {
     const [initialGranted, setInitialGranted] = useState<Set<string>>(new Set());
     const [savingRights, setSavingRights] = useState(false);
     const [moduleFilter, setModuleFilter] = useState('');
+    // Cloisonnement per-mine : modules actifs sur la mine du compte édité.
+    // null = pas de filtre (accès toutes mines / chargement).
+    const [activeModules, setActiveModules] = useState<Set<string> | null>(null);
 
     // Connexions / activité
     const [sessions, setSessions] = useState<UserSessionRow[]>([]);
@@ -192,6 +196,29 @@ export default function UserProfilePage() {
             .catch(() => { setActivity([]); setActivityTotal(0); });
     }, [accountId, tab, activityKind, activityPage]);
 
+    // Charge les modules ACTIFS sur la mine du compte (cloisonnement per-mine).
+    // Accès toutes mines → pas de filtre. On élague aussi les droits déjà
+    // accordés qui seraient désactivés sur la mine.
+    useEffect(() => {
+        if (!overview || overview.allMinesAccess || !overview.companyId) {
+            setActiveModules(null);
+            return;
+        }
+        let cancelled = false;
+        getActiveModulesForCompany(Number(overview.companyId))
+            .then((keys) => {
+                if (cancelled) return;
+                const set = new Set(keys);
+                setActiveModules(set);
+                setGranted((prev) => {
+                    const next = new Set(Array.from(prev).filter((k) => set.has(k)));
+                    return next.size === prev.size ? prev : next;
+                });
+            })
+            .catch(() => { if (!cancelled) setActiveModules(null); });
+        return () => { cancelled = true; };
+    }, [overview]);
+
     const dirty = useMemo(() => {
         if (granted.size !== initialGranted.size) return true;
         for (const key of granted) if (!initialGranted.has(key)) return true;
@@ -218,7 +245,7 @@ export default function UserProfilePage() {
     const saveRights = async () => {
         setSavingRights(true);
         try {
-            await updateAccountModules(accountId, Array.from(granted), overview?.role);
+            await updateAccountModules(accountId, Array.from(granted), overview?.role, overview?.companyId);
             setInitialGranted(new Set(granted));
             successNotification('Droits enregistrés : les modules autorisés ont été mis à jour.');
         } catch (e: any) {
@@ -249,15 +276,19 @@ export default function UserProfilePage() {
 
     const filteredCatalog = useMemo(() => {
         const needle = moduleFilter.trim().toLowerCase();
-        if (!needle) return catalog;
         return catalog
             .map((c) => ({
                 ...c,
-                modules: c.modules.filter((m) =>
-                    moduleLabel(m.key).toLowerCase().includes(needle) || m.key.toLowerCase().includes(needle)),
+                // Cloisonnement per-mine : on ne montre que les modules ACTIFS sur
+                // la mine du compte (sauf accès toutes mines → activeModules null).
+                modules: c.modules.filter((m) => {
+                    if (activeModules && !activeModules.has(m.key)) return false;
+                    if (!needle) return true;
+                    return moduleLabel(m.key).toLowerCase().includes(needle) || m.key.toLowerCase().includes(needle);
+                }),
             }))
             .filter((c) => c.modules.length > 0);
-    }, [catalog, moduleFilter]);
+    }, [catalog, moduleFilter, activeModules]);
 
     if (loading) {
         return (

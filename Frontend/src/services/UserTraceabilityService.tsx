@@ -119,11 +119,12 @@ const getAccountModules = (accountId: number): Promise<string[]> =>
         return csv.split(',').map((s) => s.trim()).filter(Boolean);
     });
 
-const updateAccountModules = (accountId: number, modules: string[], role?: string) =>
+const updateAccountModules = (accountId: number, modules: string[], role?: string, companyId?: number | null) =>
     axiosInstance
         .post(`/hns/users/permissions/update-modules/${accountId}`, {
             allowedModules: modules.join(','),
             role,
+            companyId: companyId ?? null,
         })
         .then((r) => r.data);
 
