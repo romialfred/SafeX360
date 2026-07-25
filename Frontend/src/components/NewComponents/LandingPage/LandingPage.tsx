@@ -18,7 +18,6 @@ import { useNavigate } from 'react-router-dom';
 import Africa from '@react-map/africa';
 import { useAuth } from '../../../hooks/useAuth';
 
-const PHOTO_HERO = '/hero/training-team.png';
 const PHOTO_FIELD = '/hero/workers-loto.png';
 
 type Problem = { icon: string; bg: string; color: string; title: string; desc: string; stat: string; cap: string };
@@ -54,13 +53,27 @@ const STEPS: [string, string][] = [
 
 const SECTORS = ['⛏ Exploitation minière', '⛰ Carrières', '⚡ Énergie', '🏗 BTP', '🏭 Industrie', '🚚 Logistique'];
 
-// Hero dynamique : le dernier mot défile.
-const HERO_WORDS = ['performance HSE.', 'conformité réglementaire.', 'sécurité au travail.', 'culture de prévention.'];
-
-// Bandeau défilant du hero (remplace les anciennes puces statiques).
-const HERO_TICKER = [
-    'Multi-sites', 'Temps réel', 'Mobile & Tablette', 'Données sécurisées',
-    'Aligné ISO 45001', 'Indicateurs LTIFR / TRIFR', 'Alertes terrain', 'Traçabilité auditable',
+/* Hero défilant : chaque slide couple une IMAGE et un titre qui lui répond.
+   Contrainte de mise en page : 3 lignes noires courtes (chacune tient sur une
+   ligne) + 1 accroche ambre sur une seule ligne — pas de retour parasite. */
+type Slide = { img: string; alt: string; black: [string, string, string]; amber: string };
+const SLIDES: Slide[] = [
+    {
+        img: '/hero/training-team.png', alt: 'Équipe HSE en formation sécurité',
+        black: ['Anticipez les risques.', 'Protégez vos équipes.', 'Ancrez une'], amber: 'vraie prévention.',
+    },
+    {
+        img: '/hero/mine-aerial.jpg', alt: 'Vue aérienne d’un site minier',
+        black: ['Un seul outil.', 'Tous vos sites.', 'Une vision'], amber: 'consolidée.',
+    },
+    {
+        img: '/hero/first-aid.png', alt: 'Intervention de premiers secours sur site',
+        black: ['Chaque seconde compte.', 'Alertez, réagissez.', 'Maîtrisez vos'], amber: 'urgences.',
+    },
+    {
+        img: '/hero/workers-loto.png', alt: 'Consignation d’équipement sur le terrain',
+        black: ['Une donnée du terrain.', 'Fiable et tracée.', 'Pilotez votre'], amber: 'performance HSE.',
+    },
 ];
 
 // Pilotage multi-sites : pays couverts (clé normalisée @react-map/africa → couleur).
@@ -148,17 +161,29 @@ const CSS = `
                radial-gradient(500px 260px at 62% 40%,rgba(15,158,142,.10),transparent 62%);
     animation:lpAurora 18s ease-in-out infinite alternate}
   @keyframes lpAurora{0%{transform:translate3d(-2%,0,0) scale(1)}100%{transform:translate3d(3%,3%,0) scale(1.1)}}
-  .lp .hero .wrap{position:relative;z-index:1;display:grid;grid-template-columns:1.02fr .98fr;gap:48px;align-items:center;padding:64px 22px 72px}
+  .lp .hero .wrap{position:relative;z-index:1;display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center;padding:60px 22px 66px}
   .lp .badge{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--amber-d);background:#FDF3E1;border:1px solid #F6DFB3;padding:7px 13px;border-radius:999px}
-  .lp .hero h1{font-size:clamp(32px,4.5vw,54px);margin-top:20px;color:var(--ink)}
+  /* Titre : 3 lignes noires (chacune sur une ligne, sans retour parasite) + 1
+     ligne ambre. Interligne resserré pour ne pas allonger la hauteur. */
+  .lp .hero h1{font-size:clamp(27px,3.3vw,42px);color:var(--ink);line-height:1.08}
+  .lp .hero .hero-title .hl,.lp .hero .hero-title .rot{display:block;white-space:nowrap}
   .lp .hero h1 .y{color:var(--amber-d)}
+  @media(max-width:560px){.lp .hero .hero-title .hl,.lp .hero .hero-title .rot{white-space:normal}}
   .lp .hero .sub{margin-top:20px;font-size:17px;line-height:1.6;color:var(--muted);max-width:46ch}
   .lp .hero .cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
   .lp .pills{display:flex;gap:9px 16px;flex-wrap:wrap;margin-top:26px}
   .lp .pill{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--muted)}
   .lp .hero-art{position:relative}
-  .lp .hero-art .photo{border-radius:18px;overflow:hidden;box-shadow:var(--sh);aspect-ratio:4/3}
-  .lp .hero-art .photo img{width:100%;height:100%;object-fit:cover;display:block}
+  .lp .hero-art .photo{position:relative;border-radius:18px;overflow:hidden;box-shadow:var(--sh);aspect-ratio:4/3}
+  /* Carrousel : slides empilées, fondu croisé de l'active. */
+  .lp .hero-art .photo .hero-slide{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .9s ease}
+  .lp .hero-art .photo .hero-slide.on{opacity:1}
+  /* Puces de navigation */
+  .lp .hero-dots{display:flex;gap:9px;margin-top:26px}
+  .lp .hero-dots .hd{width:26px;height:5px;border-radius:999px;border:0;padding:0;cursor:pointer;background:var(--line);transition:background .25s,width .25s}
+  .lp .hero-dots .hd.on{width:34px;background:linear-gradient(90deg,var(--amber),var(--amber-d))}
+  .lp .hero-dots .hd:hover{background:var(--faint)}
+  .lp .hero-dots .hd.on:hover{background:linear-gradient(90deg,var(--amber),var(--amber-d))}
   .lp .fc1,.lp .fc2{position:absolute;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 30px -16px rgba(18,35,61,.4);padding:12px 14px}
   .lp .fc1{top:18px;left:-16px}.lp .fc2{bottom:18px;right:-16px}
   .lp .fc1 .t,.lp .fc2 .t{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--faint)}
@@ -278,17 +303,11 @@ const CSS = `
     -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:var(--amber-d);
     animation:lpRot .55s cubic-bezier(.2,.7,.2,1)}
   @keyframes lpRot{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
-  /* Bandeau défilant du hero (« défilant ») — remplace les puces statiques. */
-  .lp .hero-ticker{margin-top:26px;max-width:48ch;overflow:hidden;
-    -webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 86%,transparent);
-    mask-image:linear-gradient(90deg,transparent,#000 5%,#000 86%,transparent)}
-  .lp .ht-track{display:inline-flex;gap:24px;white-space:nowrap;animation:lpTicker 24s linear infinite;will-change:transform}
-  .lp .hero-ticker:hover .ht-track{animation-play-state:paused}
-  .lp .ht-track span{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:var(--muted)}
-  .lp .ht-track span::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--amber);flex:0 0 auto}
-  @keyframes lpTicker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-  .lp .hero-art .photo img{animation:lpKB 20s ease-in-out infinite alternate;will-change:transform}
-  @keyframes lpKB{from{transform:scale(1)}to{transform:scale(1.09)}}
+  /* Titre : fondu à chaque changement de slide (h1 remonté via key={slideIdx}). */
+  .lp .hero .hero-title{animation:lpTitle .5s ease}
+  @keyframes lpTitle{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .lp .hero-art .photo .hero-slide.on{animation:lpKB 8s ease-in-out infinite alternate;will-change:transform,opacity}
+  @keyframes lpKB{from{transform:scale(1)}to{transform:scale(1.08)}}
   .lp .fc1{animation:lpFloat 5.5s ease-in-out infinite}
   .lp .fc2{animation:lpFloat 5.5s ease-in-out infinite;animation-delay:1.4s}
   @keyframes lpFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
@@ -308,7 +327,8 @@ const CSS = `
 
   @media(prefers-reduced-motion:reduce){
     .lp .reveal{opacity:1;transform:none;transition:none}
-    .lp .hero::before,.lp .hero h1 .rot,.lp .hero-art .photo img,.lp .fc1,.lp .fc2,.lp .marq-track,.lp .ht-track,.lp .hero-art .live i{animation:none}
+    .lp .hero::before,.lp .hero h1 .rot,.lp .hero .hero-title,.lp .hero-art .photo .hero-slide.on,.lp .fc1,.lp .fc2,.lp .marq-track,.lp .hero-art .live i{animation:none}
+    .lp .hero-art .photo .hero-slide{transition:none}
   }
 `;
 
@@ -316,14 +336,15 @@ export default function LandingPage() {
     const navigate = useNavigate();
     const { user } = useAuth();
     const rootRef = useRef<HTMLDivElement | null>(null);
-    const [wordIdx, setWordIdx] = useState(0);
+    const [slideIdx, setSlideIdx] = useState(0);
     const [count, setCount] = useState(0);
 
-    // Hero : le dernier mot du titre défile toutes les 2,4 s.
+    // Hero défilant : image + titre changent ensemble toutes les 5 s.
     useEffect(() => {
-        const id = setInterval(() => setWordIdx((i) => (i + 1) % HERO_WORDS.length), 2400);
+        const id = setInterval(() => setSlideIdx((i) => (i + 1) % SLIDES.length), 5000);
         return () => clearInterval(id);
     }, []);
+    const slide = SLIDES[slideIdx];
 
     // Compteur animé de la carte « incidents ce mois » (0 → 128).
     useEffect(() => {
@@ -398,21 +419,30 @@ export default function LandingPage() {
             {/* HERO */}
             <header className="hero"><div className="wrap">
                 <div className="reveal">
-                    <h1>Anticipez les risques.<br />Protégez vos équipes.<br />Pilotez votre <span className="y rot" key={wordIdx}>{HERO_WORDS[wordIdx]}</span></h1>
+                    <h1 className="hero-title" key={slideIdx}>
+                        {slide.black.map((line, i) => <span className="hl" key={i}>{line}</span>)}
+                        <span className="y rot">{slide.amber}</span>
+                    </h1>
                     <p className="sub">SafeX 360 digitalise l’ensemble de vos processus Santé, Sécurité et Environnement, du terrain jusqu’au pilotage stratégique.</p>
                     <div className="cta">
                         <button className="btn btn-a" onClick={() => goTo('demo')}>Demander une démonstration &nbsp;→</button>
                         <button className="btn btn-o" onClick={() => goTo('modules')}>Découvrir la plateforme</button>
                     </div>
-                    {/* Bandeau défilant (remplace les puces statiques) */}
-                    <div className="hero-ticker" aria-hidden="true">
-                        <div className="ht-track">
-                            {[...HERO_TICKER, ...HERO_TICKER].map((t, i) => <span key={i}>{t}</span>)}
-                        </div>
+                    {/* Puces de navigation du carrousel */}
+                    <div className="hero-dots" role="tablist" aria-label="Diaporama">
+                        {SLIDES.map((s, i) => (
+                            <button key={i} type="button" className={`hd${i === slideIdx ? ' on' : ''}`}
+                                aria-label={s.alt} aria-selected={i === slideIdx} onClick={() => setSlideIdx(i)} />
+                        ))}
                     </div>
                 </div>
                 <div className="hero-art reveal">
-                    <div className="photo"><img src={PHOTO_HERO} alt="Équipe HSE sur site minier" /></div>
+                    <div className="photo">
+                        {SLIDES.map((s, i) => (
+                            <img key={i} src={s.img} alt={i === slideIdx ? s.alt : ''}
+                                className={`hero-slide${i === slideIdx ? ' on' : ''}`} aria-hidden={i !== slideIdx} />
+                        ))}
+                    </div>
                     <div className="fc1"><div className="t">Incidents ce mois</div><div className="n">{count}</div><div className="d">↓ 13%</div></div>
                     <div className="fc2"><div className="row"><span className="dot" /><span className="lab">Équipe au complet · 243 pointés</span></div></div>
                 </div>
@@ -617,7 +647,7 @@ export default function LandingPage() {
                     <div><h5>Solution</h5><ul><li><a onClick={() => goTo('features')}>Fonctionnalités</a></li><li><a onClick={() => goTo('modules')}>Modules</a></li><li><a onClick={() => goTo('secteurs')}>Secteurs</a></li><li><a onClick={() => goTo('demo')}>Tarifs</a></li></ul></div>
                     <div><h5>Ressources</h5><ul><li><a>Centre d’aide</a></li><li><a>Documentation</a></li><li><a>FAQ</a></li><li><a>Actualités</a></li></ul></div>
                     <div><h5>Entreprise</h5><ul><li><a>Data Universe</a></li><li><a>À propos</a></li><li><a onClick={() => goTo('demo')}>Contact</a></li><li><a>Partenariats</a></li></ul></div>
-                    <div><h5>Data Universe</h5><p className="contact">Abidjan, Côte d’Ivoire<br />Riviera Feya, Rue L100 - Îlot 64<br />+225 27 22 54 88 40<br />contact@safex360.com<br /><span className="oper"><span className="dot" />Statut des services : Opérationnel</span></p></div>
+                    <div><h5>Data Universe</h5><p className="contact">Ouagadougou, Burkina Faso<br />Quartier Cité Azimo<br />+226 77 96 35 25<br />contact@datauniverse.bf<br /><span className="oper"><span className="dot" />Statut des services : Opérationnel</span></p></div>
                 </div>
                 <div className="fbar"><span>© {new Date().getFullYear()} Data Universe. Tous droits réservés.</span><span>Mentions légales · Confidentialité · Conditions d’utilisation</span></div>
             </div></footer>

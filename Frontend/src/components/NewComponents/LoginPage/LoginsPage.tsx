@@ -581,79 +581,16 @@ const LoginsPage = () => {
                 de téléchargement vivent désormais en bas à gauche (hors flux). */}
             <div className="relative z-10 h-full w-full flex flex-col items-center [justify-content:safe_center] px-4 py-3 md:py-4 overflow-y-auto">
 
-                {/* Marque + tagline — logo coloré (bouclier teal gradient) */}
+                {/* Marque + tagline — VRAI logo officiel SafeX 360 (asset de marque,
+                    version claire pour fond sombre). Affiché à ~48px de haut (natif
+                    66px) : downscale = rendu net, aucun bord rugueux. */}
                 <div className="flex flex-col items-center text-center mb-3 md:mb-5 max-w-md shrink-0">
-                    {/* Bouclier coloré (gradient teal → rouge — identité HSE forte) */}
-                    <div
-                        className="mb-2 md:mb-3"
-                        style={{ filter: 'drop-shadow(0 10px 30px rgba(20,184,166,0.6))' }}
-                    >
-                        <svg
-                            width="52"
-                            height="52"
-                            className="md:w-[60px] md:h-[60px]"
-                            viewBox="0 0 64 64"
-                            xmlns="http://www.w3.org/2000/svg"
-                            aria-label="SafeX 360"
-                        >
-                            <defs>
-                                <linearGradient id="shieldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" stopColor="#5EEAD4" />
-                                    <stop offset="55%" stopColor="#14B8A6" />
-                                    <stop offset="100%" stopColor="#EF4444" />
-                                </linearGradient>
-                                <linearGradient id="shieldHighlight" x1="0%" y1="0%" x2="0%" y2="60%">
-                                    <stop offset="0%" stopColor="rgba(255,255,255,0.4)" />
-                                    <stop offset="100%" stopColor="rgba(255,255,255,0)" />
-                                </linearGradient>
-                            </defs>
-                            {/* Bouclier — fond gradient teal → rouge */}
-                            <path
-                                d="M32 3 L56 11 C56.5 11.2, 57 11.6, 57 12.3 L57 30 C57 44, 36 60, 32.7 61.6 C32.3 61.8, 31.7 61.8, 31.3 61.6 C28 60, 7 44, 7 30 L7 12.3 C7 11.6, 7.5 11.2, 8 11 Z"
-                                fill="url(#shieldGradient)"
-                                stroke="rgba(255,255,255,0.35)"
-                                strokeWidth="0.8"
-                            />
-                            {/* Highlight subtil */}
-                            <path
-                                d="M32 3 L56 11 C56.5 11.2, 57 11.6, 57 12.3 L57 30 C57 38, 50 42, 32 42 C14 42, 7 38, 7 30 L7 12.3 C7 11.6, 7.5 11.2, 8 11 Z"
-                                fill="url(#shieldHighlight)"
-                            />
-                            {/* Coche blanche épaisse */}
-                            <path
-                                d="M 20 31 L 29 40 L 45 21"
-                                stroke="white"
-                                strokeWidth="5"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                fill="none"
-                            />
-                        </svg>
-                    </div>
-
-                    {/* Wordmark — "Safe" blanc, "X" teal vif, "360" rouge accent identité */}
-                    <h1
-                        className="flex items-baseline gap-0.5"
-                        style={{
-                            fontFamily: "'Source Serif 4', Georgia, serif",
-                            fontWeight: 600,
-                            fontSize: 'clamp(28px, 3.6vw, 38px)',
-                            letterSpacing: '-0.022em',
-                            lineHeight: 1,
-                            textShadow: '0 4px 28px rgba(0,0,0,0.7)',
-                        }}
-                    >
-                        <span className="text-white">Safe</span>
-                        <span style={{
-                            color: '#2DD4BF',
-                            textShadow: '0 0 24px rgba(45,212,191,0.55), 0 2px 14px rgba(0,0,0,0.6)',
-                        }}>X</span>
-                        <span style={{
-                            color: '#EF4444',
-                            marginLeft: '0.4rem',
-                            textShadow: '0 0 24px rgba(239,68,68,0.55), 0 2px 14px rgba(0,0,0,0.6)',
-                        }}>360</span>
-                    </h1>
+                    <img
+                        src="/safex-logo-dark.png"
+                        alt="SafeX 360"
+                        className="h-11 md:h-[52px] w-auto mb-2 md:mb-3"
+                        style={{ filter: 'drop-shadow(0 8px 26px rgba(0,0,0,0.6))' }}
+                    />
 
                     {/* Tagline */}
                     <p
@@ -814,13 +751,14 @@ const LoginsPage = () => {
                     </div>
                 </div>
 
-                {/* Repères des référentiels pris en compte ; ils n'ont pas valeur d'attestation. */}
+                {/* Référentiels pris en compte (repères, pas d'attestation tierce) —
+                    regroupés sur un bandeau dépoli pour une lecture claire et premium. */}
                 <div
-                    className="mt-3 md:mt-4 flex items-center justify-center gap-2.5 shrink-0"
+                    className="mt-3 md:mt-4 flex items-center justify-center gap-3 md:gap-3.5 px-4 py-2 rounded-full bg-black/30 border border-white/12 backdrop-blur-md shrink-0"
                     aria-label={language === 'fr' ? 'Référentiels pris en compte' : 'Referenced frameworks'}
                 >
                     {(['ISO 45001', 'ISO 14001', 'ISO 9001', 'ISO 19011'] as const).map((norm) => (
-                        <IsoBadge key={norm} norm={norm} theme="dark" size="sm" />
+                        <IsoBadge key={norm} norm={norm} theme="dark" size="md" />
                     ))}
                 </div>
 
