@@ -30,9 +30,9 @@ public class NcHistoryServiceImpl implements NcHistoryService {
             @CacheEvict(cacheNames = "nonConformityInfoAll", allEntries = true),
             @CacheEvict(cacheNames = "nonConformityInfoById", key = "#ncHistoryDTO.nonConformityId")
     })
-    public Long saveNcHistory(NcHistoryDTO ncHistoryDTO) throws HSException {
+    public Long saveNcHistory(NcHistoryDTO ncHistoryDTO, Long companyId) throws HSException {
         ncHistoryDTO.setCreatedAt(LocalDateTime.now());
-        nonConformityService.updateNonConformityStatus(ncHistoryDTO.getNonConformityId(), ncHistoryDTO.getStatus());
+        nonConformityService.updateNonConformityStatus(ncHistoryDTO.getNonConformityId(), ncHistoryDTO.getStatus(), companyId);
         return ncHistoryRepository.save(ncHistoryDTO.toEntity()).getId();
     }
 

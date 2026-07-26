@@ -160,9 +160,14 @@ public class NonConformityServiceImpl implements NonConformityService {
             @CacheEvict(cacheNames = "nonConformityInfoAll", allEntries = true),
             @CacheEvict(cacheNames = "nonConformityInfoById", allEntries = true)
     })
-    public void updateNonConformityStatus(Long nonConformityId, EventStatus status) throws HSException {
+    public void updateNonConformityStatus(Long nonConformityId, EventStatus status, Long companyId) throws HSException {
         NonConformity nonConformity = nonConformityRepository.findById(nonConformityId)
                 .orElseThrow(() -> new HSException("NON_CONFORMITY_NOT_FOUND"));
+        // Cloisonnement par mine : on ne change pas le statut d'une NC d'une autre
+        // mine (companyId null = appel système). Sinon, écriture inter-mines possible.
+        if (companyId != null && !companyId.equals(nonConformity.getCompanyId())) {
+            throw new HSException("NON_CONFORMITY_NOT_FOUND");
+        }
         assertNcTransition(nonConformity.getStatus(), status);
         nonConformity.setStatus(status);
         nonConformity.setUpdatedAt(LocalDateTime.now());

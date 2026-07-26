@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,8 +27,10 @@ public class NcHistoryApi {
     private final NcHistoryService ncHistoryService;
 
     @PostMapping("/create")
-    public ResponseEntity<Long> saveNcHistory(@RequestBody NcHistoryDTO ncHistoryDTO) throws HSException {
-        return new ResponseEntity<>(ncHistoryService.saveNcHistory(ncHistoryDTO), HttpStatus.CREATED);
+    public ResponseEntity<Long> saveNcHistory(@RequestBody NcHistoryDTO ncHistoryDTO,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : companyId auto-injecté par l'intercepteur.
+        return new ResponseEntity<>(ncHistoryService.saveNcHistory(ncHistoryDTO, companyId), HttpStatus.CREATED);
     }
 
     @GetMapping("/getByNonConformityId/{nonConformityId}")

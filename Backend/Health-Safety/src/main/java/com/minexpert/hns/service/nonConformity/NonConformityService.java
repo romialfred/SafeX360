@@ -16,7 +16,7 @@ public interface NonConformityService {
 
     public NonConformityDTO getNonConformityById(Long id, Long companyId) throws HSException;
 
-    void updateNonConformityStatus(Long nonConformityId, EventStatus status) throws HSException;
+    void updateNonConformityStatus(Long nonConformityId, EventStatus status, Long companyId) throws HSException;
 
     public List<NcInfo> getAllNcInfo(Long companyId) throws HSException;
 

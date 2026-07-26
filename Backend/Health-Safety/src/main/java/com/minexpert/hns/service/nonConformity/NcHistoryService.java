@@ -6,7 +6,7 @@ import com.minexpert.hns.dto.nonConformity.NcHistoryDTO;
 import com.minexpert.hns.exception.HSException;
 
 public interface NcHistoryService {
-    Long saveNcHistory(NcHistoryDTO ncHistoryDTO) throws HSException;
+    Long saveNcHistory(NcHistoryDTO ncHistoryDTO, Long companyId) throws HSException;
 
     List<NcHistoryDTO> getNcHistoryByNonConformityId(Long nonConformityId) throws HSException;
 }
