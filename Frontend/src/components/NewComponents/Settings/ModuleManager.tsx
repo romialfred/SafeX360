@@ -62,6 +62,9 @@ type ModuleDef = {
 
 const buildCellKey = (mineId: number, moduleId: string) => `${mineId}:${moduleId}`;
 
+// Modules socle : toujours actifs, non désactivables par mine (aligné serveur).
+const LOCKED_MODULES = new Set(['home', 'usersManagement', 'settings', 'modulesManagement']);
+
 const resolveMineName = (m: Mine) => m.name || m.shortName || `Mine #${m.id}`;
 const resolveMineCode = (m: Mine) => {
     const name = resolveMineName(m);
@@ -669,20 +672,23 @@ const ModuleManager: React.FC<ModuleManagerProps> = ({ onBackToSettings }) => {
                                                     </td>
                                                     {visibleMines.map((mine) => {
                                                         const key = buildCellKey(mine.id, mod.id);
-                                                        const enabled = matrix[key] ?? true;
+                                                        const locked = LOCKED_MODULES.has(mod.id);
+                                                        const enabled = locked ? true : (matrix[key] ?? true);
                                                         const isSaving = saving[key];
                                                         return (
                                                             <td
                                                                 key={mine.id}
                                                                 className="text-center px-2 py-2 border-b border-slate-100"
                                                             >
-                                                                <div className="inline-flex items-center justify-center">
+                                                                <div className="inline-flex items-center justify-center"
+                                                                    title={locked ? t('lockedModule', { defaultValue: 'Module socle — toujours actif' }) : undefined}>
                                                                     {isSaving ? (
                                                                         <span className="w-3.5 h-3.5 rounded-full border-2 border-teal-500 border-t-transparent animate-spin" />
                                                                     ) : (
                                                                         <ToggleSwitch
                                                                             checked={enabled}
-                                                                            onChange={() => handleToggleCell(mine.id, mod.id)}
+                                                                            disabled={locked}
+                                                                            onChange={() => { if (!locked) handleToggleCell(mine.id, mod.id); }}
                                                                         />
                                                                     )}
                                                                 </div>

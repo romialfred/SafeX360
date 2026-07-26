@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,6 +22,15 @@ import java.util.stream.Collectors;
 public class CompanyModuleActivationServiceImpl implements CompanyModuleActivationService {
 
     private final CompanyModuleActivationRepository repository;
+
+    /**
+     * Modules socle TOUJOURS actifs, jamais désactivables par mine : accueil et
+     * administration de la plateforme. Les désactiver isolerait une mine de sa
+     * propre configuration (voire empêcherait d'y ré-activer un module) — on
+     * refuse donc au niveau serveur, quelle que soit la valeur en base.
+     */
+    private static final Set<String> ALWAYS_ON = Set.of(
+            "home", "usersManagement", "settings", "modulesManagement");
 
     private void requireCompany(Long companyId) throws HSException {
         if (companyId == null || companyId <= 0) {
@@ -48,18 +58,26 @@ public class CompanyModuleActivationServiceImpl implements CompanyModuleActivati
         Map<String, Status> overrides = companyId == null ? Map.of() : overridesOf(companyId);
         return ModuleCatalog.MODULES.stream()
                 .map(m -> CompanyModuleActivationDTO.of(
-                        companyId, m.key(), overrides.getOrDefault(m.key(), Status.ACTIVE)))
+                        companyId, m.key(), statusOf(m.key(), overrides)))
                 .toList();
+    }
+
+    /** Statut effectif d'un module : socle toujours ACTIF, sinon override / défaut ACTIF. */
+    private Status statusOf(String key, Map<String, Status> overrides) {
+        if (ALWAYS_ON.contains(key)) {
+            return Status.ACTIVE;
+        }
+        return overrides.getOrDefault(key, Status.ACTIVE);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<String> activeModulesForCompany(Long companyId) {
         Map<String, Status> overrides = companyId == null ? Map.of() : overridesOf(companyId);
-        // Defaut ACTIF : un module est actif tant qu'il n'est pas explicitement INACTIF.
+        // Defaut ACTIF ; les modules socle restent actifs quoi qu'il arrive.
         return ModuleCatalog.MODULES.stream()
                 .map(ModuleCatalog.Module::key)
-                .filter(key -> overrides.getOrDefault(key, Status.ACTIVE) != Status.INACTIVE)
+                .filter(key -> statusOf(key, overrides) != Status.INACTIVE)
                 .toList();
     }
 
@@ -72,6 +90,10 @@ public class CompanyModuleActivationServiceImpl implements CompanyModuleActivati
         // Cle du catalogue exigee : une cle inventee est refusee (source unique).
         if (!ModuleCatalog.KEYS.contains(module)) {
             throw new HSException("UNKNOWN_MODULE");
+        }
+        // Les modules socle ne se desactivent jamais.
+        if (ALWAYS_ON.contains(module) && status == Status.INACTIVE) {
+            throw new HSException("MODULE_ALWAYS_ON");
         }
         CompanyModuleActivation entity = repository.findByCompanyIdAndModule(companyId, module)
                 .orElseGet(() -> {

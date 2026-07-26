@@ -131,7 +131,6 @@ const Guide = lazy(() => import('../components/NewComponents/HelpCenter/Guide'))
 const FeatureOverview = lazy(() => import('../components/NewComponents/HelpCenter/FeatureOverview'));
 const LoginsPage = lazy(() => import('../components/NewComponents/LoginPage/LoginsPage'));
 const PasswordPage = lazy(() => import('../components/NewComponents/LoginPage/PasswordPage'));
-const AddUserForm = lazy(() => import('../components/NewComponents/UsersManagement/AddUserForm'));
 
 const TargetAndForecastPage = lazy(() => import('../pages/TargetAndForecastPage'));
 const AdvancedConfigurationPage = lazy(() => import('../pages/AdvancedConfigurationPage'));
@@ -312,14 +311,6 @@ const ErrorManagementSuspense = ({ children }: { children: React.ReactNode }) =>
 
 
 
-
-const handleBackToUsers = () => {
-    console.log("Back to users clicked");
-};
-
-const handleCreateUser = (userData: Partial<any>) => {
-    console.log("New user created:", userData);
-};
 
 const router = createBrowserRouter([
     {
@@ -631,10 +622,10 @@ const router = createBrowserRouter([
             { path: "users-admin", element: <DemoPermissionGuard moduleLabel="Gestion des utilisateurs"><UsersAdminPage /></DemoPermissionGuard> },
             // LOT 52 A2 — création d'utilisateur en page pleine largeur (remplace le modal)
             { path: "users-admin/new", element: <DemoPermissionGuard moduleLabel="Gestion des utilisateurs"><CreateUserPage /></DemoPermissionGuard> },
-            {
-                path: 'users-management/create-user', element: <DemoPermissionGuard moduleLabel="Gestion des utilisateurs"><AddUserForm onBackToUsers={handleBackToUsers}
-                    onCreateUser={handleCreateUser} /></DemoPermissionGuard>,
-            },
+            // Ancien formulaire de création (AddUserForm) : sa voie d'écriture
+            // contournait l'enforcement per-mine et le catalogue serveur. On redirige
+            // vers la page premium unique — plus aucune voie de création parallèle.
+            { path: 'users-management/create-user', element: <Navigate to="/users-admin/new" replace /> },
             // FICHE UTILISATEUR — écran unique (profil, droits, connexions, activité).
             // Les deux anciens chemins y redirigent : le clic sur « Modifier » menait
             // encore à l'ancien écran d'édition, alors que la liste et la création
