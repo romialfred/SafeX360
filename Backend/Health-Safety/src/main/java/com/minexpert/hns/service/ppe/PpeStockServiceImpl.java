@@ -58,6 +58,8 @@ public class PpeStockServiceImpl implements PpeStockService {
         if (companyId != null && !companyId.equals(existing.getCompanyId())) {
             throw new HSException("STOCK_NOT_FOUND");
         }
+        // Quantité AVANT modification : sert à réconcilier l'agrégat Ppe.stock.
+        int oldQty = existing.getQuantity() != null ? existing.getQuantity() : 0;
         existing.setQuantity(dto.getQuantity());
         existing.setUnitPrice(dto.getUnitPrice());
         existing.setSupplier(dto.getSupplier());
@@ -67,6 +69,15 @@ public class PpeStockServiceImpl implements PpeStockService {
         existing.setExpiryDate(dto.getExpiryDate());
         existing.setUpdatedAt(LocalDateTime.now());
         PpeStock updated = stockRepository.save(existing);
+        // Réconcilie le stock global : sans cela, éditer une entrée (ex. 100 → 50)
+        // laissait Ppe.stock figé sur l'ancienne quantité → dérive qui fausse les
+        // demandes d'EPI (rupture ou sur-attribution à partir d'un agrégat erroné).
+        int newQty = dto.getQuantity() != null ? dto.getQuantity() : 0;
+        int delta = newQty - oldQty;
+        if (delta != 0) {
+            ppeService.updateStockQuantity(updated.getPpe().getId(), Math.abs(delta),
+                    delta > 0 ? "ADD" : "SUBTRACT");
+        }
         return updated.toDTO();
     }
 
