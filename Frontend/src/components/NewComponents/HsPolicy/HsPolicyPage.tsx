@@ -1,22 +1,25 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-    ActionIcon, Badge, Button, Collapse, FileButton, Group, Loader, Modal, Stack, Text,
+    ActionIcon, Badge, Button, Collapse, FileButton, Group, Loader, Modal, Progress, Stack, Text,
     Textarea, TextInput, Timeline,
 } from '@mantine/core';
 import { DateInput } from '@mantine/dates';
 import {
-    IconArrowDown, IconArrowUp, IconBulb, IconCertificate, IconCheck, IconChevronDown,
-    IconDownload, IconEdit, IconEye, IconFileText, IconFileTypePdf, IconHistory, IconPaperclip,
-    IconPlus, IconShieldCheck, IconSparkles, IconTrash, IconUsers, IconWriting,
+    IconArrowDown, IconArrowLeft, IconArrowUp, IconBriefcase, IconBuildingFactory2, IconBulb,
+    IconCalendarStats, IconCertificate, IconChartBar, IconCheck, IconChevronDown, IconClipboardCheck,
+    IconDownload, IconEdit, IconEye, IconFileText, IconFileTypePdf, IconHistory, IconLayoutDashboard,
+    IconPaperclip, IconPlus, IconShieldCheck, IconSparkles, IconTrash, IconUsers, IconWriting,
 } from '@tabler/icons-react';
 
 import { EXAMPLE_POLICY } from './examplePolicy';
+import SafeXLogoColor from '../../UtilityComp/SafeXLogoColor';
 
 import {
-    acknowledge as ackPolicy, getAcknowledgementStats, getPolicy, getPublished,
+    acknowledge as ackPolicy, getAcknowledgements, getAcknowledgementStats, getPolicy, getPublished,
     listPolicies, publish as publishPolicy, saveDraft,
-    type HsPolicy, type HsPolicyArticle,
+    type HsPolicy, type HsPolicyArticle, type HsPolicyAcknowledgement,
 } from '../../../services/HsPolicyService';
+import { getEmployeesWithDepartment } from '../../../services/EmployeeService';
 import { useAppSelector } from '../../../slices/hooks';
 import { usePermissions } from '../../../hooks/usePermissions';
 import { isHsPolicyManager } from '../../../utility/hsPolicyRbac';
@@ -80,7 +83,7 @@ function ArticleCard({ article, index }: { article: HsPolicyArticle; index: numb
 }
 
 function PolicyReader({
-    policy, mineName, canAcknowledge, onAcknowledge, acking, userName,
+    policy, mineName, canAcknowledge, onAcknowledge, acking, userName, onBack,
 }: {
     policy: HsPolicy;
     mineName: string;
@@ -88,58 +91,81 @@ function PolicyReader({
     onAcknowledge: () => void;
     acking: boolean;
     userName: string;
+    onBack?: () => void;
 }) {
     return (
         <div className="max-w-4xl mx-auto">
-            {/* En-tête — couverture du document (claire, compacte, premium) */}
-            <div className="rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-sm">
-                {/* filet d'accent — la seule touche de couleur forte */}
+            {onBack && (
+                <button type="button" onClick={onBack}
+                    className="inline-flex items-center gap-1.5 text-[13px] text-slate-500 hover:text-slate-800 mb-3 transition-colors">
+                    <IconArrowLeft size={15} /> Retour au tableau de bord
+                </button>
+            )}
+
+            {/* DOCUMENT — feuille unique façon PDF : en-tête (logo + référence),
+                titre, corps et signature dans une même page officielle. */}
+            <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-md bg-white">
                 <div className="h-1.5" style={{ background: 'linear-gradient(90deg,#12294A 0%,#1E7F76 100%)' }} />
-                <div className="px-8 pt-6 pb-5">
-                    <div className="flex items-center gap-1.5 text-teal-700 text-[11.5px] font-semibold uppercase tracking-[0.14em]">
-                        <IconShieldCheck size={14} /> {mineName}
+
+                {/* Papier à en-tête : logo à gauche, référence à droite, filet de séparation */}
+                <div className="px-8 sm:px-10 pt-7">
+                    <div className="flex items-start justify-between gap-4 flex-wrap">
+                        <SafeXLogoColor variant="full" tone="dark" size={34} />
+                        <div className="text-right">
+                            <p className="text-[10.5px] uppercase tracking-[0.12em] text-slate-400 font-semibold">Document officiel</p>
+                            <p className="text-[13px] font-semibold text-slate-600 tabular-nums">Réf. POL-SST · v{policy.version ?? '—'}</p>
+                        </div>
                     </div>
-                    <h1 className="text-[26px] sm:text-[31px] font-bold mt-2 leading-[1.15]"
-                        style={{ color: '#12294A', fontFamily: 'Georgia,"Times New Roman",serif' }}>
-                        {policy.title || 'Politique Santé & Sécurité au Travail'}
-                    </h1>
-                    <Group gap="xs" mt="sm">
-                        <Badge color="teal" variant="light">Version {policy.version ?? '—'}</Badge>
-                        <Badge color="gray" variant="light">En vigueur depuis le {fmt(policy.effectiveDate)}</Badge>
-                        <Badge color="blue" variant="light" leftSection={<IconCertificate size={12} />}>ISO 45001 §5.2</Badge>
-                    </Group>
+
+                    <div className="mt-5 border-t border-slate-200 pt-5">
+                        <div className="flex items-center gap-1.5 text-teal-700 text-[11.5px] font-semibold uppercase tracking-[0.14em]">
+                            <IconShieldCheck size={14} /> {mineName}
+                        </div>
+                        <h1 className="text-[27px] sm:text-[33px] font-bold mt-2 leading-[1.12]"
+                            style={{ color: '#12294A', fontFamily: 'Georgia,"Times New Roman",serif' }}>
+                            {policy.title || 'Politique Santé & Sécurité au Travail'}
+                        </h1>
+                        <Group gap="xs" mt="sm">
+                            <Badge color="teal" variant="light">Version {policy.version ?? '—'}</Badge>
+                            <Badge color="gray" variant="light">En vigueur depuis le {fmt(policy.effectiveDate)}</Badge>
+                            <Badge color="blue" variant="light" leftSection={<IconCertificate size={12} />}>ISO 45001 §5.2</Badge>
+                        </Group>
+                    </div>
                 </div>
+
+                {/* Préambule */}
                 {policy.preamble && (
-                    <div className="px-8 pb-7">
-                        {/* préambule = chapô : liseré navy à gauche, texte posé */}
+                    <div className="px-8 sm:px-10 py-6">
                         <p className="text-[15.5px] text-slate-700 leading-relaxed whitespace-pre-line border-l-2 border-slate-200 pl-4">
                             {policy.preamble}
                         </p>
                     </div>
                 )}
-            </div>
 
-            {/* Articles */}
-            <Stack gap="sm" mt="lg">
-                {(policy.articles ?? []).map((a, i) => <ArticleCard key={a.id ?? i} article={a} index={i} />)}
-            </Stack>
+                {/* Articles — dans le corps du document */}
+                <div className="px-8 sm:px-10 pb-2">
+                    <Stack gap="sm">
+                        {(policy.articles ?? []).map((a, i) => <ArticleCard key={a.id ?? i} article={a} index={i} />)}
+                    </Stack>
+                </div>
 
-            {/* Signature de la direction */}
-            <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-6 mt-6">
-                <Text size="xs" c="dimmed" tt="uppercase" style={{ letterSpacing: '0.1em' }}>Engagement de la direction</Text>
-                <div className="flex items-end justify-between flex-wrap gap-4 mt-3">
-                    <div>
-                        {policy.signatureImage
-                            ? <img src={policy.signatureImage} alt="Signature" style={{ height: 64, maxWidth: 240, objectFit: 'contain' }} />
-                            : <p className="text-2xl text-slate-800" style={{ fontFamily: "'Segoe Script','Brush Script MT',cursive" }}>{policy.signatoryName}</p>}
-                        <div className="mt-1">
-                            <p className="font-semibold text-slate-800">{policy.signatoryName}</p>
-                            <p className="text-[13px] text-slate-500">{policy.signatoryTitle || 'Direction'}</p>
+                {/* Signature de la direction — pied du document */}
+                <div className="px-8 sm:px-10 pt-4 pb-8 mt-4 border-t border-slate-200 bg-gradient-to-br from-white to-slate-50">
+                    <Text size="xs" c="dimmed" tt="uppercase" style={{ letterSpacing: '0.1em' }} mt="md">Engagement de la direction</Text>
+                    <div className="flex items-end justify-between flex-wrap gap-4 mt-3">
+                        <div>
+                            {policy.signatureImage
+                                ? <img src={policy.signatureImage} alt="Signature" style={{ height: 64, maxWidth: 240, objectFit: 'contain' }} />
+                                : <p className="text-2xl text-slate-800" style={{ fontFamily: "'Segoe Script','Brush Script MT',cursive" }}>{policy.signatoryName}</p>}
+                            <div className="mt-1">
+                                <p className="font-semibold text-slate-800">{policy.signatoryName}</p>
+                                <p className="text-[13px] text-slate-500">{policy.signatoryTitle || 'Direction'}</p>
+                            </div>
                         </div>
-                    </div>
-                    <div className="text-right">
-                        <Badge color="teal" variant="filled" leftSection={<IconCertificate size={12} />}>Signée</Badge>
-                        <p className="text-[12px] text-slate-500 mt-1">le {fmtDateTime(policy.signedAt)}</p>
+                        <div className="text-right">
+                            <Badge color="teal" variant="filled" leftSection={<IconCertificate size={12} />}>Signée</Badge>
+                            <p className="text-[12px] text-slate-500 mt-1">le {fmtDateTime(policy.signedAt)}</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -412,6 +438,217 @@ function PolicyEditor({
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+// TABLEAU DE BORD — adhésion à la politique (§5.4)
+// ════════════════════════════════════════════════════════════════════════════
+
+type Emp = { id: number; name?: string; department?: string; position?: string };
+
+function StatCard({ label, value, sub, tint, icon }: {
+    label: string; value: React.ReactNode; sub?: string; tint: string; icon: React.ReactNode;
+}) {
+    return (
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 flex-1 min-w-[150px]">
+            <div className="flex items-center justify-between">
+                <Text size="xs" c="dimmed" tt="uppercase" style={{ letterSpacing: '0.08em' }}>{label}</Text>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                    style={{ background: `${tint}1a`, color: tint }}>{icon}</div>
+            </div>
+            <Text fw={800} className="tabular-nums mt-1" style={{ fontSize: 28, color: '#12294A' }}>{value}</Text>
+            {sub && <Text size="xs" c="dimmed">{sub}</Text>}
+        </div>
+    );
+}
+
+function BreakdownPanel({ title, icon, rows }: {
+    title: string; icon: React.ReactNode; rows: { key: string; total: number; signed: number }[];
+}) {
+    return (
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 flex-1 min-w-[280px]">
+            <Group gap={8} mb="sm">
+                <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">{icon}</div>
+                <Text fw={600} className="text-slate-800">{title}</Text>
+            </Group>
+            {rows.length === 0 ? (
+                <Text size="sm" c="dimmed">Aucune donnée.</Text>
+            ) : (
+                <Stack gap={10}>
+                    {rows.map((r) => {
+                        const pct = r.total ? Math.round((r.signed / r.total) * 100) : 0;
+                        return (
+                            <div key={r.key}>
+                                <div className="flex items-center justify-between mb-1">
+                                    <Text size="sm" className="text-slate-700" style={{ maxWidth: '65%' }} truncate>{r.key}</Text>
+                                    <Text size="xs" c="dimmed" className="tabular-nums">{r.signed}/{r.total} · {pct}%</Text>
+                                </div>
+                                <Progress value={pct} size="sm" radius="xl"
+                                    color={pct >= 80 ? 'teal' : pct >= 50 ? 'yellow' : 'red'} />
+                            </div>
+                        );
+                    })}
+                </Stack>
+            )}
+        </div>
+    );
+}
+
+function PolicyDashboard({ policy, onRead }: { policy: HsPolicy; onRead: () => void }) {
+    const [roster, setRoster] = useState<Emp[]>([]);
+    const [acks, setAcks] = useState<HsPolicyAcknowledgement[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        let cancelled = false;
+        setLoading(true);
+        Promise.all([
+            getEmployeesWithDepartment().catch(() => []),
+            policy.id ? getAcknowledgements(policy.id).catch(() => []) : Promise.resolve([]),
+        ]).then(([emps, a]) => {
+            if (cancelled) return;
+            setRoster(Array.isArray(emps) ? emps.map((e: any) => ({
+                id: e.id, name: e.name, department: e.department, position: e.position,
+            })) : []);
+            setAcks(Array.isArray(a) ? a : []);
+        }).finally(() => { if (!cancelled) setLoading(false); });
+        return () => { cancelled = true; };
+    }, [policy.id]);
+
+    const s = useMemo(() => {
+        const ym = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const ackedIds = new Set(acks.map((a) => a.empId).filter((v): v is number => v != null));
+        const total = roster.length;
+        const signed = roster.filter((e) => ackedIds.has(e.id)).length;
+        const rate = total ? Math.round((signed / total) * 100) : 0;
+        const now = new Date();
+        const thisMonth = acks.filter((a) => a.acknowledgedAt && ym(new Date(a.acknowledgedAt)) === ym(now)).length;
+        const group = (keyOf: (e: Emp) => string) => {
+            const m = new Map<string, { total: number; signed: number }>();
+            roster.forEach((e) => {
+                const k = keyOf(e) || '—';
+                const cur = m.get(k) || { total: 0, signed: 0 };
+                cur.total++; if (ackedIds.has(e.id)) cur.signed++;
+                m.set(k, cur);
+            });
+            return Array.from(m.entries()).map(([key, v]) => ({ key, ...v })).sort((a, b) => b.total - a.total);
+        };
+        const byDept = group((e) => e.department || '—');
+        const byPos = group((e) => e.position || '—');
+        const months: { key: string; label: string; count: number }[] = [];
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            months.push({ key: ym(d), label: d.toLocaleDateString('fr-FR', { month: 'short' }), count: 0 });
+        }
+        const idx = new Map(months.map((mo, i) => [mo.key, i] as const));
+        acks.forEach((a) => {
+            if (!a.acknowledgedAt) return;
+            const i = idx.get(ym(new Date(a.acknowledgedAt)));
+            if (i != null) months[i].count++;
+        });
+        const maxMonth = Math.max(1, ...months.map((mo) => mo.count));
+        return { total, signed, rate, thisMonth, byDept, byPos, months, maxMonth, totalSignatures: acks.length };
+    }, [roster, acks]);
+
+    const recent = useMemo(
+        () => [...acks].sort((a, b) => (b.acknowledgedAt || '').localeCompare(a.acknowledgedAt || '')).slice(0, 8),
+        [acks],
+    );
+
+    return (
+        <div className="max-w-6xl mx-auto">
+            {/* Bandeau : titre + accès lecture */}
+            <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-sm mb-4"
+                style={{ background: 'linear-gradient(135deg,#12294A 0%,#0B1E3A 100%)' }}>
+                <div className="px-6 py-5 flex items-center justify-between flex-wrap gap-4">
+                    <div>
+                        <Text className="text-white" fw={700} style={{ fontSize: 19 }}>Adhésion à la politique SST</Text>
+                        <Text className="text-white/70" size="sm">
+                            {policy.title || 'Politique Santé & Sécurité au Travail'} · Version {policy.version ?? '—'} · §5.4 consultation des travailleurs
+                        </Text>
+                    </div>
+                    <Button size="md" color="teal" leftSection={<IconFileText size={18} />} onClick={onRead}>
+                        Lire la politique
+                    </Button>
+                </div>
+            </div>
+
+            {loading ? (
+                <div className="flex justify-center py-16"><Loader color="teal" /></div>
+            ) : (
+                <>
+                    {/* KPIs */}
+                    <div className="flex flex-wrap gap-3">
+                        <StatCard label="Effectif" value={s.total} sub="employés de la mine" tint="#12294A" icon={<IconUsers size={16} />} />
+                        <StatCard label="Ont signé" value={s.signed} sub={`${s.rate}% de l'effectif`} tint="#0F766E" icon={<IconCheck size={16} />} />
+                        <StatCard label="Ce mois-ci" value={s.thisMonth} sub="prises de connaissance" tint="#B26B00" icon={<IconCalendarStats size={16} />} />
+                        <StatCard label="Signatures" value={s.totalSignatures} sub="au total, horodatées" tint="#2563EB" icon={<IconWriting size={16} />} />
+                    </div>
+
+                    {/* Taux global */}
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5 mt-3">
+                        <div className="flex items-center justify-between mb-2">
+                            <Text fw={600} className="text-slate-800">Taux d'adhésion global</Text>
+                            <Text fw={800} style={{ fontSize: 22, color: '#0F766E' }} className="tabular-nums">{s.rate}%</Text>
+                        </div>
+                        <Progress value={s.rate} size="lg" radius="xl" color={s.rate >= 80 ? 'teal' : s.rate >= 50 ? 'yellow' : 'red'} />
+                        <Text size="xs" c="dimmed" mt={6}>{s.signed} sur {s.total} employés ont pris connaissance et signé la politique en vigueur.</Text>
+                    </div>
+
+                    {/* Répartitions */}
+                    <div className="flex flex-wrap gap-3 mt-3">
+                        <BreakdownPanel title="Par département" icon={<IconBuildingFactory2 size={15} />} rows={s.byDept} />
+                        <BreakdownPanel title="Par poste" icon={<IconBriefcase size={15} />} rows={s.byPos} />
+                    </div>
+
+                    {/* Par mois + récents */}
+                    <div className="flex flex-wrap gap-3 mt-3 mb-10">
+                        <div className="rounded-2xl border border-slate-200 bg-white p-5 flex-1 min-w-[300px]">
+                            <Group gap={8} mb="md">
+                                <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center"><IconChartBar size={15} /></div>
+                                <Text fw={600} className="text-slate-800">Signatures par mois</Text>
+                            </Group>
+                            <div className="flex items-end gap-3" style={{ height: 130 }}>
+                                {s.months.map((mo) => (
+                                    <div key={mo.key} className="flex-1 flex flex-col items-center justify-end gap-1">
+                                        <Text size="xs" c="dimmed" className="tabular-nums">{mo.count}</Text>
+                                        <div className="w-full rounded-t-md" style={{
+                                            height: `${Math.round((mo.count / s.maxMonth) * 96) + 4}px`,
+                                            background: 'linear-gradient(180deg,#1E7F76,#0F766E)',
+                                        }} />
+                                        <Text size="xs" c="dimmed" className="capitalize">{mo.label}</Text>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="rounded-2xl border border-slate-200 bg-white p-5 flex-1 min-w-[300px]">
+                            <Group gap={8} mb="sm">
+                                <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center"><IconClipboardCheck size={15} /></div>
+                                <Text fw={600} className="text-slate-800">Dernières prises de connaissance</Text>
+                            </Group>
+                            {recent.length === 0 ? (
+                                <Text size="sm" c="dimmed">Aucune signature pour l'instant.</Text>
+                            ) : (
+                                <Stack gap={8}>
+                                    {recent.map((r) => (
+                                        <div key={r.id} className="flex items-center justify-between">
+                                            <Group gap={8}>
+                                                <div className="w-7 h-7 rounded-full bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center">
+                                                    <IconCheck size={14} />
+                                                </div>
+                                                <Text size="sm" className="text-slate-700">{r.name || `Employé #${r.empId ?? '—'}`}</Text>
+                                            </Group>
+                                            <Text size="xs" c="dimmed">{fmtDateTime(r.acknowledgedAt)}</Text>
+                                        </div>
+                                    ))}
+                                </Stack>
+                            )}
+                        </div>
+                    </div>
+                </>
+            )}
+        </div>
+    );
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 // PAGE
 // ════════════════════════════════════════════════════════════════════════════
 
@@ -426,7 +663,7 @@ export default function HsPolicyPage() {
     const [published, setPublished] = useState<HsPolicy | null>(null);
     const [loading, setLoading] = useState(true);
     const [acking, setAcking] = useState(false);
-    const [mode, setMode] = useState<'read' | 'manage'>('read');
+    const [mode, setMode] = useState<'dashboard' | 'read' | 'manage'>('dashboard');
 
     // Gestion
     const [versions, setVersions] = useState<HsPolicy[]>([]);
@@ -510,20 +747,40 @@ export default function HsPolicyPage() {
                         <Text size="xs" c="dimmed">ISO 45001 §5.2 — engagement de la direction · §5.4 — consultation des travailleurs</Text>
                     </div>
                 </Group>
-                {canManage && (
-                    <Button.Group>
-                        <Button variant={mode === 'read' ? 'filled' : 'default'} color="teal"
-                            leftSection={<IconEye size={16} />} onClick={() => setMode('read')}>Lecture</Button>
+                <Button.Group>
+                    <Button variant={mode === 'dashboard' ? 'filled' : 'default'} color="teal"
+                        leftSection={<IconLayoutDashboard size={16} />} onClick={() => setMode('dashboard')}>Tableau de bord</Button>
+                    <Button variant={mode === 'read' ? 'filled' : 'default'} color="teal"
+                        leftSection={<IconEye size={16} />} onClick={() => setMode('read')}>Lecture</Button>
+                    {canManage && (
                         <Button variant={mode === 'manage' ? 'filled' : 'default'} color="teal"
                             leftSection={<IconEdit size={16} />} onClick={() => setMode('manage')}>Gérer</Button>
-                    </Button.Group>
-                )}
+                    )}
+                </Button.Group>
             </Group>
+
+            {mode === 'dashboard' && (
+                published ? (
+                    <PolicyDashboard policy={published} onRead={() => setMode('read')} />
+                ) : (
+                    <div className="max-w-2xl mx-auto text-center py-16">
+                        <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-4">
+                            <IconFileText size={28} />
+                        </div>
+                        <Text fw={600} c="dimmed">Aucune politique SST n'est en vigueur pour cette mine.</Text>
+                        {canManage && (
+                            <Button mt="md" color="teal" leftSection={<IconEdit size={16} />}
+                                onClick={() => { setMode('manage'); }}>Rédiger la politique</Button>
+                        )}
+                    </div>
+                )
+            )}
 
             {mode === 'read' && (
                 published ? (
                     <PolicyReader policy={published} mineName={mineName} canAcknowledge={!!published.id}
-                        onAcknowledge={onAcknowledge} acking={acking} userName={userName} />
+                        onAcknowledge={onAcknowledge} acking={acking} userName={userName}
+                        onBack={() => setMode('dashboard')} />
                 ) : (
                     <div className="max-w-2xl mx-auto text-center py-16">
                         <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-4">
