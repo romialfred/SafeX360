@@ -306,8 +306,11 @@ public class EmployeeAPI {
     }
 
     @GetMapping("/getEmployeesWithDepartment")
-    public ResponseEntity<List<EmpEmailPosResponse>> getEmployeesWithDepartment() {
-        return new ResponseEntity<>(employeeService.getEmployeesWithDepartment(), HttpStatus.OK);
+    public ResponseEntity<List<EmpEmailPosResponse>> getEmployeesWithDepartment(
+            @RequestParam(required = false) Long companyId) {
+        // Cloisonnement par mine : companyId auto-injecté par l'intercepteur.
+        // L'effectif renvoyé est celui de la mine active (ex. 153), pas le total.
+        return new ResponseEntity<>(employeeService.getEmployeesWithDepartment(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/getEmployeeWithDirection")

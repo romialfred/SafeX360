@@ -94,7 +94,7 @@ public interface EmployeeService {
 
     public List<EmpEmailPosResponse> getEmployeesWithEmailPosition();
 
-    public List<EmpEmailPosResponse> getEmployeesWithDepartment();
+    public List<EmpEmailPosResponse> getEmployeesWithDepartment(Long companyId);
 
     public EmpEmailPosResponse getEmployeeEmailPositionById(Long employeeId) throws HRMSException;
 

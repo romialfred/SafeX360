@@ -538,8 +538,8 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     @Cacheable(cacheNames = "employeeWithDepartment")
-    public List<EmpEmailPosResponse> getEmployeesWithDepartment() {
-        return employeeRepository.findEmployeeNamesWithDepartment();
+    public List<EmpEmailPosResponse> getEmployeesWithDepartment(Long companyId) {
+        return employeeRepository.findEmployeeNamesWithDepartment(companyId);
     }
 
     @Override

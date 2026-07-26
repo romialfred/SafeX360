@@ -90,8 +90,11 @@ public interface EmployeeRepository extends CrudRepository<Employee, Long> {
     @Query("SELECT e.id AS id, CONCAT(e.firstName, ' ', e.familyName) AS name, e.professionalEmail as email, e.position.id as positionId, e.position.name as position, e.department.name as department FROM Employee e WHERE e.effectiveEndDate IS NULL OR e.effectiveEndDate > CURRENT_DATE ")
     List<EmpEmailPosResponse> findEmployeeNamesWithEmailAndPosition();
 
-    @Query("SELECT e.id AS id, CONCAT(e.firstName, ' ', e.familyName) AS name, e.department.id as departmentId, e.department.name as department, e.uniqueNumber as empNumber FROM Employee e WHERE e.effectiveEndDate IS NULL OR e.effectiveEndDate > CURRENT_DATE")
-    List<EmpEmailPosResponse> findEmployeeNamesWithDepartment();
+    // Cloisonnement par mine (companyId null = toutes mines). Poste en LEFT JOIN
+    // pour ne pas exclure un employé sans poste. Sans le filtre, l'effectif renvoyé
+    // etait celui de TOUTES les mines (ex. 173) au lieu de la mine active (ex. 153).
+    @Query("SELECT e.id AS id, CONCAT(e.firstName, ' ', e.familyName) AS name, e.department.id as departmentId, e.department.name as department, p.id as positionId, p.name as position, e.uniqueNumber as empNumber FROM Employee e LEFT JOIN e.position p WHERE (e.effectiveEndDate IS NULL OR e.effectiveEndDate > CURRENT_DATE) AND (:companyId IS NULL OR e.company.id = :companyId)")
+    List<EmpEmailPosResponse> findEmployeeNamesWithDepartment(@Param("companyId") Long companyId);
 
     @Query("SELECT e.id AS id, CONCAT(e.firstName, ' ', e.familyName) AS name, e.professionalEmail as email, e.position.id as positionId, e.position.name as position, e.department.name as department FROM Employee e WHERE (e.effectiveEndDate IS NULL OR e.effectiveEndDate > CURRENT_DATE)  AND e.id = :id ")
     Optional<EmpEmailPosResponse> findEmployeeNamesWithEmailAndPositionById(Long id);
