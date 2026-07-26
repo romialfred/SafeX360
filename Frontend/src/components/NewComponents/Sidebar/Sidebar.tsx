@@ -813,8 +813,16 @@ const Sidebar = () => {
         return activeMineModules.has(key);
     };
 
-    /** Visible = droit utilisateur ET module actif sur la mine. */
-    const isVisible = (menuId: string): boolean => isItemVisible(menuId) && isActiveForMine(menuId);
+    /**
+     * Un module DÉSACTIVÉ ne doit PAS s'afficher (masqué, pas grisé). Un module
+     * est montré s'il est actif sur la mine ET activé (flag module), sauf les
+     * items socle (accueil/administration) toujours accessibles.
+     */
+    const isModuleShownForMine = (menuId: string): boolean =>
+        isActiveForMine(menuId) && (isModuleEnabled(menuId) || ALWAYS_ACCESSIBLE.has(menuId));
+
+    /** Visible = droit utilisateur ET module montré (actif mine + activé). */
+    const isVisible = (menuId: string): boolean => isItemVisible(menuId) && isModuleShownForMine(menuId);
 
     /** Items de menu filtrés : un parent sans aucun sous-item visible disparaît. */
     const visibleMenuItems = menuItems
@@ -822,10 +830,10 @@ const Sidebar = () => {
             if (!item.subItems) {
                 return isVisible(item.id) ? item : null;
             }
-            // Cloisonnement per-mine au niveau du PARENT : si le module lui-même
-            // (ex. « Planification ») est désactivé sur la mine, tout le groupe
-            // disparaît — sinon un parent à sous-items n'était jamais évalué.
-            if (!isActiveForMine(item.id)) return null;
+            // Cloisonnement au niveau du PARENT : si le module lui-même (ex.
+            // « Gestion des Erreurs ») est désactivé (mine ou flag), tout le
+            // groupe disparaît — plus de sous-items grisés.
+            if (!isModuleShownForMine(item.id)) return null;
             const subItems = item.subItems.filter((sub) => isVisible(sub.id));
             if (subItems.length === 0) return null;
             // Le parent reste visible dès qu'au moins un enfant l'est
