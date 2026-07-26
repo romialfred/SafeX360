@@ -168,7 +168,18 @@ const DashboardLayout = () => {
                             plus d'en ouvrir une autre. */}
                         <AppErrorBoundary resetKey={location.pathname} context={location.pathname}>
                             <Suspense fallback={<PageLoader label="Chargement de la page…" minHeight="60vh" delay={120} />}>
-                                <Outlet />
+                                {/* CLOISONNEMENT — remontage de la zone de contenu au
+                                    changement de mine : la key force le re-montage de la
+                                    page routée, donc la ré-exécution de ses effets de
+                                    chargement → les données se rafraîchissent pour la mine
+                                    active. Correctif SYSTÉMIQUE (fini les tableaux de bord
+                                    figés sur la 1re mine faute de dépendance à companyId).
+                                    display:contents = aucun impact sur la mise en page ;
+                                    seul le contenu remonte (en-tête, sidebar, WebSockets
+                                    au-dessus ne bougent pas). */}
+                                <div className="contents" key={`mine-${selectedCompanyId ?? 'all'}`}>
+                                    <Outlet />
+                                </div>
                             </Suspense>
                         </AppErrorBoundary>
                     </main>
