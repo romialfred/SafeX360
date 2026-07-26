@@ -15,13 +15,13 @@ import com.minexpert.hns.enums.Status;
 public interface IncidentTypeRepository extends CrudRepository<IncidentType, Long> {
         Optional<IncidentType> findByCompanyIdAndNameIgnoreCase(Long companyId, String name);
 
-        @Query("SELECT i.id AS id, i.name AS name, i.description AS description, i.companyId AS companyId, c.id AS incidentCategoryId, c.name AS incidentCategoryName, s.name as severityLevelName, s.level as severityLevel, s.id as severityLevelId, i.status AS status FROM IncidentType i JOIN i.incidentCategory c JOIN i.severityLevel s WHERE (:companyId IS NULL OR i.companyId = :companyId)")
+        @Query("SELECT i.id AS id, i.name AS name, i.description AS description, i.companyId AS companyId, c.id AS incidentCategoryId, c.name AS incidentCategoryName, s.name as severityLevelName, s.level as severityLevel, s.id as severityLevelId, i.status AS status FROM IncidentType i JOIN i.incidentCategory c JOIN i.severityLevel s WHERE (:companyId IS NULL OR i.companyId = :companyId OR i.companyId IS NULL)")
         List<IncidentTypeDetails> findAllWithName(@Param("companyId") Long companyId);
 
-        @Query("SELECT i.id AS id, i.name AS name, i.description AS description, i.companyId AS companyId, c.id AS incidentCategoryId, c.name AS incidentCategoryName, s.name as severityLevelName, s.level as severityLevel, s.id as severityLevelId, i.status AS status FROM IncidentType i JOIN i.incidentCategory c JOIN i.severityLevel s WHERE i.status = :status AND (:companyId IS NULL OR i.companyId = :companyId)")
+        @Query("SELECT i.id AS id, i.name AS name, i.description AS description, i.companyId AS companyId, c.id AS incidentCategoryId, c.name AS incidentCategoryName, s.name as severityLevelName, s.level as severityLevel, s.id as severityLevelId, i.status AS status FROM IncidentType i JOIN i.incidentCategory c JOIN i.severityLevel s WHERE i.status = :status AND (:companyId IS NULL OR i.companyId = :companyId OR i.companyId IS NULL)")
         List<IncidentTypeDetails> findAllByStatus(@Param("companyId") Long companyId, @Param("status") Status status);
 
-        @Query("SELECT i FROM IncidentType i WHERE i.id = :id AND (:companyId IS NULL OR i.companyId = :companyId)")
+        @Query("SELECT i FROM IncidentType i WHERE i.id = :id AND (:companyId IS NULL OR i.companyId = :companyId OR i.companyId IS NULL)")
         Optional<IncidentType> findByIdWithCompanyContext(@Param("id") Long id, @Param("companyId") Long companyId);
 
         @Query("SELECT s.level AS level, COUNT(d.id) AS count " +

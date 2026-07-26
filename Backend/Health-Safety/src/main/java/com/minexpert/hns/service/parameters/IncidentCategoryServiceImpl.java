@@ -153,12 +153,22 @@ public class IncidentCategoryServiceImpl implements IncidentCategoryService {
     @Cacheable(cacheNames = "incidentCategoriesAll", key = "#companyId != null ? #companyId : 'ALL'")
     public List<IncidentCategoryDTO> getAllIncidentCategories(Long companyId) throws HSException {
         List<IncidentCategory> incidentCategories = incidentCategoryRepository.findAllByCompanyId(companyId);
+        // Repli sur le jeu de référence PARTAGE (company_id=0) si la mine n'a aucune
+        // catégorie propre : évite un écran vide sans dupliquer les catégories des
+        // mines qui, elles, en possèdent (aucun mélange, aucune régression).
+        if (incidentCategories.isEmpty() && companyId != null && companyId != 0L) {
+            incidentCategories = incidentCategoryRepository.findAllByCompanyId(0L);
+        }
         return incidentCategories.stream().map(IncidentCategory::toDTO).toList();
     }
 
     @Override
     @Cacheable(cacheNames = "incidentCategoriesActive", key = "#companyId != null ? #companyId : 'ALL'")
     public List<IncidentCategoryResponse> getAllActiveIncidentCategories(Long companyId) throws HSException {
-        return incidentCategoryRepository.findAllByStatus(companyId, Status.ACTIVE);
+        List<IncidentCategoryResponse> rows = incidentCategoryRepository.findAllByStatus(companyId, Status.ACTIVE);
+        if (rows.isEmpty() && companyId != null && companyId != 0L) {
+            rows = incidentCategoryRepository.findAllByStatus(0L, Status.ACTIVE);
+        }
+        return rows;
     }
 }

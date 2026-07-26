@@ -127,14 +127,22 @@ public class SeverityLevelServiceImpl implements SeverityLevelService {
     @Override
     @Cacheable(cacheNames = "severityLevelsAll", key = "#companyId != null ? #companyId : 'ALL'")
     public List<SeverityLevelDTO> getAllSeverityLevels(Long companyId) throws HSException {
-        return severityLevelRepository.findAllScoped(companyId).stream().map(SeverityLevel::toDTO)
-                .toList();
+        List<SeverityLevel> rows = severityLevelRepository.findAllScoped(companyId);
+        // Repli sur le jeu partagé (catégories company_id=0) si la mine n'a aucun niveau.
+        if (rows.isEmpty() && companyId != null && companyId != 0L) {
+            rows = severityLevelRepository.findAllScoped(0L);
+        }
+        return rows.stream().map(SeverityLevel::toDTO).toList();
     }
 
     @Override
     @Cacheable(cacheNames = "severityLevelsActive", key = "#companyId != null ? #companyId : 'ALL'")
     public List<SeverityLevelResponse> getAllActiveSeverityLevels(Long companyId) throws HSException {
-        return severityLevelRepository.findAllActiveLevels(companyId);
+        List<SeverityLevelResponse> rows = severityLevelRepository.findAllActiveLevels(companyId);
+        if (rows.isEmpty() && companyId != null && companyId != 0L) {
+            rows = severityLevelRepository.findAllActiveLevels(0L);
+        }
+        return rows;
     }
 
     @Override
