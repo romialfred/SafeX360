@@ -56,6 +56,11 @@ public class AuditServiceImpl implements AuditService {
     })
     public Long createAudit(AuditDTO auditDTO) throws HSException {
         assertDateOrder(auditDTO.getStartDate(), auditDTO.getEndDate());
+        // scope_id est NOT NULL en base : sans garde, un formulaire sans périmètre
+        // provoquait un 500 (violation d'intégrité) au lieu d'une erreur métier claire.
+        if (auditDTO.getScopeId() == null || auditDTO.getScopeId() <= 0) {
+            throw new HSException("AUDIT_SCOPE_REQUIRED");
+        }
         auditDTO.setRefNumber(generateAuditRefNumber());
         auditDTO.setStatus(AuditStatus.PLANNING);
         // ISO 19011 §5.4 — l'approbation du programme est un ACTE TRACÉ

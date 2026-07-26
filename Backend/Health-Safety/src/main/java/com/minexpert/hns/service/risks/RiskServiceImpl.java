@@ -184,11 +184,20 @@ public class RiskServiceImpl implements RiskService {
         }
 
         private OverviewMetrics buildMetrics(List<RiskDTO> items) {
+                // Statuts réels du registre : IDENTIFIED / ASSESSED / MITIGATED /
+                // ACCEPTED / CLOSED / MONITORING. Les anciens libellés « OPEN » /
+                // « IN_PROGRESS » n'existaient pas → KPI toujours à 0.
                 int total = items.size();
-                int open = (int) items.stream().filter(r -> "OPEN".equalsIgnoreCase(s(r.getStatus()))).count();
-                int inProgress = (int) items.stream().filter(r -> "IN_PROGRESS".equalsIgnoreCase(s(r.getStatus())))
-                                .count();
-                int closed = (int) items.stream().filter(r -> "CLOSED".equalsIgnoreCase(s(r.getStatus()))).count();
+                int open = (int) items.stream().filter(r -> "IDENTIFIED".equalsIgnoreCase(s(r.getStatus()))).count();
+                int inProgress = (int) items.stream().filter(r -> {
+                        String st = s(r.getStatus());
+                        return "ASSESSED".equalsIgnoreCase(st) || "MITIGATED".equalsIgnoreCase(st)
+                                        || "MONITORING".equalsIgnoreCase(st);
+                }).count();
+                int closed = (int) items.stream().filter(r -> {
+                        String st = s(r.getStatus());
+                        return "CLOSED".equalsIgnoreCase(st) || "ACCEPTED".equalsIgnoreCase(st);
+                }).count();
                 LocalDate today = LocalDate.now();
                 int overdue = (int) items.stream()
                                 .filter(r -> r.getReviewDate() != null && r.getReviewDate().isBefore(today)

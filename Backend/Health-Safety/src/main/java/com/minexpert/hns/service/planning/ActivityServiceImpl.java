@@ -44,6 +44,11 @@ public class ActivityServiceImpl implements ActivityService {
             @CacheEvict(cacheNames = ActivityCacheNames.PLANNED_ACTIVITIES_FILTERED, allEntries = true)
     })
     public ActivityDTO createActivity(ActivityDTO dto) throws HSException {
+        // Mine obligatoire : sans companyId, l'activité devient GLOBALE (companyId
+        // NULL) et apparaît dans la planification de TOUTES les mines.
+        if (dto.getCompanyId() == null || dto.getCompanyId() <= 0) {
+            throw new HSException("COMPANY_ID_REQUIRED");
+        }
         Activity activity = dto.toEntity();
         activity.setId(null);
         LocalDateTime now = LocalDateTime.now();

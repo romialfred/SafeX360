@@ -46,11 +46,12 @@ public class AuditProgramAPI {
             @RequestParam(required = false) Long companyId,
             @RequestBody AuditProgramDTO programDTO) throws HSException {
         // Le companyId de la mine active est injecté en query par l'intercepteur
-        // Axios ; on le persiste ici, sinon le programme est créé avec
-        // companyId=null et devient INVISIBLE dans la liste (filtrée par mine).
-        if (companyId != null) {
-            programDTO.setCompanyId(companyId);
+        // Axios. Il est OBLIGATOIRE : sans lui le programme naîtrait avec
+        // companyId=null et deviendrait INVISIBLE dans la liste (filtrée par mine).
+        if (companyId == null || companyId <= 0) {
+            throw new HSException("COMPANY_ID_REQUIRED");
         }
+        programDTO.setCompanyId(companyId);
         return new ResponseEntity<>(auditProgramService.createProgram(programDTO), HttpStatus.CREATED);
     }
 
