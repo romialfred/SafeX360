@@ -210,6 +210,14 @@ public class InvestigationServiceImpl implements InvestigationService {
                     .anyMatch(p -> validatorEmpId.equals(p.getId()))) {
                 throw new HSException("VALIDATOR_MUST_BE_INDEPENDENT");
             }
+            // §10.2(e) — le validateur ne doit pas non plus être le DÉCLARANT de
+            // l'incident (même espace d'empId : reporterId = currentEmpId à la
+            // déclaration). Ferme le cas d'un déclarant hors équipe qui validerait
+            // sa propre enquête.
+            if (investigation.getIncident() != null
+                    && validatorEmpId.equals(investigation.getIncident().getReporterId())) {
+                throw new HSException("VALIDATOR_MUST_BE_INDEPENDENT");
+            }
         }
         investigation.setValidated(true);
         investigation.setReviewedBy(actor);
