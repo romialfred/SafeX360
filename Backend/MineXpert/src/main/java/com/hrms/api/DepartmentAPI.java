@@ -64,9 +64,12 @@ public class DepartmentAPI {
     }
 
     @GetMapping("/getNames")
-    public ResponseEntity<List<DepartmentNames>> getDepartmentNamesByCompanyId()
-            throws HRMSException {
-        return new ResponseEntity<>(departmentService.getAllDepartmentNames(), HttpStatus.OK);
+    public ResponseEntity<List<DepartmentNames>> getDepartmentNamesByCompanyId(
+            @RequestParam(required = false) Long companyId) throws HRMSException {
+        // Cloisonnement par mine : companyId auto-injecté par l'intercepteur.
+        // Fini la fuite (tous les départements de toutes les mines dans les
+        // formulaires d'équipe/zone et le module Communication).
+        return new ResponseEntity<>(departmentService.getAllDepartmentNames(companyId), HttpStatus.OK);
     }
 
     @GetMapping("/getByIds")

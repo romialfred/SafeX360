@@ -79,9 +79,9 @@ public class DepartmentServiceImpl implements DepartmentService {
     }
 
     @Override
-    @Cacheable(cacheNames = "departmentNamesAll")
-    public List<DepartmentNames> getAllDepartmentNames() throws HRMSException {
-        return departmentRepository.findDepartmentNames();
+    @Cacheable(cacheNames = "departmentNamesAll", key = "#companyId != null ? #companyId : 'ALL'")
+    public List<DepartmentNames> getAllDepartmentNames(Long companyId) throws HRMSException {
+        return departmentRepository.findDepartmentNames(companyId);
     }
 
     @Override

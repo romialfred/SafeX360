@@ -17,7 +17,7 @@ public interface DepartmentService {
 
     public List<DepartmentDTO> getDepartmentsByCompanyId(Long companyId);
 
-    public List<DepartmentNames> getAllDepartmentNames() throws HRMSException;
+    public List<DepartmentNames> getAllDepartmentNames(Long companyId) throws HRMSException;
 
     public List<DepartmentNames> getDepartmentsByIds(List<Long> ids)
             throws HRMSException;
