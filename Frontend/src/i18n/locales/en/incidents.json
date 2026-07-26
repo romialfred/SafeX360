@@ -44,7 +44,7 @@
     "colDepartment": "Department",
     "colReporter": "Reporter",
     "colSeverity": "Severity",
-    "colDate": "Report date",
+    "colDate": "Decl. date",
     "colStatus": "Status",
     "emptyTable": "No incident matches the selected filters.",
     "emptyCardTitle": "No incident to display",

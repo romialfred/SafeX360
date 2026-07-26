@@ -530,10 +530,11 @@ const IncidentManagementData = () => {
                 viewType === 'table' ? (
                     <DataTable
                         selectionMode="single"
-                        className='[&_.p-datatable-tbody]:!text-sm'
+                        className='[&_.p-datatable-tbody]:!text-sm [&_.p-datatable-thead_th]:whitespace-nowrap [&_.p-column-title]:whitespace-nowrap'
                         size="small"
                         stripedRows
                         removableSort
+                        sortMode="single"
                         paginator
                         value={filteredData}
                         rows={10}
@@ -547,13 +548,13 @@ const IncidentManagementData = () => {
                         onFilter={(e) => setFilters(e.filters)}
                     >
                         <Column style={{ fontWeight: 'normal' }} field="title" body={nameBodyTemplate} header={t('list.colIncident')} sortable />
-                        <Column style={{ fontWeight: 'normal' }} field="incidentCategoryName" header={t('list.colCategory')} />
-                        <Column style={{ fontWeight: 'normal' }} field="departmentName" header={t('list.colDepartment')} />
-                        <Column style={{ fontWeight: 'normal' }} field="reporterName" header={t('list.colReporter')} />
-                        <Column style={{ fontWeight: 'normal' }} field="severity" header={t('list.colSeverity')} body={levelBodyTemplate} />
-                        <Column style={{ fontWeight: 'normal' }} field="incidentDate" header={t('list.colDate')} body={(rowData: any) => formatDateShort(rowData.incidentDate)} />
-                        <Column style={{ fontWeight: 'normal' }} field="status" header={t('list.colStatus')} body={getSeverity} />
-                        <Column bodyStyle={{ textAlign: 'center', overflow: 'visible' }} body={actionBodyTemplate} />
+                        <Column style={{ fontWeight: 'normal' }} field="incidentCategoryName" header={t('list.colCategory')} sortable />
+                        <Column style={{ fontWeight: 'normal' }} field="departmentName" header={t('list.colDepartment')} sortable />
+                        <Column style={{ fontWeight: 'normal' }} field="reporterName" header={t('list.colReporter')} sortable />
+                        <Column style={{ fontWeight: 'normal' }} field="maxSeverityLevel" header={t('list.colSeverity')} body={levelBodyTemplate} sortable />
+                        <Column style={{ fontWeight: 'normal' }} field="incidentDate" header={t('list.colDate')} body={(rowData: any) => formatDateShort(rowData.incidentDate)} sortable />
+                        <Column style={{ fontWeight: 'normal' }} field="status" header={t('list.colStatus')} body={getSeverity} sortable />
+                        <Column header="" body={actionBodyTemplate} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} />
                     </DataTable>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">

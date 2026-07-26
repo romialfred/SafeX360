@@ -44,7 +44,7 @@
     "colDepartment": "Département",
     "colReporter": "Déclarant",
     "colSeverity": "Gravité",
-    "colDate": "Date de déclaration",
+    "colDate": "Date décla.",
     "colStatus": "Statut",
     "emptyTable": "Aucun incident ne correspond aux filtres sélectionnés.",
     "emptyCardTitle": "Aucun incident à afficher",
