@@ -9,6 +9,7 @@ import { DataTable, DataTableFilterMeta } from 'primereact/datatable';
 import { Toast } from 'primereact/toast';
 import { Toolbar } from 'primereact/toolbar';
 import { useEffect, useRef, useState } from 'react';
+import { useAppSelector } from '../../../slices/hooks';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getAllAudit, getLeadAuditors } from '../../../services/AuditService';
@@ -54,6 +55,9 @@ const AuditData = () => {
     const [activeTab, setActiveTab] = useState<string>('dashboard');
     const [auditAreaMap, setAuditAreaMap] = useState<any>({});
     const [leadAuditors, setLeadAuditors] = useState<Record<string, any>>({});
+    // Mine active : re-déclenche le chargement au changement de mine (l'intercepteur
+    // envoie ce companyId ; sans dépendance, les chiffres restaient figés).
+    const selectedCompanyId = useAppSelector((s: any) => s.companySelection?.selectedCompanyId ?? null);
 
 
     useEffect(() => {
@@ -72,7 +76,8 @@ const AuditData = () => {
                 return acc;
             }, {}));
         }).catch((err) => console.error(err)).finally(() => { });
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedCompanyId]);
 
 
     const onGlobalFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
