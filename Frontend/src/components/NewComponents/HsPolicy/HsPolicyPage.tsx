@@ -447,13 +447,14 @@ function StatCard({ label, value, sub, tint, icon }: {
     label: string; value: React.ReactNode; sub?: string; tint: string; icon: React.ReactNode;
 }) {
     return (
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 flex-1 min-w-[150px]">
+        <div className="rounded-2xl border p-4 flex-1 min-w-[160px]"
+            style={{ background: `${tint}12`, borderColor: `${tint}33` }}>
             <div className="flex items-center justify-between">
-                <Text size="xs" c="dimmed" tt="uppercase" style={{ letterSpacing: '0.08em' }}>{label}</Text>
+                <Text size="sm" style={{ fontWeight: 600, color: tint }}>{label}</Text>
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                    style={{ background: `${tint}1a`, color: tint }}>{icon}</div>
+                    style={{ background: `${tint}26`, color: tint }}>{icon}</div>
             </div>
-            <Text fw={800} className="tabular-nums mt-1" style={{ fontSize: 28, color: '#12294A' }}>{value}</Text>
+            <Text fw={800} className="tabular-nums mt-1" style={{ fontSize: 30, color: '#12294A' }}>{value}</Text>
             {sub && <Text size="xs" c="dimmed">{sub}</Text>}
         </div>
     );
@@ -553,14 +554,14 @@ function PolicyDashboard({ policy, onRead }: { policy: HsPolicy; onRead: () => v
     );
 
     return (
-        <div className="max-w-6xl mx-auto">
-            {/* Bandeau : titre + accès lecture */}
-            <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-sm mb-4"
-                style={{ background: 'linear-gradient(135deg,#12294A 0%,#0B1E3A 100%)' }}>
-                <div className="px-6 py-5 flex items-center justify-between flex-wrap gap-4">
+        <div className="w-full">
+            {/* Bandeau clair : titre + accès lecture (filet d'accent, fond blanc) */}
+            <div className="rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-sm mb-4">
+                <div className="h-1.5" style={{ background: 'linear-gradient(90deg,#12294A 0%,#1E7F76 100%)' }} />
+                <div className="px-6 py-4 flex items-center justify-between flex-wrap gap-4">
                     <div>
-                        <Text className="text-white" fw={700} style={{ fontSize: 19 }}>Adhésion à la politique SST</Text>
-                        <Text className="text-white/70" size="sm">
+                        <Text fw={700} style={{ fontSize: 19, color: '#12294A' }}>Adhésion à la politique SST</Text>
+                        <Text size="sm" c="dimmed">
                             {policy.title || 'Politique Santé & Sécurité au Travail'} · Version {policy.version ?? '—'} · §5.4 consultation des travailleurs
                         </Text>
                     </div>
