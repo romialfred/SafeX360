@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -29,9 +30,11 @@ public class InvestigationProcessAPI {
     private final InvestigationProcessService investigationProcessService;
 
     @PostMapping("/create")
-    public ResponseEntity<Long> addInvestigationProcess(@RequestBody InvestigationProcessDTO investigationProcessDTO)
+    public ResponseEntity<Long> addInvestigationProcess(@RequestBody InvestigationProcessDTO investigationProcessDTO,
+            @RequestParam(required = false) Long companyId)
             throws HSException {
-        return new ResponseEntity<>(investigationProcessService.addInvestigationProcess(investigationProcessDTO),
+        // Cloisonnement par mine : companyId auto-injecté par l'intercepteur.
+        return new ResponseEntity<>(investigationProcessService.addInvestigationProcess(investigationProcessDTO, companyId),
                 HttpStatus.CREATED);
     }
 

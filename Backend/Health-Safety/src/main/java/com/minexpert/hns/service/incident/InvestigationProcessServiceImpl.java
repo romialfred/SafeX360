@@ -39,11 +39,19 @@ public class InvestigationProcessServiceImpl implements InvestigationProcessServ
             @CacheEvict(cacheNames = InvestigationServiceImpl.CACHE_INVESTIGATIONS_ALL, allEntries = true),
             @CacheEvict(cacheNames = IncidentServiceImpl.CACHE_DEPARTMENT_INCIDENT_STATS, allEntries = true)
     })
-    public Long addInvestigationProcess(InvestigationProcessDTO investigationProcessDTO) throws HSException {
+    public Long addInvestigationProcess(InvestigationProcessDTO investigationProcessDTO, Long companyId) throws HSException {
         Investigation investigation = investigationRepository.findById(investigationProcessDTO.getInvestigationId())
                 .orElseThrow(() -> new HSException("INVESTIGATION_NOT_FOUND"));
+        // Cloisonnement par mine : on ne modifie pas l'investigation d'une autre
+        // mine (companyId null = appel système).
+        if (companyId != null && !companyId.equals(investigation.getCompanyId())) {
+            throw new HSException("INVESTIGATION_NOT_FOUND");
+        }
         investigation.setProgress(investigationProcessDTO.getProgress());
-        investigation.setStatus(investigationProcessDTO.getStatus());
+        // Null-safety : ne pas écraser le statut avec null si l'appelant ne le fournit pas.
+        if (investigationProcessDTO.getStatus() != null) {
+            investigation.setStatus(investigationProcessDTO.getStatus());
+        }
         investigationRepository.save(investigation);
 
         investigationProcessDTO.setCreatedAt(LocalDateTime.now());

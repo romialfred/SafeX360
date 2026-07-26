@@ -6,7 +6,7 @@ import com.minexpert.hns.dto.InvestigationProcessDTO;
 import com.minexpert.hns.exception.HSException;
 
 public interface InvestigationProcessService {
-    public Long addInvestigationProcess(InvestigationProcessDTO investigationProcessDTO) throws HSException;
+    public Long addInvestigationProcess(InvestigationProcessDTO investigationProcessDTO, Long companyId) throws HSException;
 
     public List<InvestigationProcessDTO> getInvestigationProcessesByInvestigationId(Long investigationId)
             throws HSException;
