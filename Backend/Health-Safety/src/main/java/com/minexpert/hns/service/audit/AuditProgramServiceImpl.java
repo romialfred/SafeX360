@@ -102,8 +102,10 @@ public class AuditProgramServiceImpl implements AuditProgramService {
     }
 
     @Override
-    public AuditProgramDTO getProgram(Long id) throws HSException {
-        return loadProgram(id).toDTO();
+    public AuditProgramDTO getProgram(Long id, Long companyId) throws HSException {
+        AuditProgram program = loadProgram(id);
+        assertSameCompany(companyId, program.getCompanyId());
+        return program.toDTO();
     }
 
     @Override
@@ -135,8 +137,9 @@ public class AuditProgramServiceImpl implements AuditProgramService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<RiskSuggestionDTO> getRiskSuggestions(Long programId) throws HSException {
+    public List<RiskSuggestionDTO> getRiskSuggestions(Long programId, Long companyId) throws HSException {
         AuditProgram program = loadProgram(programId);
+        assertSameCompany(companyId, program.getCompanyId());
         List<AuditAreas> areas = auditAreasRepository.findAllByCompanyId(program.getCompanyId());
 
         // NC ouvertes traçables par domaine (constats escaladés). Si aucune NC
@@ -198,8 +201,8 @@ public class AuditProgramServiceImpl implements AuditProgramService {
 
     @Override
     @Transactional(readOnly = true)
-    public AuditProgramKpisDTO getProgramKpis(Long programId) throws HSException {
-        loadProgram(programId);
+    public AuditProgramKpisDTO getProgramKpis(Long programId, Long companyId) throws HSException {
+        assertSameCompany(companyId, loadProgram(programId).getCompanyId());
         List<Audit> audits = auditRepository.findByProgramId(programId);
         if (audits.isEmpty()) {
             return new AuditProgramKpisDTO(0, 0, 0.0, Map.of(), Map.of(), 0, 0, 0);

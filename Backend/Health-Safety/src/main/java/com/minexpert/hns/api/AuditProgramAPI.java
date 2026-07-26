@@ -64,8 +64,10 @@ public class AuditProgramAPI {
     }
 
     @GetMapping("/get/{id}")
-    public ResponseEntity<AuditProgramDTO> getProgram(@PathVariable Long id) throws HSException {
-        return new ResponseEntity<>(auditProgramService.getProgram(id), HttpStatus.OK);
+    public ResponseEntity<AuditProgramDTO> getProgram(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        // Cloisonnement par mine : refuse de lire un programme d'une autre mine.
+        return new ResponseEntity<>(auditProgramService.getProgram(id, companyId), HttpStatus.OK);
     }
 
     @GetMapping("/getAll")
@@ -93,13 +95,15 @@ public class AuditProgramAPI {
 
     /** Priorisation des domaines d'audit fondée sur les risques (ISO §5.4.2). */
     @GetMapping("/{id}/risk-suggestions")
-    public ResponseEntity<List<RiskSuggestionDTO>> getRiskSuggestions(@PathVariable Long id) throws HSException {
-        return new ResponseEntity<>(auditProgramService.getRiskSuggestions(id), HttpStatus.OK);
+    public ResponseEntity<List<RiskSuggestionDTO>> getRiskSuggestions(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(auditProgramService.getRiskSuggestions(id, companyId), HttpStatus.OK);
     }
 
     /** Indicateurs de surveillance du programme (ISO §5.6). */
     @GetMapping("/{id}/kpis")
-    public ResponseEntity<AuditProgramKpisDTO> getProgramKpis(@PathVariable Long id) throws HSException {
-        return new ResponseEntity<>(auditProgramService.getProgramKpis(id), HttpStatus.OK);
+    public ResponseEntity<AuditProgramKpisDTO> getProgramKpis(@PathVariable Long id,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return new ResponseEntity<>(auditProgramService.getProgramKpis(id, companyId), HttpStatus.OK);
     }
 }

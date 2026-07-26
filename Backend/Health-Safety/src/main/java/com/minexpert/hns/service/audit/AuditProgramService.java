@@ -16,7 +16,7 @@ public interface AuditProgramService {
 
     void updateProgram(AuditProgramDTO programDTO, Long companyId) throws HSException;
 
-    AuditProgramDTO getProgram(Long id) throws HSException;
+    AuditProgramDTO getProgram(Long id, Long companyId) throws HSException;
 
     List<AuditProgramDTO> getAllPrograms(Long companyId) throws HSException;
 
@@ -29,8 +29,8 @@ public interface AuditProgramService {
      * d'audit, score = NC ouvertes × 2 + mois depuis le dernier audit clôturé
      * (plafonné à 24), avec fréquence suggérée.
      */
-    List<RiskSuggestionDTO> getRiskSuggestions(Long programId) throws HSException;
+    List<RiskSuggestionDTO> getRiskSuggestions(Long programId, Long companyId) throws HSException;
 
     /** Indicateurs de pilotage du programme (ISO 19011 §5.6). */
-    AuditProgramKpisDTO getProgramKpis(Long programId) throws HSException;
+    AuditProgramKpisDTO getProgramKpis(Long programId, Long companyId) throws HSException;
 }
