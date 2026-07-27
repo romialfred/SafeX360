@@ -81,11 +81,17 @@ public class DosimetrySelfAccessGuard {
             return true;
         }
 
-        // 2) Mode SELF strict : requesterUserId requis.
-        if (requesterUserId == null) {
-            logDenied(workerId, null, null, "MISSING_USER_ID");
+        // 2) Mode SELF strict.
+        // [AUTHZ-06] La comparaison SELF doit se faire dans le BON espace d'id :
+        // ExposedWorker.employeeId est un id d'EMPLOYE (HRMS), tandis que
+        // requesterUserId (= X-User-Id) est un id de COMPTE. Comparer les deux ne
+        // pouvait matcher que par coincidence. On derive donc l'id EMPLOYE courant
+        // depuis l'identite non repudiable (X-User-Emp-Id) via AuthUtils.currentEmpId().
+        Long requesterEmpId = com.minexpert.hns.utility.AuthUtils.currentEmpId();
+        if (requesterEmpId == null) {
+            logDenied(workerId, requesterUserId, null, "MISSING_EMP_ID");
             throw new AccessDeniedException(
-                    "SELF access denied : missing X-User-Id header and no elevated permission.");
+                    "SELF access denied : missing employee identity (X-User-Emp-Id) and no elevated permission.");
         }
         if (workerId == null) {
             logDenied(null, requesterUserId, null, "MISSING_WORKER_ID");
@@ -99,8 +105,8 @@ public class DosimetrySelfAccessGuard {
             throw new AccessDeniedException("SELF access denied : worker not accessible.");
         }
         Long employeeId = opt.get().getEmployeeId();
-        if (employeeId == null || !employeeId.equals(requesterUserId)) {
-            logDenied(workerId, requesterUserId, employeeId, "EMPLOYEE_ID_MISMATCH");
+        if (employeeId == null || !employeeId.equals(requesterEmpId)) {
+            logDenied(workerId, requesterEmpId, employeeId, "EMPLOYEE_ID_MISMATCH");
             throw new AccessDeniedException(
                     "SELF access denied : worker " + workerId + " does not belong to requester.");
         }

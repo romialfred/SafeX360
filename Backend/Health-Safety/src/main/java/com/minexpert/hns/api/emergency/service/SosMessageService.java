@@ -34,9 +34,16 @@ public class SosMessageService {
     private final SosMessageRepository messageRepo;
     private final SosAlertRepository alertRepo;
     private final SimpMessagingTemplate messaging;
+    // [AUTHZ-02] Cloisonnement mine : le fil d'un SOS n'est lisible/inscriptible
+    // que par un appelant dont le perimetre contient la mine de l'alerte parente.
+    private final com.minexpert.hns.config.CompanyScopeGuard companyScopeGuard;
 
     @Transactional(readOnly = true)
     public List<SosMessageDTO> list(Long sosAlertId) {
+        // [AUTHZ-02] Appartenance mine verifiee via l'alerte parente (403 hors
+        // perimetre). Alerte introuvable => rien a filtrer/leaker (liste vide).
+        alertRepo.findById(sosAlertId)
+                .ifPresent(alert -> companyScopeGuard.assertInScope(alert.getCompanyId()));
         return messageRepo.findBySosAlertIdOrderByCreatedAtAsc(sosAlertId)
                 .stream().map(this::toDto).toList();
     }
@@ -49,6 +56,8 @@ public class SosMessageService {
         }
         SosAlert alert = alertRepo.findById(sosAlertId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "SOS_NOT_FOUND"));
+        // [AUTHZ-02] Interdit de poster dans le fil d'un SOS hors perimetre (403).
+        companyScopeGuard.assertInScope(alert.getCompanyId());
 
         SosMessage msg = SosMessage.builder()
                 .sosAlertId(sosAlertId)

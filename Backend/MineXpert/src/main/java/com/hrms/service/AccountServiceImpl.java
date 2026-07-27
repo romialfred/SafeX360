@@ -285,27 +285,10 @@ public class AccountServiceImpl implements AccountService {
         return ((List<AccountNameDTO>) accountRepository.findAccountNamesByDepartment(departmentId));
     }
 
-    @Override
-    @Caching(evict = {
-            @CacheEvict(cacheNames = "accountById", key = "#accountDTO.id", condition = "#accountDTO.id != null"),
-            @CacheEvict(cacheNames = "accountByLogin", allEntries = true),
-            @CacheEvict(cacheNames = "accountsAll", allEntries = true),
-            @CacheEvict(cacheNames = "accountCountsByCompany", allEntries = true),
-            @CacheEvict(cacheNames = "accountActiveCountsByCompany", allEntries = true),
-            @CacheEvict(cacheNames = "accountAdminCountsByCompany", allEntries = true),
-            @CacheEvict(cacheNames = "accountEmpIds", allEntries = true),
-            @CacheEvict(cacheNames = "leaveApproversByDept", allEntries = true),
-            @CacheEvict(cacheNames = "salaryAdvanceApproversByCompany", allEntries = true),
-            @CacheEvict(cacheNames = "accountByEmpId", allEntries = true),
-            @CacheEvict(cacheNames = "accountPermissions", key = "#accountDTO.id", condition = "#accountDTO.id != null")
-    })
-    public void sendUpdatedPassword(AccountDTO accountDTO) throws Exception {
-        Account account = accountRepository.findById(accountDTO.getId())
-                .orElseThrow(() -> new HRMSException("ACCOUNT_NOT_FOUND"));
-        this.sendEmail(accountDTO);
-        account.setPassword(passwordEncoder.encode(accountDTO.getPassword()));
-        accountRepository.save(account);
-    }
+    // [AUTH-01] sendUpdatedPassword(...) SUPPRIME : seul l'endpoint ouvert
+    // /account/send-password l'appelait ; ce dernier permettait d'ecraser le mot
+    // de passe de n'importe quel compte sans authentification. Endpoint et methode
+    // retires ensemble.
 
     @Override
     @Cacheable(cacheNames = "accountByEmpId", key = "#empId")

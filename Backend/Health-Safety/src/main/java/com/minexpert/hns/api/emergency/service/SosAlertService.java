@@ -59,6 +59,9 @@ public class SosAlertService {
     private final EmergencyEmailService emergencyEmailService;
     private final EmergencyPermissionService permissionService;
     private final com.minexpert.hns.clients.HrmsClient hrmsClient;
+    // [AUTHZ-02] Cloisonnement mine : une alerte n'est lisible/modifiable que par
+    // un appelant dont le perimetre (X-User-Companies) contient sa mine.
+    private final com.minexpert.hns.config.CompanyScopeGuard companyScopeGuard;
 
     /**
      * Clôture d'un SOS (CLOSED / FALSE_ALARM) réservée aux COORDINATEURS : sans
@@ -67,7 +70,13 @@ public class SosAlertService {
      * Les transitions intermédiaires (acknowledge, dispatch, on-site) restent
      * ouvertes aux intervenants.
      */
-    private void requireCoordinator(Long actorId, Long companyId) {
+    private void requireCoordinator(Long clientActorId, Long companyId) {
+        // [AUTHZ-04] L'autorisation se decide sur l'identite NON REPUDIABLE portee
+        // par le JWT (X-User-Id, injecte par la passerelle), JAMAIS sur l'actorId
+        // fourni par le client (falsifiable : un non-coordinateur pouvait passer
+        // l'id d'un coordinateur pour cloturer). Le clientActorId n'est plus qu'une
+        // metadonnee de tracabilite (evenement / audit), sans effet d'autorisation.
+        Long actorId = com.minexpert.hns.utility.AuthUtils.currentActorId();
         boolean ok = isPlatformAdmin() || (actorId != null && (
             permissionService.hasPermission(actorId, EmergencyPermission.COORDINATOR, companyId)
             || permissionService.hasPermission(actorId, EmergencyPermission.COORDINATOR, null)));
@@ -102,6 +111,15 @@ public class SosAlertService {
 
     @Transactional
     public SosAlertDTO create(SosAlertDTO dto, Long actorId) {
+        // [AUTHZ-02] Ne pas faire confiance au companyId du corps : on refuse la
+        // creation d'une alerte pour une mine hors du perimetre de l'appelant
+        // (appels service-a-service et comptes toutes-mines exemptes par la garde).
+        // Doctrine « companyId > 0 exige » : une alerte SOS sans mine serait
+        // orpheline (invisible du cloisonnement) — on rejette avant la garde.
+        if (dto.getCompanyId() == null || dto.getCompanyId() <= 0) {
+            throw new IllegalArgumentException("companyId requis (mine) pour creer une alerte SOS");
+        }
+        companyScopeGuard.assertInScope(dto.getCompanyId());
         String clientRequestId = normalizeClientRequestId(dto.getClientRequestId());
         if (clientRequestId != null) {
             Optional<SosAlert> existing = alertRepo.findByClientRequestId(clientRequestId);
@@ -209,6 +227,11 @@ public class SosAlertService {
         SosAlert alert = alertRepo.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("SOS introuvable : id=" + id));
 
+        // [AUTHZ-02] Appartenance mine verifiee sur CHAQUE transition (acknowledge,
+        // dispatch, on-site, close, false-alarm) : l'alerte doit etre dans le
+        // perimetre de l'appelant, sinon 403 (fermait le BOLA sur /{id}/{action}).
+        companyScopeGuard.assertInScope(alert.getCompanyId());
+
         // Clôture terminale = décision d'un coordinateur (voir requireCoordinator).
         if (target == SosStatus.CLOSED || target == SosStatus.FALSE_ALARM) {
             requireCoordinator(actorId, alert.getCompanyId());
@@ -270,7 +293,12 @@ public class SosAlertService {
     public Optional<SosAlertDTO> get(Long id) {
         // Enrichissement nom + téléphone du concerné (console d'intervention) :
         // fait uniquement sur le détail (un seul appel HRMS), pas sur les listes.
-        return alertRepo.findById(id).map(this::toDto).map(this::enrichEmployee);
+        // [AUTHZ-02] Lecture par id : l'alerte doit appartenir a une mine autorisee.
+        return alertRepo.findById(id)
+            .map(alert -> {
+                companyScopeGuard.assertInScope(alert.getCompanyId());
+                return enrichEmployee(toDto(alert));
+            });
     }
 
     /** Résout nom + téléphone du concerné via HRMS ; échec HRMS = non bloquant. */
@@ -292,6 +320,10 @@ public class SosAlertService {
     }
 
     public List<SosLifecycleEventDTO> getLifecycle(Long alertId) {
+        // [AUTHZ-02] La chronologie ne doit etre lisible que si l'alerte est dans
+        // le perimetre de l'appelant (403 sinon).
+        alertRepo.findById(alertId)
+            .ifPresent(alert -> companyScopeGuard.assertInScope(alert.getCompanyId()));
         return eventRepo.findBySosAlertIdOrderByCreatedAtAsc(alertId).stream()
             .map(this::toEventDto)
             .toList();

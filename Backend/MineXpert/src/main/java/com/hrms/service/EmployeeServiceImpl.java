@@ -553,4 +553,14 @@ public class EmployeeServiceImpl implements EmployeeService {
     public List<EmployeeDirection> getAllEmployeeWithDirection() {
         return employeeRepository.findAllEmployeeWithDirection();
     }
+
+    @Override
+    public List<Long> getIdsInCompanies(List<Long> ids, java.util.Collection<Long> companyIds) {
+        // [AUTHZ-01] Volontairement NON caché : le resultat depend du perimetre de
+        // l'appelant. Court-circuit si rien a resoudre (evite une requete inutile).
+        if (ids == null || ids.isEmpty() || companyIds == null || companyIds.isEmpty()) {
+            return List.of();
+        }
+        return employeeRepository.findIdsInCompanies(ids, companyIds);
+    }
 }

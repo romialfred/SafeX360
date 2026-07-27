@@ -16,7 +16,7 @@ public interface AccountService {
 
     public Boolean sendEmail(AccountDTO accountDTO) throws Exception;
 
-    public void sendUpdatedPassword(AccountDTO accountDTO) throws Exception;
+    // [AUTH-01] sendUpdatedPassword retire (endpoint /send-password non garde supprime).
 
     public void updateAccount(AccountDTO accountDTO) throws Exception;
 

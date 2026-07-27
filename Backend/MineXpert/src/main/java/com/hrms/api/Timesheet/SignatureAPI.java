@@ -26,6 +26,8 @@ import com.hrms.service.Timesheet.SignatureService;
 @Validated
 public class SignatureAPI {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(SignatureAPI.class);
+
     @Autowired
     private SignatureService signatureService;
 
@@ -45,8 +47,7 @@ public class SignatureAPI {
             try {
                 signatureService.addSignature(signatureDTO);
             } catch (HRMSException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                log.error("Echec d'ajout d'une signature pour le timesheet {}", timesheetId, e);
             }
 
         });

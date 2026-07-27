@@ -102,4 +102,11 @@ public interface EmployeeService {
 
     public List<EmployeeDirection> getAllEmployeeWithDirection();
 
+    /**
+     * [AUTHZ-01] Sous-ensemble des {@code ids} appartenant a l'une des mines
+     * {@code companyIds}. Non caché (dépend du perimetre de l'appelant) : sert au
+     * cloisonnement des lectures par ids dont le DTO ne porte pas la mine.
+     */
+    public List<Long> getIdsInCompanies(List<Long> ids, java.util.Collection<Long> companyIds);
+
 }

@@ -229,4 +229,11 @@ public interface EmployeeRepository extends CrudRepository<Employee, Long> {
             + "AND (e.effectiveEndDate IS NULL OR e.effectiveEndDate > CURRENT_DATE)")
     List<EmployeeEmailDTO> findEmployeeEmailsByIds(@Param("employeeIds") List<Long> employeeIds);
 
+    // [AUTHZ-01] Cloisonnement mine des lectures par ids : les DTO renvoyes
+    // (EmployeeNameDTO/EmployeeEmailDTO) ne portent pas la mine, on resout donc
+    // le sous-ensemble d'ids appartenant aux mines autorisees de l'appelant.
+    @Query("SELECT e.id FROM Employee e WHERE e.id IN :employeeIds AND e.company.id IN :companyIds")
+    List<Long> findIdsInCompanies(@Param("employeeIds") List<Long> employeeIds,
+            @Param("companyIds") java.util.Collection<Long> companyIds);
+
 }

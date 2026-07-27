@@ -30,6 +30,10 @@ public class SecurityHeadersFilter implements GlobalFilter, Ordered {
         response.beforeCommit(() -> {
             HttpHeaders headers = response.getHeaders();
             headers.addIfAbsent("X-Content-Type-Options", "nosniff");
+            // CFG-04 : HSTS — force HTTPS pendant 1 an, sous-domaines inclus. Pose
+            // via addIfAbsent (comme les autres) pour ne pas dupliquer un en-tete
+            // deja present. Le trafic public transite par HTTPS (Render/Vercel).
+            headers.addIfAbsent("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
             headers.addIfAbsent("X-Frame-Options", "DENY");
             headers.addIfAbsent("Referrer-Policy", "strict-origin-when-cross-origin");
             headers.addIfAbsent("Permissions-Policy", "camera=(), microphone=(), geolocation=(self)");

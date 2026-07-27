@@ -3,6 +3,7 @@ package com.hrms.api;
 import java.nio.file.Files;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -47,6 +48,10 @@ public class EmployeeAPI {
     @Autowired
     private EmployeeService employeeService;
 
+    // [AUTHZ-01] Cloisonnement mine des lectures d'employes (PII/salaires).
+    @Autowired
+    private com.hrms.security.EmployeeScopeGuard employeeScopeGuard;
+
     @org.springframework.beans.factory.annotation.Value("${JWT_SECRET:}")
     private String jwtSecret;
 
@@ -87,7 +92,11 @@ public class EmployeeAPI {
 
     @GetMapping("/get/{id}")
     public ResponseEntity<EmployeeDTO> getEmployee(@PathVariable Long id) throws HRMSException {
-        return new ResponseEntity<>(employeeService.getEmployee(id), HttpStatus.OK);
+        EmployeeDTO employee = employeeService.getEmployee(id);
+        // [AUTHZ-01] L'employe demande doit appartenir a une mine autorisee de
+        // l'appelant (admins/all-mines et appels service-a-service exemptes).
+        employeeScopeGuard.assertInScope(companyIdOf(employee));
+        return new ResponseEntity<>(employee, HttpStatus.OK);
     }
 
     @GetMapping("/getByUnique/{uniqueNumber}")
@@ -98,7 +107,14 @@ public class EmployeeAPI {
 
     @GetMapping("/getAll")
     public ResponseEntity<List<EmployeeDetailsDTO>> getAllEmployees() {
-        return new ResponseEntity<>(employeeService.getAllEmployees(), HttpStatus.OK);
+        // [AUTHZ-01] Filtrage de resultats par mine : un appelant utilisateur
+        // cloisonne ne voit que les employes de son perimetre. Appels
+        // service-a-service / admin / toutes-mines : liste inchangee (le filtrage
+        // a lieu APRES le cache, jamais dedans, pour ne pas empoisonner le cache).
+        List<EmployeeDetailsDTO> all = employeeService.getAllEmployees();
+        return new ResponseEntity<>(
+                employeeScopeGuard.filterByCompany(all, EmployeeDetailsDTO::getCompanyId),
+                HttpStatus.OK);
     }
 
     @GetMapping("/getByDepartment/{departmentId}")
@@ -108,6 +124,8 @@ public class EmployeeAPI {
 
     @GetMapping("/getByCompany/{companyId}")
     public ResponseEntity<List<EmployeeNameDTO>> getAllEmployeesByCompany(@PathVariable Long companyId) {
+        // [AUTHZ-01] La mine demandee doit etre dans le perimetre de l'appelant.
+        employeeScopeGuard.assertInScope(companyId);
         return new ResponseEntity<>(employeeService.getAllEmployeesByCompany(companyId), HttpStatus.OK);
     }
 
@@ -175,9 +193,19 @@ public class EmployeeAPI {
 
     @GetMapping("/getPicture/{employeeId}")
     public ResponseEntity<String> getPicture(@PathVariable Long employeeId) throws Exception {
+        // [AUTHZ-01] La photo est une donnee de l'employe : on resout sa mine et on
+        // verifie l'appartenance au perimetre (403 hors perimetre ; appels
+        // service-a-service / admin / toutes-mines exemptes par la garde).
+        employeeScopeGuard.assertInScope(companyIdOf(employeeService.getEmployee(employeeId)));
         return new ResponseEntity<>(employeeService.getPicture(employeeId), HttpStatus.OK);
     }
 
+    // [AUTHZ-01] files/{fileName} et profile-picture/{fileName} servent un fichier
+    // par NOM DE FICHIER HACHÉ, sans lien inverse fichier -> employe/mine dans le
+    // modele (Documents est une collection fille d'Employee, aucune requete par
+    // chemin). Impossible de deriver la mine ici sans changement de schema invasif :
+    // ces endpoints restent inchanges (le hash du nom fait office de capacite non
+    // enumerable). Documente au titre du residuel AUTHZ-01.
     @GetMapping("/files/{fileName}")
     public ResponseEntity<Resource> getFile(@PathVariable String fileName) {
         try {
@@ -270,8 +298,18 @@ public class EmployeeAPI {
     }
 
     @GetMapping("/getSalary/{employeeId}")
-    public ResponseEntity<Long> getEmployeeSalary(@PathVariable Long employeeId) {
+    public ResponseEntity<Long> getEmployeeSalary(@PathVariable Long employeeId) throws HRMSException {
+        // [AUTHZ-01] Donnee la plus sensible : on resout la mine de l'employe puis
+        // on verifie qu'elle est dans le perimetre de l'appelant avant tout retour.
+        employeeScopeGuard.assertInScope(companyIdOf(employeeService.getEmployee(employeeId)));
         return new ResponseEntity<>(employeeService.getEmployeeSalary(employeeId), HttpStatus.OK);
+    }
+
+    /** Extrait l'id de mine d'un employe, ou {@code null} si non rattache. */
+    private static Long companyIdOf(EmployeeDTO employee) {
+        return employee != null && employee.getCompany() != null
+                ? employee.getCompany().getId()
+                : null;
     }
 
     @GetMapping("/getTotalCount")
@@ -286,7 +324,11 @@ public class EmployeeAPI {
 
     @GetMapping("/getByIds")
     public ResponseEntity<List<EmployeeNameDTO>> getEmployeesByIds(@RequestParam List<Long> ids) {
-        return new ResponseEntity<>(employeeService.getEmployeesByIds(ids), HttpStatus.OK);
+        // [AUTHZ-01] Retour PARTIEL (jamais d'erreur) : on ecarte les employes hors
+        // du perimetre de l'appelant. Le DTO ne portant pas la mine, on resout le
+        // sous-ensemble d'ids autorises. Service-a-service : liste inchangee.
+        List<EmployeeNameDTO> result = employeeService.getEmployeesByIds(ids);
+        return new ResponseEntity<>(retainInScopeById(result, EmployeeNameDTO::getId, ids), HttpStatus.OK);
     }
 
     @GetMapping("/getAllWithEmailAndPosition")
@@ -296,7 +338,32 @@ public class EmployeeAPI {
 
     @GetMapping("/getEmailsByIds")
     public ResponseEntity<List<EmployeeEmailDTO>> getEmployeeEmailsByIds(@RequestParam List<Long> ids) {
-        return new ResponseEntity<>(employeeService.getEmployeeEmailsByIds(ids), HttpStatus.OK);
+        // [AUTHZ-01] Meme filtrage partiel par ids que getByIds (le DTO email ne
+        // porte pas la mine). Service-a-service : liste inchangee.
+        List<EmployeeEmailDTO> result = employeeService.getEmployeeEmailsByIds(ids);
+        return new ResponseEntity<>(retainInScopeById(result, EmployeeEmailDTO::getId, ids), HttpStatus.OK);
+    }
+
+    /**
+     * [AUTHZ-01] Filtre une liste de DTO identifies par employeeId pour ne garder
+     * que les entrees dans le perimetre de l'appelant. Ne leve jamais d'erreur :
+     * retour partiel. Aucun filtrage (service-a-service / admin / toutes-mines)
+     * => liste inchangee, et aucune requete BDD supplementaire n'est emise.
+     */
+    private <T> List<T> retainInScopeById(List<T> items,
+            java.util.function.Function<T, Long> idOf, List<Long> requestedIds) {
+        if (items == null || items.isEmpty()) {
+            return items;
+        }
+        Set<Long> scope = employeeScopeGuard.filterableCompanyScope();
+        if (scope == null) {
+            return items; // pas de cloisonnement a appliquer
+        }
+        java.util.Set<Long> allowedIds = new java.util.HashSet<>(
+                employeeService.getIdsInCompanies(requestedIds, scope));
+        return items.stream()
+                .filter(item -> allowedIds.contains(idOf.apply(item)))
+                .toList();
     }
 
     @GetMapping("/getEmpEmailAndPosition/{employeeId}")

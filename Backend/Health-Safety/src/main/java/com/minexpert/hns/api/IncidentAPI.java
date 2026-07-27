@@ -44,9 +44,6 @@ public class IncidentAPI {
     // parametres de methode (@RequestParam/@PathVariable), jamais le corps de la
     // requete. Sans lui, les contraintes de IncidentDTO n'etaient JAMAIS evaluees —
     // un titre vide ou de plus de 255 caracteres partait jusqu'a la base.
-    // Volontairement PAS de @Valid sur /update : ce endpoint recoit des incidents
-    // existants, et un rejet 400 y ferait perdre la saisie en cours. A traiter
-    // separement.
     @PostMapping("/report")
     public ResponseEntity<ResponseDTO> reportIncident(@RequestParam("companyId") Long companyId,
             @Valid @RequestBody IncidentDTO incidentDTO) throws HSException {
@@ -54,9 +51,14 @@ public class IncidentAPI {
         return new ResponseEntity<>(new ResponseDTO("Incident reported successfully."), HttpStatus.OK);
     }
 
+    // [INJ-02] @Valid RETABLI sur /update : l'absence de validation laissait passer
+    // en base des donnees non contraintes (titre vide/hors bornes, etc.) — un
+    // contournement direct des memes regles que /report. La mise a jour envoie un
+    // incident deja complet, donc les memes contraintes s'appliquent sans perte de
+    // saisie.
     @PutMapping("/update")
     public ResponseEntity<ResponseDTO> updateIncident(@RequestParam("companyId") Long companyId,
-            @RequestBody IncidentDTO incidentDTO) throws HSException {
+            @Valid @RequestBody IncidentDTO incidentDTO) throws HSException {
         incidentService.updateIncident(companyId, incidentDTO);
         return new ResponseEntity<>(new ResponseDTO("Incident updated successfully."), HttpStatus.OK);
     }

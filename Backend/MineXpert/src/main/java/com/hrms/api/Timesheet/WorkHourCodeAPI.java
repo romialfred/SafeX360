@@ -27,6 +27,8 @@ import com.hrms.service.Timesheet.WorkHourCodeService;
 @Validated
 public class WorkHourCodeAPI {
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(WorkHourCodeAPI.class);
+
     @Autowired
     private WorkHourCodeService workHourCodeService;
 
@@ -44,7 +46,7 @@ public class WorkHourCodeAPI {
             try {
                 workHourCodeService.createWorkHourCode(x);
             } catch (HRMSException e) {
-                e.printStackTrace();
+                log.error("Echec de creation d'un WorkHourCode en lot", e);
             }
 
         });

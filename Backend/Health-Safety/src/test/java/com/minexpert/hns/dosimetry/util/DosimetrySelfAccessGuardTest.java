@@ -80,13 +80,31 @@ class DosimetrySelfAccessGuardTest {
         SecurityContextHolder.getContext().setAuthentication(token);
     }
 
+    /**
+     * Positionne le SecurityContext avec un id EMPLOYÉ (empId) + d'eventuelles
+     * autorites. Le guard derive l'identite SELF depuis {@code AuthUtils.currentEmpId()},
+     * qui lit {@code auth.getDetails()} (pose par GatewayAuthorityFilter depuis
+     * l'en-tete {@code X-User-Emp-Id}). On reproduit donc cette convention ici.
+     */
+    private void mockContext(Long empId, String... authorities) {
+        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
+                "test-user", "",
+                List.of(authorities).stream().map(SimpleGrantedAuthority::new).toList());
+        if (empId != null) {
+            token.setDetails(String.valueOf(empId));
+        }
+        SecurityContextHolder.getContext().setAuthentication(token);
+    }
+
     // ────────────────────────────────────────────────────────────────────────
     // SELF match
     // ────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("SELF match : worker.employeeId == userId -> autorise, pas d'audit DENIED")
+    @DisplayName("SELF match : worker.employeeId == empId courant -> autorise, pas d'audit DENIED")
     void selfMatch_ok() {
+        // L'employe consulte SES donnees : empId courant (999) == worker.employeeId (999).
+        mockContext(999L);
         when(workerRepository.findById(10L)).thenReturn(Optional.of(worker(10L, 999L)));
 
         boolean ok = guard.verifySelfAccess(10L, 999L);
@@ -102,8 +120,10 @@ class DosimetrySelfAccessGuardTest {
     // ────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("Cross worker : employeeId != userId -> AccessDeniedException + audit")
+    @DisplayName("Cross worker : employeeId != empId courant -> AccessDeniedException + audit")
     void crossWorker_deniedAndAudited() {
+        // empId courant = 999, mais le worker cible appartient a l'employe 100.
+        mockContext(999L);
         when(workerRepository.findById(10L)).thenReturn(Optional.of(worker(10L, 100L)));
 
         assertThatThrownBy(() -> guard.verifySelfAccess(10L, 999L))
@@ -118,6 +138,8 @@ class DosimetrySelfAccessGuardTest {
     @Test
     @DisplayName("Worker introuvable : AccessDeniedException + audit WORKER_NOT_FOUND")
     void workerNotFound_denied() {
+        // empId courant present (fail-fast MISSING_EMP_ID non declenche) mais worker absent.
+        mockContext(999L);
         when(workerRepository.findById(42L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> guard.verifySelfAccess(42L, 999L))
@@ -129,15 +151,18 @@ class DosimetrySelfAccessGuardTest {
     }
 
     @Test
-    @DisplayName("X-User-Id absent (null) sans permission elevee : AccessDeniedException + audit")
-    void missingUserId_denied() {
+    @DisplayName("X-User-Emp-Id absent sans permission elevee : AccessDeniedException + audit MISSING_EMP_ID")
+    void missingEmpId_denied() {
+        // Aucun empId dans le contexte : le guard fail-fast avant toute requete BDD.
+        SecurityContextHolder.clearContext();
+
         assertThatThrownBy(() -> guard.verifySelfAccess(10L, null))
                 .isInstanceOf(AccessDeniedException.class)
-                .hasMessageContaining("X-User-Id");
+                .hasMessageContaining("X-User-Emp-Id");
 
         verify(auditService).log(eq("ACCESS_DENIED_SELF_MISMATCH"),
                 eq("ExposedWorker"), eq(10L), eq(0L), isNull(),
-                contains("MISSING_USER_ID"));
+                contains("MISSING_EMP_ID"));
         // L'appel ne doit pas avoir leve la requete BDD : on fail-fast avant.
         verify(workerRepository, never()).findById(anyLong());
     }
@@ -181,7 +206,8 @@ class DosimetrySelfAccessGuardTest {
     @Test
     @DisplayName("DOSIMETRY_READ_NOMINATIVE seul : PAS de bypass (SELF strict)")
     void readNominativeOnly_noBypass() {
-        mockAuthorities(DosimetryRBACConfig.DOSIMETRY_READ_NOMINATIVE);
+        // Autorite non elevee + empId courant (999) != employe du worker (100).
+        mockContext(999L, DosimetryRBACConfig.DOSIMETRY_READ_NOMINATIVE);
         when(workerRepository.findById(10L)).thenReturn(Optional.of(worker(10L, 100L)));
 
         assertThatThrownBy(() -> guard.verifySelfAccess(10L, 999L))
@@ -195,6 +221,7 @@ class DosimetrySelfAccessGuardTest {
     @Test
     @DisplayName("isSelfOrElevated : self match -> true")
     void isSelfOrElevated_self() {
+        mockContext(999L);
         when(workerRepository.findById(10L)).thenReturn(Optional.of(worker(10L, 999L)));
         assertThat(guard.isSelfOrElevated(10L, 999L)).isTrue();
     }
@@ -202,6 +229,7 @@ class DosimetrySelfAccessGuardTest {
     @Test
     @DisplayName("isSelfOrElevated : cross worker -> false (sans lever)")
     void isSelfOrElevated_cross() {
+        mockContext(999L);
         when(workerRepository.findById(10L)).thenReturn(Optional.of(worker(10L, 100L)));
         assertThat(guard.isSelfOrElevated(10L, 999L)).isFalse();
     }

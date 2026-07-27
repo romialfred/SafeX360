@@ -87,24 +87,42 @@ public class AccountAPI {
         return new ResponseEntity<>(new ResponseDTO("Password Reset Successful."), HttpStatus.OK);
     }
 
-    @PostMapping("/send-password")
-    public ResponseEntity<ResponseDTO> sendUpdatedPassword(@RequestBody @Valid AccountDTO accountDTO) throws Exception {
-        accountService.sendUpdatedPassword(accountDTO);
-        return new ResponseEntity<>(new ResponseDTO("Email Sent Successfully."), HttpStatus.OK);
-    }
+    // [AUTH-01] Endpoint /send-password SUPPRIME : il appliquait un mot de passe
+    // choisi par l'appelant sur un compte d'id arbitraire, SANS aucune garde
+    // d'authentification ni d'autorisation (prise de controle de compte). Aucun
+    // appelant (Frontend ni service-a-service) ne l'utilisait — le parcours de
+    // reinitialisation legitime passe par /reset-password et /update-password.
+    // La methode de service sendUpdatedPassword(...) devenue morte est retiree.
 
-    // Lecture d'un compte : authentification requise (fermait un IDOR anonyme).
+    // Lecture d'un compte : self OU admin (fermait un IDOR — tout compte
+    // authentifie pouvait lire n'importe quel compte par id). Calque de
+    // getPermissionsById ci-dessous.
     @GetMapping("/get/{id}")
     public ResponseEntity<AccountDTO> getAccount(@PathVariable Long id,
             @CookieValue(name = "jwt", required = false) String token) throws HRMSException {
-        requireAuth(token);
+        Claims claims = requireAuth(token);
+        // [AUTHZ-05] self (id de compte) OU admin — calque de getPermissionsById.
+        Long callerId = claims.get("id", Long.class);
+        String callerRole = claims.get("role", String.class);
+        if (!id.equals(callerId) && !AdminRoles.isAdmin(callerRole)) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Not allowed to read this account");
+        }
         return new ResponseEntity<>(accountService.getAccount(id), HttpStatus.OK);
     }
 
     @GetMapping("/getByEmpId/{empId}")
     public ResponseEntity<AccountDTO> getAccountByEmpId(@PathVariable Long empId,
             @CookieValue(name = "jwt", required = false) String token) throws HRMSException {
-        requireAuth(token);
+        Claims claims = requireAuth(token);
+        // [AUTHZ-05] self (id EMPLOYE, claim empId) OU admin. Le titulaire peut lire
+        // son propre compte via son empId ; tout autre acces exige un role admin.
+        Long callerEmpId = claimAsLong(claims, "empId");
+        String callerRole = claims.get("role", String.class);
+        if (!empId.equals(callerEmpId) && !AdminRoles.isAdmin(callerRole)) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Not allowed to read this account");
+        }
         return new ResponseEntity<>(accountService.getAccountByEmpId(empId), HttpStatus.OK);
     }
 
@@ -139,8 +157,12 @@ public class AccountAPI {
         return new ResponseEntity<>(accountService.getAdminCountsByCompany(), HttpStatus.OK);
     }
 
+    // [AUTHZ-05] Liste de TOUS les empId (tous comptes, toutes mines) : reservee
+    // aux administrateurs (fermait une enumeration ouverte a tout authentifie).
     @GetMapping("/getEmpIds")
-    public ResponseEntity<List<Long>> getEmpIds() throws HRMSException {
+    public ResponseEntity<List<Long>> getEmpIds(
+            @CookieValue(name = "jwt", required = false) String token) throws HRMSException {
+        requireAdmin(token);
         return new ResponseEntity<>(accountService.getAllEmpIds(), HttpStatus.OK);
     }
 
@@ -210,6 +232,18 @@ public class AccountAPI {
             throw new org.springframework.web.server.ResponseStatusException(
                     HttpStatus.FORBIDDEN, "Admin privileges required");
         }
+    }
+
+    /**
+     * Lit un claim numerique en Long de facon robuste : jjwt peut le materialiser
+     * en Integer ou en Long selon sa taille. Renvoie null si absent/non numerique.
+     */
+    private static Long claimAsLong(Claims claims, String name) {
+        Object raw = claims.get(name);
+        if (raw instanceof Number number) {
+            return number.longValue();
+        }
+        return null;
     }
 
     /** Exige un cookie jwt valide ; renvoie les claims. 401 sinon. */

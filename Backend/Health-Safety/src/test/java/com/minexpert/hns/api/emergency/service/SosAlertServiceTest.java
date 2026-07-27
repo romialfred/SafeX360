@@ -1,7 +1,9 @@
 package com.minexpert.hns.api.emergency.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -17,7 +19,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
+import org.springframework.security.access.AccessDeniedException;
+
 import com.minexpert.hns.api.emergency.dto.SosAlertDTO;
+import com.minexpert.hns.api.emergency.dto.SosTransitionRequest;
 import com.minexpert.hns.api.emergency.entity.SosAlert;
 import com.minexpert.hns.api.emergency.enums.SosStatus;
 import com.minexpert.hns.api.emergency.repository.RescueTeamRepository;
@@ -35,6 +40,8 @@ class SosAlertServiceTest {
     @Mock private EmergencyEmailService emergencyEmailService;
     @Mock private EmergencyPermissionService permissionService;
     @Mock private com.minexpert.hns.clients.HrmsClient hrmsClient;
+    // [AUTHZ-02] Nouvelle dependance : garde de cloisonnement mine (mock no-op ici).
+    @Mock private com.minexpert.hns.config.CompanyScopeGuard companyScopeGuard;
 
     private SosAlertService service;
 
@@ -48,7 +55,8 @@ class SosAlertServiceTest {
             messaging,
             emergencyEmailService,
             permissionService,
-            hrmsClient
+            hrmsClient,
+            companyScopeGuard
         );
     }
 
@@ -81,6 +89,36 @@ class SosAlertServiceTest {
         verify(alertRepo).save(captor.capture());
         assertThat(captor.getValue().getClientRequestId()).isEqualTo("request-456");
         assertThat(result.getClientRequestId()).isEqualTo("request-456");
+    }
+
+    @Test
+    void createRejectedWhenCompanyOutOfScope() {
+        // [AUTHZ-02] La garde de cloisonnement refuse la mine hors perimetre :
+        // aucune alerte ne doit etre persistee.
+        doThrow(new AccessDeniedException("COMPANY_SCOPE_FORBIDDEN"))
+            .when(companyScopeGuard).assertInScope(7L);
+
+        assertThatThrownBy(() -> service.create(dto("request-789", 7L, 9L), 9L))
+            .isInstanceOf(AccessDeniedException.class);
+
+        verify(alertRepo, never()).save(any());
+        verify(eventRepo, never()).save(any());
+    }
+
+    @Test
+    void transitionRejectedWhenCompanyOutOfScope() {
+        // [AUTHZ-02] Ferme le BOLA sur /{id}/{action} : une transition sur une alerte
+        // hors perimetre est refusee avant toute mutation d'etat.
+        SosAlert alert = alert(50L, "request-xyz", 7L, 9L);
+        when(alertRepo.findById(50L)).thenReturn(Optional.of(alert));
+        doThrow(new AccessDeniedException("COMPANY_SCOPE_FORBIDDEN"))
+            .when(companyScopeGuard).assertInScope(7L);
+
+        assertThatThrownBy(() -> service.acknowledge(50L, 9L, new SosTransitionRequest()))
+            .isInstanceOf(AccessDeniedException.class);
+
+        verify(alertRepo, never()).save(any());
+        verify(eventRepo, never()).save(any());
     }
 
     private SosAlertDTO dto(String requestId, Long companyId, Long employeeId) {
