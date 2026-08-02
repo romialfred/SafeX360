@@ -44,6 +44,20 @@ if (!import.meta.env.DEV && 'serviceWorker' in navigator) {
       setInterval(() => { reg.update().catch(() => undefined); }, 60_000);
     })
     .catch(() => undefined);
+
+  // Purge des caches runtime de la GÉNÉRATION PRÉCÉDENTE (régression du 02/08).
+  // `cleanupOutdatedCaches` de Workbox ne nettoie que les PRÉcaches : les caches
+  // runtime `safex-static` / `safex-images` survivaient à une mise à jour du SW.
+  // Or ils pouvaient contenir la page HTML de repli SPA stockée sous l'URL d'un
+  // chunk .js — un poison qui serait resté 30 jours malgré le correctif. Les
+  // nouveaux caches sont suffixés `-v2` ; on supprime ici les anciens, une fois.
+  if (window.caches) {
+    caches.keys()
+      .then((keys) => Promise.all(
+        keys.filter((k) => k === 'safex-static' || k === 'safex-images').map((k) => caches.delete(k)),
+      ))
+      .catch(() => undefined);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -77,7 +91,7 @@ if (!import.meta.env.DEV && 'serviceWorker' in navigator) {
         const keys = await caches.keys();
         await Promise.all(
           keys
-            .filter((k) => (attempt >= 2 ? true : k.startsWith('safex-')))
+            .filter((k) => (attempt >= 2 ? true : k.startsWith("safex-")))
             .map((k) => caches.delete(k)),
         );
       }

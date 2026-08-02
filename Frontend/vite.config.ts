@@ -157,7 +157,7 @@ export default defineConfig({
               && !url.pathname.startsWith('/safex-analytics'),
             handler: 'CacheFirst',
             options: {
-              cacheName: 'safex-static',
+              cacheName: 'safex-static-v2',
               expiration: { maxEntries: 200, maxAgeSeconds: 30 * 24 * 3600 },
               // ⚠️ Anti-empoisonnement (régression du 02/08) : un chunk lazy dont
               // le hash n'existe plus retombait sur la réécriture SPA de Vercel,
@@ -190,7 +190,7 @@ export default defineConfig({
               && !url.pathname.startsWith('/safex-analytics'),
             handler: 'StaleWhileRevalidate',
             options: {
-              cacheName: 'safex-images',
+              cacheName: 'safex-images-v2',
               expiration: { maxEntries: 100, maxAgeSeconds: 30 * 24 * 3600 },
             },
           },
