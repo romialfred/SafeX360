@@ -46,18 +46,80 @@ if (!import.meta.env.DEV && 'serviceWorker' in navigator) {
     .catch(() => undefined);
 }
 
-// Chunk périmé après un déploiement : une page ouverte avant le déploiement
-// référence des chunks lazy dont le hash n'existe plus → « Failed to fetch
-// dynamically imported module » à la navigation. Vite émet `vite:preloadError` ;
-// on recharge UNE fois pour récupérer l'index + les chunks à jour. Garde-fou
-// sessionStorage pour ne pas boucler si le rechargement ne résout pas.
-window.addEventListener('vite:preloadError', () => {
-  const KEY = 'safex:chunk-reloaded';
-  if (sessionStorage.getItem(KEY)) return;
-  sessionStorage.setItem(KEY, '1');
-  window.location.reload();
-});
-// Une navigation réussie efface le garde-fou (prochain incident → 1 reload permis).
-window.addEventListener('load', () => {
-  setTimeout(() => sessionStorage.removeItem('safex:chunk-reloaded'), 8000);
-});
+// ─────────────────────────────────────────────────────────────────────────────
+// Filet de sécurité « chunk périmé » — auto-réparation
+// ─────────────────────────────────────────────────────────────────────────────
+// Une page ouverte avant un déploiement référence des chunks lazy dont le hash
+// n'existe plus. Le chargement échoue et l'écran concerné (typiquement la Salle
+// de Crise, lazy-loadée et ouverte dans un NOUVEL onglet) reste bloqué.
+//
+// Vite n'émet `vite:preloadError` que pour SES preloads : un `import()` qui
+// échoue au fetch, un <script type="module"> ou un modulepreload en erreur ne
+// déclenchent RIEN. On couvre donc les trois voies, sinon l'auto-réparation ne
+// s'arme jamais dans le cas réel.
+//
+// Escalade en deux temps, pour ne jamais rester coincé :
+//   1er incident  → purge du cache SW des assets + mise à jour du SW + reload ;
+//   2e  incident  → désinscription du SW (l'index précaché lui-même est suspect)
+//                   + purge totale + reload. Au-delà, on n'insiste plus.
+{
+  const KEY = 'safex:chunk-recovery';
+  let recovering = false;
+
+  const purgeAndReload = async () => {
+    if (recovering) return;
+    recovering = true;
+    const attempt = Number(sessionStorage.getItem(KEY) || '0') + 1;
+    if (attempt > 2) return; // on ne boucle pas : l'erreur n'est pas un chunk périmé
+    sessionStorage.setItem(KEY, String(attempt));
+    try {
+      if (window.caches) {
+        const keys = await caches.keys();
+        await Promise.all(
+          keys
+            .filter((k) => (attempt >= 2 ? true : k.startsWith('safex-')))
+            .map((k) => caches.delete(k)),
+        );
+      }
+      if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (reg) await (attempt >= 2 ? reg.unregister() : reg.update());
+      }
+    } catch {
+      /* la récupération ne doit jamais empêcher le rechargement */
+    }
+    window.location.reload();
+  };
+
+  // Volontairement ÉTROIT : uniquement les messages d'échec de chargement de
+  // module (Chrome / Firefox / Safari). Un « Failed to fetch » générique n'en
+  // fait PAS partie — sinon la moindre coupure réseau sur un appel API
+  // déclencherait une purge + un rechargement intempestifs.
+  const looksLikeStaleChunk = (msg: string) =>
+    /dynamically imported module|Importing a module script failed|Failed to load module script/i.test(msg);
+
+  // 1) Preloads Vite.
+  window.addEventListener('vite:preloadError', () => { void purgeAndReload(); });
+
+  // 2) import() rejeté (React.lazy) — non couvert par vite:preloadError.
+  window.addEventListener('unhandledrejection', (e) => {
+    const msg = String((e.reason && (e.reason.message || e.reason)) || '');
+    if (looksLikeStaleChunk(msg)) void purgeAndReload();
+  });
+
+  // 3) <script> / <link rel=modulepreload> en erreur : pas d'exception JS, mais
+  //    un event `error` sur l'élément — capturé en phase de capture (il ne bulle pas).
+  window.addEventListener('error', (e) => {
+    const el = e.target as HTMLElement | null;
+    if (!el || el === (window as unknown as HTMLElement)) return;
+    const tag = el.tagName;
+    if (tag !== 'SCRIPT' && tag !== 'LINK') return;
+    const src = (el as HTMLScriptElement).src || (el as HTMLLinkElement).href || '';
+    if (src.includes('/assets/')) void purgeAndReload();
+  }, true);
+
+  // Une session qui tient 8 s sans incident réarme le compteur.
+  window.addEventListener('load', () => {
+    setTimeout(() => sessionStorage.removeItem(KEY), 8000);
+  });
+}

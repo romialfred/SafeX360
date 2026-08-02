@@ -8,7 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Bibliotheques servies EN LOCAL (public/safex-analytics/vendor/) et non depuis
+       un CDN : une page de presentation ne doit dependre ni du reseau tiers, ni
+       d'une exception CSP, ni du bon vouloir du Service Worker. -->
+  <script src="/safex-analytics/vendor/tailwind-cdn-3.4.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -37,13 +40,13 @@
       }
     }
   </script>
-  <script crossorigin src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
-  <script crossorigin src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
-  <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script src="https://unpkg.com/topojson-client@3/dist/topojson-client.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+  <script src="/safex-analytics/vendor/react-18.2.0.production.min.js"></script>
+  <script src="/safex-analytics/vendor/react-dom-18.2.0.production.min.js"></script>
+  <script src="/safex-analytics/vendor/prop-types-15.8.1.min.js"></script>
+  <script src="/safex-analytics/vendor/recharts-2.12.7.js"></script>
+  <script src="/safex-analytics/vendor/d3-7.min.js"></script>
+  <script src="/safex-analytics/vendor/topojson-client-3.min.js"></script>
+  <script src="/safex-analytics/vendor/babel-standalone-7.24.7.min.js"></script>
   <style>
     html, body { background:#F6F7F9; font-family:'Inter',system-ui,sans-serif; color:#0F172A; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
     .tabular-nums { font-variant-numeric: tabular-nums; }

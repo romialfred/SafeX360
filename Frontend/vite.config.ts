@@ -134,19 +134,60 @@ export default defineConfig({
           // provoquant un ERR_FAILED à l'ouverture (ex. Salle de Crise en
           // nouvelle fenêtre). Les navigations sont servies par navigateFallback
           // (index.html PRÉCACHÉ, jamais redirigé), tenu à jour par autoUpdate.
-          // Assets statiques (JS, CSS, fonts) : Cache First
+          //
+          // ⚠️ RÈGLE ABSOLUE (régression du 02/08) : ces routes ne matchent QUE
+          // le MÊME ORIGINE. Un fetch() émis DEPUIS le Service Worker est régi
+          // par la CSP servie avec /sw.js — la CSP GLOBALE — et non par celle de
+          // la page. En interceptant des scripts tiers, le SW les refetchait
+          // depuis le worker, où `connect-src` ne les autorise pas : « Refused to
+          // connect… » → no-response → net::ERR_FAILED. C'est ce qui tuait
+          // /safex-analytics (React/Recharts/D3/Tailwind/Babel en CDN) de façon
+          // « aléatoire » : cassé quand le SW contrôlait l'onglet, OK sinon.
+          // Le correctif f588cec (fonts.googleapis en connect-src) traitait le
+          // symptôme hôte par hôte ; on traite ici la cause : le SW ne touche
+          // plus à ce qui ne vient pas de notre origine.
+          //
+          // Assets statiques de MÊME ORIGINE (JS, CSS, fonts) : Cache First.
           {
-            urlPattern: ({ request }) =>
-              ['script', 'style', 'font'].includes(request.destination),
+            urlPattern: ({ request, sameOrigin, url }) =>
+              sameOrigin
+              && ['script', 'style', 'font'].includes(request.destination)
+              // La page Analytics est une appli autonome (public/safex-analytics)
+              // servie telle quelle : le SW ne doit ni l'intercepter ni la cacher.
+              && !url.pathname.startsWith('/safex-analytics'),
             handler: 'CacheFirst',
             options: {
               cacheName: 'safex-static',
               expiration: { maxEntries: 200, maxAgeSeconds: 30 * 24 * 3600 },
+              // ⚠️ Anti-empoisonnement (régression du 02/08) : un chunk lazy dont
+              // le hash n'existe plus retombait sur la réécriture SPA de Vercel,
+              // qui répondait 200 + text/html. `response.ok` étant vrai, CacheFirst
+              // mettait CETTE PAGE HTML en cache SOUS L'URL DU .js, pour 30 jours.
+              // Le chunk restait alors définitivement cassé (« Salle de Crise »
+              // lazy-loadée), y compris après redéploiement — d'où les échecs
+              // aléatoires qui revenaient après un vidage de cache.
+              // On refuse donc de mettre en cache toute réponse dont le type ne
+              // correspond pas à ce qui a été demandé.
+              cacheableResponse: { statuses: [200] },
+              plugins: [
+                {
+                  cacheWillUpdate: async ({ request, response }) => {
+                    const type = (response.headers.get('content-type') || '').toLowerCase();
+                    if (type.includes('text/html') && request.destination !== 'document') return null;
+                    return response;
+                  },
+                },
+              ],
             },
           },
-          // Images : Stale While Revalidate
+          // Images de MÊME ORIGINE : Stale While Revalidate.
+          // (Les images tierces — tuiles de carte, avatars distants — passent en
+          // direct : le SW n'a pas à les refetcher sous sa propre CSP.)
           {
-            urlPattern: ({ request }) => request.destination === 'image',
+            urlPattern: ({ request, sameOrigin, url }) =>
+              sameOrigin
+              && request.destination === 'image'
+              && !url.pathname.startsWith('/safex-analytics'),
             handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'safex-images',
