@@ -14,11 +14,7 @@
       "destination": "/safex-analytics/index.html"
     },
     {
-      "source": "/assets/(.*)",
-      "destination": "/__not-found__"
-    },
-    {
-      "source": "/(.*)",
+      "source": "/((?!assets/).*)",
       "destination": "/"
     }
   ],
