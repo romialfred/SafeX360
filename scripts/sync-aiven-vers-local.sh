@@ -42,8 +42,12 @@ for DBN in "${SCHEMAS[@]}"; do
   docker exec -e SRC_PW="$DB_PASSWORD" -e ROOT_PW="$DB_LOCAL_ROOT_PASSWORD" -e DBN="$DBN" \
     -e SRC_HOST="$SRC_HOST" -e SRC_PORT="$SRC_PORT" -e SRC_USER="$DB_USERNAME" safex-mysql sh -c \
     'mysqldump --host="$SRC_HOST" --port="$SRC_PORT" --user="$SRC_USER" --password="$SRC_PW" --ssl-mode=REQUIRED --single-transaction --skip-lock-tables --set-gtid-purged=OFF --routines --triggers --no-tablespaces "$DBN" 2>/dev/null | mysql -uroot -p"$ROOT_PW" "$DBN" 2>/dev/null'
+  # NB : guillemets SIMPLES autour du nom de schema. Aiven tourne avec ANSI_QUOTES
+  # dans sql_mode, ou "x" designe un IDENTIFIANT et non une chaine — la variante a
+  # guillemets doubles echoue avec « Unknown column 'defaultdb' in where clause ».
+  # Le local etant desormais aligne sur ce sql_mode, la forme simple est la seule sure.
   n=$(docker exec -e ROOT_PW="$DB_LOCAL_ROOT_PASSWORD" -e DBN="$DBN" safex-mysql sh -c \
-    'mysql -uroot -p"$ROOT_PW" -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = \"$DBN\""' 2>/dev/null)
+    "mysql -uroot -p\"\$ROOT_PW\" -N -e \"SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '\$DBN'\"" 2>/dev/null)
   echo "    OK — $n tables importees en $(( $(date +%s) - t0 ))s"
 done
 
