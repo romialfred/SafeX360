@@ -79,14 +79,18 @@ export interface SosMessageDTO {
 
 export const listSosAlerts = (
     companyId: number,
-    includeClosed = false
+    includeClosed = false,
+    /** Sondage de fond : n'alimente pas le sablier global (cf. AxiosInterceptor). */
+    background = false
 ): Promise<SosAlertDTO[]> =>
     axiosInstance
-        .get('/hns/emergency/sos', { params: { companyId, includeClosed } })
+        .get('/hns/emergency/sos', { params: { companyId, includeClosed }, background })
         .then((r) => r.data);
 
+// Sonde montee sur TOUTES les pages (CoordinatorAlertListener, toutes les 12 s) :
+// marquee en fond pour ne pas rallumer le sablier a chaque tour.
 export const getActiveSosAlerts = (companyId: number): Promise<SosAlertDTO[]> =>
-    listSosAlerts(companyId, false);
+    listSosAlerts(companyId, false, true);
 
 export const getSosAlert = (id: number): Promise<SosAlertDTO> =>
     axiosInstance.get(`/hns/emergency/sos/${id}`).then((r) => r.data);

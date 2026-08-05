@@ -22,8 +22,12 @@ export const getHseNotifications = async (unreadOnly = false, limit = 30): Promi
     return axiosInstance.get(url, { params: { unreadOnly, limit } }).then((r) => r.data ?? []);
 };
 
+// Compteur du badge de notifications, rafraichi toutes les 60 s sur toutes les
+// pages : sondage de fond, il ne doit pas declencher l'indicateur de chargement.
 export const getHseUnreadCount = async (): Promise<number> => {
-    return axiosInstance.get(`${url}/unread-count`).then((r) => r.data?.count ?? 0);
+    return axiosInstance
+        .get(`${url}/unread-count`, { background: true })
+        .then((r) => r.data?.count ?? 0);
 };
 
 export const markHseNotificationRead = async (id: number) => {

@@ -1,14 +1,17 @@
 
 import axiosInstance from "../interceptors/AxiosInterceptor";
+import { cachedGet } from "../utility/referenceCache";
 const url = "/hrms/employee";
-const getEmployeeDropdown = () => {
-    return axiosInstance.get(`${url}/getEmployeeDropdown`)
-        .then(result => result.data);
-}
-const getEmployeeDropdownWithEmail = () => {
-    return axiosInstance.get(`${url}/getEmployeeDropdownWithEmail`)
-        .then(result => result.data);
-}
+// Listes d'employés MISES EN CACHE (mine-scopé, dédup, TTL 5 min). Elles sont
+// re-demandées par des dizaines d'écrans à chaque montage alors qu'elles
+// changent très rarement — et les employés sont gérés dans le SIRH, pas créés
+// depuis SafeX, donc la fraîcheur bornée par le TTL suffit. Voir referenceCache.ts.
+const getEmployeeDropdown = () =>
+    cachedGet('employees:dropdown', () =>
+        axiosInstance.get(`${url}/getEmployeeDropdown`).then(result => result.data));
+const getEmployeeDropdownWithEmail = () =>
+    cachedGet('employees:dropdownWithEmail', () =>
+        axiosInstance.get(`${url}/getEmployeeDropdownWithEmail`).then(result => result.data));
 const getEmployeesByIds = (ids: number[]) => {
     const safeIds = Array.isArray(ids) ? ids.filter(v => v != null) : [];
     return axiosInstance.get(`${url}/getByIds`, {
@@ -29,10 +32,9 @@ const getProfilePicture = async (empId: any) => {
     return axiosInstance.get(`${url}/getPicture/` + empId)
         .then(result => result.data);
 }
-const getEmployeesWithDepartment = async () => {
-    return axiosInstance.get(`${url}/getEmployeesWithDepartment`)
-        .then(result => result.data);
-}
+const getEmployeesWithDepartment = async () =>
+    cachedGet('employees:withDepartment', () =>
+        axiosInstance.get(`${url}/getEmployeesWithDepartment`).then(result => result.data));
 
 const getAllEmployeeWithDirection = async () => {
     return axiosInstance.get(`${url}/getAllEmployeeWithDirection`)

@@ -1,6 +1,7 @@
 import { Outlet, useNavigate } from "react-router-dom";
 import Header from "../components/Dashboard/Header/Header";
 import { useAppSelector, useAppDispatch } from "../slices/hooks";
+import { preloadReferenceData } from "../utility/preloadReferenceData";
 import { setupResponseInterceptor } from "../interceptors/AxiosInterceptor";
 import { Affix, LoadingOverlay } from "@mantine/core";
 import Sidebar from "../components/NewComponents/Sidebar/Sidebar";
@@ -62,6 +63,16 @@ const DashboardLayout = () => {
             setSwitching(true);
             const id = window.setTimeout(() => setSwitching(false), 600);
             return () => window.clearTimeout(id);
+        }
+    }, [selectedCompanyId]);
+
+    // Préchargement des référentiels dès que la mine est connue — et à chaque
+    // changement de mine (les listes sont mine-scopées). Réchauffe le cache
+    // mémoire pour que la 1re navigation vers un écran qui en dépend soit
+    // instantanée. Fire-and-forget : cf. preloadReferenceData.
+    useEffect(() => {
+        if (selectedCompanyId != null && selectedCompanyId > 0) {
+            preloadReferenceData();
         }
     }, [selectedCompanyId]);
     const inactivityMinutes = useMemo(() => {

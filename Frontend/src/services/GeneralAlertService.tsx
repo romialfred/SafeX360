@@ -79,7 +79,10 @@ export interface GeneralAlertRequest {
 
 export const getActiveAlert = (companyId: number): Promise<GeneralAlertDTO | null> =>
     axiosInstance
-        .get('/hns/emergency/alerts/general/active', { params: { companyId } })
+        // `background` : sondage de fond monté sur TOUTES les pages. Sans ce
+        // drapeau, chaque tour rallumait le sablier global et donnait
+        // l'impression que la plateforme charge en permanence.
+        .get('/hns/emergency/alerts/general/active', { params: { companyId }, background: true })
         .then((r) => r.data)
         .catch((err) => (err?.response?.status === 404 ? null : Promise.reject(err)));
 

@@ -8,6 +8,7 @@ import { setUser } from "../slices/UserSlice";
 import { setProfile } from "../slices/ProfileSlice";
 import { resetCompanySelection, COMPANY_SELECTION_STORAGE_KEY } from "../slices/CompanySelectionSlice";
 import { invalidateProfileCache } from "../routes/FirstLoginGuard";
+import { clearReferenceCache } from "../utility/referenceCache";
 
 const useLogout = () => {
     const dispatch = useAppDispatch();
@@ -28,6 +29,9 @@ const useLogout = () => {
             dispatch(setProfile({}));
             dispatch(resetCompanySelection());
             invalidateProfileCache();
+            // Vide le cache des référentiels : les listes (employés, départements)
+            // sont mine-scopées, elles ne doivent pas fuiter vers la session suivante.
+            clearReferenceCache();
             try {
                 localStorage.removeItem(COMPANY_SELECTION_STORAGE_KEY);
             } catch { /* stockage inaccessible — non bloquant */ }
