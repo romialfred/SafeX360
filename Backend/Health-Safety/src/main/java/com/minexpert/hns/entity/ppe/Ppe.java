@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import com.minexpert.hns.dto.ppe.PpeDTO;
 
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
@@ -33,6 +34,37 @@ public class Ppe {
     private String certificationStandard;
     @Enumerated(EnumType.STRING)
     private PpeStatus status;
+
+    // ── Incrément 3 : caractéristiques TECHNIQUES ───────────────────────────────
+    /** Marque. */
+    private String brand;
+    /** Fabricant. */
+    private String manufacturer;
+    /** Modèle / référence fabricant. */
+    private String model;
+    /** Taille ou gamme de tailles (ex. « S-XXL », « Réglable »). */
+    private String size;
+    /** Unité de gestion (ex. « paire », « unité », « boîte »). */
+    private String unitOfMeasure;
+    /** Partie du corps protégée (tête, yeux, mains…). */
+    private String protectionBodyPart;
+    /** Durée de vie théorique en mois (0/null = non applicable). */
+    private Integer lifespanMonths;
+    /** Réutilisable (true) ou usage unique / consommable (false/null). */
+    private Boolean reusable;
+    /** Port obligatoire (true) ou facultatif. */
+    private Boolean mandatory;
+
+    // ── Incrément 3 : informations COMMERCIALES ─────────────────────────────────
+    /** Prix de référence indicatif (valorisation / budget). */
+    private Double referencePrice;
+    /** Devise du prix de référence (ex. « XOF », « EUR »). */
+    private String currency;
+    /** Fournisseur principal (référentiel structuré à l'incrément dédié ; texte pour l'instant). */
+    private String preferredSupplier;
+    /** Référence article chez le fournisseur. */
+    private String supplierReference;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -54,7 +86,18 @@ public class Ppe {
     }
 
     public PpeDTO toDTO() {
-        return new PpeDTO(id, name, category, description, minStock, stock, certificationStandard, status, createdAt,
-                updatedAt, companyId);
+        // Builder plutôt que constructeur positionnel : l'ajout d'un champ ne casse
+        // plus l'arité (piège Lombok @AllArgsConstructor rencontré aux incréments 1-2).
+        return PpeDTO.builder()
+                .id(id).name(name).category(category).description(description)
+                .minStock(minStock).stock(stock).certificationStandard(certificationStandard)
+                .status(status)
+                .brand(brand).manufacturer(manufacturer).model(model).size(size)
+                .unitOfMeasure(unitOfMeasure).protectionBodyPart(protectionBodyPart)
+                .lifespanMonths(lifespanMonths).reusable(reusable).mandatory(mandatory)
+                .referencePrice(referencePrice).currency(currency)
+                .preferredSupplier(preferredSupplier).supplierReference(supplierReference)
+                .createdAt(createdAt).updatedAt(updatedAt).companyId(companyId)
+                .build();
     }
 }

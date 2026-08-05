@@ -72,6 +72,21 @@ public class PpeServiceImpl implements PpeService {
         existing.setMinStock(dto.getMinStock());
         existing.setCertificationStandard(dto.getCertificationStandard());
         existing.setStatus(dto.getStatus());
+        // Incrément 3 — caractéristiques techniques et commerciales (le stock reste
+        // exclu : il est piloté par le journal de mouvements, jamais par l'édition).
+        existing.setBrand(dto.getBrand());
+        existing.setManufacturer(dto.getManufacturer());
+        existing.setModel(dto.getModel());
+        existing.setSize(dto.getSize());
+        existing.setUnitOfMeasure(dto.getUnitOfMeasure());
+        existing.setProtectionBodyPart(dto.getProtectionBodyPart());
+        existing.setLifespanMonths(dto.getLifespanMonths());
+        existing.setReusable(dto.getReusable());
+        existing.setMandatory(dto.getMandatory());
+        existing.setReferencePrice(dto.getReferencePrice());
+        existing.setCurrency(dto.getCurrency());
+        existing.setPreferredSupplier(dto.getPreferredSupplier());
+        existing.setSupplierReference(dto.getSupplierReference());
         existing.setUpdatedAt(LocalDateTime.now());
         Ppe updated = ppeRepository.save(existing);
         return updated.toDTO();

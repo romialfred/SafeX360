@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, NumberInput, Select, Textarea, TextInput } from '@mantine/core';
+import { Button, NumberInput, Select, Switch, Textarea, TextInput } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { IconDeviceFloppy, IconHelmet, IconListDetails, IconShieldPlus } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
@@ -32,6 +32,21 @@ const PPECreateForm = () => {
             description: '',
             minStock: 5,
             certificationStandard: undefined,
+            // Incrément 3 — caractéristiques techniques
+            brand: '',
+            manufacturer: '',
+            model: '',
+            size: '',
+            unitOfMeasure: '',
+            protectionBodyPart: '',
+            lifespanMonths: undefined as number | undefined,
+            reusable: true,
+            mandatory: false,
+            // Incrément 3 — informations commerciales
+            referencePrice: undefined as number | undefined,
+            currency: 'XOF',
+            preferredSupplier: '',
+            supplierReference: '',
         },
         validate: {
             name: (value) => {
@@ -154,6 +169,38 @@ const PPECreateForm = () => {
                             size="sm"
                             {...form.getInputProps('certificationStandard')}
                         />
+
+                        {/* ── Caractéristiques techniques (incrément 3) ── */}
+                        <div className="md:col-span-2 mt-1 pt-3 border-t border-slate-100">
+                            <p className="text-[12px] font-semibold uppercase tracking-wide text-slate-500 mb-2">
+                                Caractéristiques techniques
+                            </p>
+                        </div>
+                        <TextInput label="Marque" placeholder="ex. MSA" size="sm" {...form.getInputProps('brand')} />
+                        <TextInput label="Fabricant" placeholder="ex. MSA Safety" size="sm" {...form.getInputProps('manufacturer')} />
+                        <TextInput label="Modèle" placeholder="ex. V-Gard 500" size="sm" {...form.getInputProps('model')} />
+                        <TextInput label="Taille / gamme" placeholder="ex. Réglable, S-XXL" size="sm" {...form.getInputProps('size')} />
+                        <TextInput label="Unité de gestion" placeholder="ex. unité, paire, boîte" size="sm" {...form.getInputProps('unitOfMeasure')} />
+                        <TextInput label="Partie du corps protégée" placeholder="ex. Tête, Mains, Yeux" size="sm" {...form.getInputProps('protectionBodyPart')} />
+                        <NumberInput label="Durée de vie (mois)" description="0 = non applicable" min={0} size="sm" {...form.getInputProps('lifespanMonths')} />
+                        <div className="flex items-end gap-6 pb-1">
+                            <Switch label="Réutilisable" checked={form.values.reusable} size="sm"
+                                onChange={(e) => form.setFieldValue('reusable', e.currentTarget.checked)} />
+                            <Switch label="Port obligatoire" checked={form.values.mandatory} size="sm"
+                                onChange={(e) => form.setFieldValue('mandatory', e.currentTarget.checked)} />
+                        </div>
+
+                        {/* ── Informations commerciales (incrément 3) ── */}
+                        <div className="md:col-span-2 mt-1 pt-3 border-t border-slate-100">
+                            <p className="text-[12px] font-semibold uppercase tracking-wide text-slate-500 mb-2">
+                                Informations commerciales
+                            </p>
+                        </div>
+                        <NumberInput label="Prix de référence" description="Indicatif — valorisation / budget" min={0} decimalScale={2} size="sm" {...form.getInputProps('referencePrice')} />
+                        <Select label="Devise" data={['XOF', 'EUR', 'USD']} size="sm" {...form.getInputProps('currency')} />
+                        <TextInput label="Fournisseur principal" placeholder="ex. Sahel Équipements Sécurité" size="sm" {...form.getInputProps('preferredSupplier')} />
+                        <TextInput label="Référence fournisseur" placeholder="ex. SES-CAS-500" size="sm" {...form.getInputProps('supplierReference')} />
+
                         <div className="md:col-span-2 flex justify-end gap-2 pt-2 border-t border-slate-200">
                             <Button variant="default" size="sm" onClick={() => navigate('/ppe-management')}>
                                 {t('common.cancel')}
