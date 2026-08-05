@@ -3,6 +3,7 @@ import type { Plugin } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import type { ManifestTransform } from 'workbox-build';
 import path from 'path';
 
 /**
@@ -75,6 +76,22 @@ function devServiceWorkerKillSwitch(): Plugin {
 }
 
 /**
+ * Repli de navigation du Service Worker : on precache l'app shell sous `/`
+ * plutot que sous `index.html`.
+ *
+ * `cleanUrls` (vercel.json) repond 308 vers `/` pour `/index.html`. Or le repli
+ * de navigation est parfois recupere par le RESEAU (precache absent apres un
+ * deploiement) : la reponse porte alors `redirected = true`, ce que le
+ * navigateur refuse pour une navigation -> ERR_FAILED intermittent a
+ * l'ouverture de la Salle de Crise. `/` est l'URL canonique : 200, jamais de
+ * redirection, sur le chemin cache comme sur le chemin reseau.
+ */
+const precacheShellAtRoot: ManifestTransform = (entries) => ({
+  manifest: entries.map((entry) => (entry.url === 'index.html' ? { ...entry, url: '/' } : entry)),
+  warnings: [],
+});
+
+/**
  * SafeX 360 — Vite configuration.
  *
  * LOT 40 Phase 5 — Performance + bundle optimization :
@@ -114,7 +131,34 @@ export default defineConfig({
         // Durcissement : purge les anciens precaches a chaque nouveau SW
         // (evite l'accumulation d'assets perimes et les melanges de versions).
         cleanupOutdatedCaches: true,
-        navigateFallback: '/index.html',
+
+        // ⚠️ LE REPLI DE NAVIGATION NE DOIT JAMAIS POINTER SUR UNE URL QUI REDIRIGE.
+        //
+        // Régression du 2026-08-05, intermittente et récurrente (déjà vue le 21/07
+        // par un autre chemin) : « a redirected response was used for a request
+        // whose redirect mode is not "follow" » à l'ouverture de la Salle de Crise.
+        //
+        // Mécanisme : la NavigationRoute est liée à l'URL de repli. Quand l'entrée
+        // de précache est présente, elle est servie depuis le cache — tout va bien.
+        // Quand elle MANQUE (fenêtre suivant un déploiement, éviction de stockage),
+        // Workbox se rabat sur un `fetch()` de cette URL. Or `cleanUrls` (vercel.json)
+        // répond **308 vers `/`** pour `/index.html`. La réponse porte alors
+        // `redirected = true`, ce que le navigateur REFUSE pour une navigation :
+        // ERR_FAILED. D'où l'intermittence, et le Ctrl+Maj+R qui « répare »
+        // (le rechargement forcé court-circuite le Service Worker).
+        //
+        // Seule la Salle de Crise est touchée car c'est le seul écran ouvert par
+        // `window.open` : les autres navigations sont côté client et ne passent
+        // jamais par la NavigationRoute.
+        //
+        // On bascule donc le repli sur `/`, URL canonique qui répond 200 sans
+        // redirection — sur les DEUX chemins : servi depuis le précache, ou
+        // récupéré du réseau si le précache manque. `manifestTransforms` réécrit
+        // l'entrée de précache en conséquence, sinon `createHandlerBoundToURL('/')`
+        // ne trouverait rien à servir.
+        // Invariant verrouillé par src/governance/serviceWorkerNavigation.test.ts.
+        manifestTransforms: [precacheShellAtRoot],
+        navigateFallback: '/',
         navigateFallbackDenylist: [
           // Les routes API ne doivent jamais retomber sur index.html
           /^\/api/,
