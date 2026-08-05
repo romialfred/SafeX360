@@ -36,16 +36,23 @@ public class PpeStockServiceImpl implements PpeStockService {
         if (dto.getCompanyId() == null || dto.getCompanyId() <= 0) {
             throw new HSException("COMPANY_ID_REQUIRED");
         }
-        System.out.println(dto);
+        if (dto.getQuantity() == null || dto.getQuantity() <= 0) {
+            throw new HSException("INVALID_STOCK_QUANTITY");
+        }
         PpeStock stock = dto.toEntity();
         stock.setCreatedAt(LocalDateTime.now());
         stock.setUpdatedAt(LocalDateTime.now());
         PpeStock saved = stockRepository.save(stock);
-        ppeService.updateStockQuantity(saved.getPpe().getId(), saved.getQuantity(), "ADD");
+        // Réception : mouvement RECEIPT tracé + mise à jour de l'agrégat, dans CETTE
+        // transaction. Si le mouvement échoue, le lot est annulé (plus de divergence).
+        ppeService.applyStockMovement(saved.getPpe().getId(), saved.getQuantity(),
+                com.minexpert.hns.entity.ppe.PpeMovementType.RECEIPT, "STOCK-" + saved.getId(),
+                saved.getCompanyId(), null);
         return saved.toDTO();
     }
 
     @Override
+    @Transactional
     @Caching(evict = {
             @CacheEvict(cacheNames = "ppeStockById", allEntries = true),
             @CacheEvict(cacheNames = "ppeStocksAll", allEntries = true),
@@ -69,14 +76,15 @@ public class PpeStockServiceImpl implements PpeStockService {
         existing.setExpiryDate(dto.getExpiryDate());
         existing.setUpdatedAt(LocalDateTime.now());
         PpeStock updated = stockRepository.save(existing);
-        // Réconcilie le stock global : sans cela, éditer une entrée (ex. 100 → 50)
-        // laissait Ppe.stock figé sur l'ancienne quantité → dérive qui fausse les
-        // demandes d'EPI (rupture ou sur-attribution à partir d'un agrégat erroné).
+        // Réconcilie le stock global par un mouvement de CORRECTION tracé. @Transactional
+        // (ajouté) : lot et mouvement sont désormais atomiques — plus de divergence si
+        // la réconciliation échoue (ex. la correction ferait passer le stock négatif).
         int newQty = dto.getQuantity() != null ? dto.getQuantity() : 0;
         int delta = newQty - oldQty;
         if (delta != 0) {
-            ppeService.updateStockQuantity(updated.getPpe().getId(), Math.abs(delta),
-                    delta > 0 ? "ADD" : "SUBTRACT");
+            ppeService.applyStockMovement(updated.getPpe().getId(), delta,
+                    com.minexpert.hns.entity.ppe.PpeMovementType.CORRECTION, "STOCK-" + updated.getId(),
+                    updated.getCompanyId(), null);
         }
         return updated.toDTO();
     }

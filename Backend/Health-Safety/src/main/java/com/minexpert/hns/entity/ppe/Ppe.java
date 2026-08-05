@@ -9,6 +9,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 import java.time.LocalDateTime;
 
@@ -37,6 +38,16 @@ public class Ppe {
 
     // Cloisonnement par mine (companyId). Alimenté par le CompanyScopeFilter via le controller.
     private Long companyId;
+
+    /**
+     * Verrou optimiste. Deux approbations concurrentes qui décrémentent le même
+     * EPI ne peuvent plus s'écraser silencieusement (lost update) : la seconde
+     * échoue proprement (OptimisticLockException) au lieu de laisser passer un
+     * stock incohérent. Sur les lignes existantes, la colonne démarre à null et
+     * Hibernate l'initialise au premier écrit — aucune reprise de données requise.
+     */
+    @Version
+    private Long version;
 
     public Ppe(Long id) {
         this.id = id;

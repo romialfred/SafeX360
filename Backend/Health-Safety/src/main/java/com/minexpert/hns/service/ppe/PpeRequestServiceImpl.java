@@ -107,8 +107,21 @@ public class PpeRequestServiceImpl implements PpeRequestService {
                 }
                 req.setStatus(PpeRequestStatus.APPROVED);
                 req.setComment(comment);
-                ppeService.updateStockQuantities(StringListConverter.convertToLongList(req.getPpeIds()),
-                                StringListConverter.convertToLongList(req.getEmpIds()).size(), "SUBTRACT");
+                // Sortie de stock : un mouvement ISSUE par EPI, cloisonné sur la mine de
+                // la demande et tracé (référence « REQ-<id> »). Quantité = nombre de
+                // bénéficiaires (modèle actuel : 1 unité par employé — sera remplacé par
+                // les quantités par ligne à l'incrément 2). Gardes null-safe sur les CSV.
+                List<Long> ppeIds = StringListConverter.convertToLongList(req.getPpeIds());
+                List<Long> empIds = StringListConverter.convertToLongList(req.getEmpIds());
+                if (ppeIds == null || ppeIds.isEmpty() || empIds == null || empIds.isEmpty()) {
+                        throw new HSException("PPE_REQUEST_EMPTY");
+                }
+                int quantityPerPpe = empIds.size();
+                for (Long ppeId : ppeIds) {
+                        ppeService.applyStockMovement(ppeId, -quantityPerPpe,
+                                        com.minexpert.hns.entity.ppe.PpeMovementType.ISSUE,
+                                        "REQ-" + id, req.getCompanyId(), null);
+                }
                 PpeRequest approved = requestRepository.save(req);
                 ppeEmpService.activate(id);
 

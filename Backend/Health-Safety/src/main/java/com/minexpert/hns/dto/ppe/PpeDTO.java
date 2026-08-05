@@ -32,8 +32,10 @@ public class PpeDTO {
     private Long companyId;
 
     public Ppe toEntity() {
+        // Dernier argument = version (@Version) : null → Hibernate l'initialise.
+        // Ajouté ici car Ppe utilise @AllArgsConstructor positionnel (piège d'arité).
         return new Ppe(id, name, category, description, minStock, stock, certificationStandard, status, createdAt,
-                updatedAt, companyId);
+                updatedAt, companyId, null);
     }
 
 }

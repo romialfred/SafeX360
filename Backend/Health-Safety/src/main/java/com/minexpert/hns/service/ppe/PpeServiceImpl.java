@@ -2,9 +2,12 @@ package com.minexpert.hns.service.ppe;
 
 import com.minexpert.hns.dto.ppe.PpeDTO;
 import com.minexpert.hns.entity.ppe.Ppe;
+import com.minexpert.hns.entity.ppe.PpeMovementType;
 import com.minexpert.hns.entity.ppe.PpeStatus;
+import com.minexpert.hns.entity.ppe.PpeStockMovement;
 import com.minexpert.hns.exception.HSException;
 import com.minexpert.hns.repository.ppe.PpeRepository;
+import com.minexpert.hns.repository.ppe.PpeStockMovementRepository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
@@ -21,6 +24,7 @@ import java.util.List;
 public class PpeServiceImpl implements PpeService {
 
     private final PpeRepository ppeRepository;
+    private final PpeStockMovementRepository movementRepository;
 
     @Override
     @Caching(evict = {
@@ -135,31 +139,74 @@ public class PpeServiceImpl implements PpeService {
         ppeRepository.save(ppe);
     }
 
+    /**
+     * SEULE VOIE DE MUTATION DU STOCK — journal + agrégat dans une transaction.
+     * Toutes les autres méthodes de stock délèguent ici. Voir {@link PpeStockMovement}.
+     */
     @Override
+    @Transactional
     @Caching(evict = {
             @CacheEvict(cacheNames = "ppeById", allEntries = true),
             @CacheEvict(cacheNames = "ppeActive", allEntries = true),
             @CacheEvict(cacheNames = "ppesAll", allEntries = true)
     })
-    public Integer updateStockQuantity(Long id, Integer quantity, String operation) throws HSException {
-        Ppe ppe = ppeRepository.findById(id)
-                .orElseThrow(() -> new HSException("PPE_NOT_FOUND"));
-        if (quantity <= 0) {
+    public int applyStockMovement(Long ppeId, int signedDelta, PpeMovementType type, String reference,
+            Long companyId, Long actorId) throws HSException {
+        if (signedDelta == 0) {
             throw new HSException("INVALID_STOCK_QUANTITY");
         }
-        if ("ADD".equals(operation)) {
-            ppe.setStock(ppe.getStock() + quantity);
-        } else if ("SUBTRACT".equals(operation)) {
-            if (ppe.getStock() < quantity) {
-                throw new HSException("INSUFFICIENT_STOCK");
-            }
-            ppe.setStock(ppe.getStock() - quantity);
-        } else {
-            throw new HSException("INVALID_OPERATION");
+        Ppe ppe = ppeRepository.findById(ppeId)
+                .orElseThrow(() -> new HSException("PPE_NOT_FOUND"));
+        // Cloisonnement : une mine ne peut pas mouvementer le stock d'une autre.
+        // (Corrige la fuite de l'ancien updateStockQuantities/findByIdIn sans filtre.)
+        if (companyId != null && !companyId.equals(ppe.getCompanyId())) {
+            throw new HSException("PPE_NOT_FOUND");
         }
+        // Données legacy : stock peut être null → traité comme 0 (plus de NPE d'autoboxing).
+        int current = ppe.getStock() != null ? ppe.getStock() : 0;
+        int newBalance = current + signedDelta;
+        if (newBalance < 0) {
+            throw new HSException("INSUFFICIENT_STOCK");
+        }
+        ppe.setStock(newBalance);
         ppe.setUpdatedAt(LocalDateTime.now());
-        Ppe updated = ppeRepository.save(ppe);
-        return updated.getStock();
+        ppeRepository.save(ppe); // save AVANT le mouvement : le verrou optimiste (@Version) tranche la concurrence ici
+
+        movementRepository.save(PpeStockMovement.builder()
+                .ppeId(ppeId)
+                .movementType(type)
+                .quantity(signedDelta)
+                .balanceAfter(newBalance)
+                .reference(reference)
+                .createdBy(actorId)
+                .companyId(ppe.getCompanyId())
+                .createdAt(LocalDateTime.now())
+                .build());
+        return newBalance;
+    }
+
+    /**
+     * Conservé pour compatibilité : délègue à {@link #applyStockMovement}. Le libellé
+     * ADD/SUBTRACT devient un mouvement d'AJUSTEMENT tracé (plus de mutation directe).
+     */
+    @Override
+    public Integer updateStockQuantity(Long id, Integer quantity, String operation) throws HSException {
+        if (quantity == null || quantity <= 0) {
+            throw new HSException("INVALID_STOCK_QUANTITY");
+        }
+        int delta = signedDeltaFor(operation, quantity);
+        return applyStockMovement(id, delta, PpeMovementType.ADJUSTMENT, "MANUAL", null, null);
+    }
+
+    /** Convertit un couple (operation, quantité positive) en delta signé. */
+    private int signedDeltaFor(String operation, int quantity) throws HSException {
+        if ("ADD".equals(operation)) {
+            return quantity;
+        }
+        if ("SUBTRACT".equals(operation)) {
+            return -quantity;
+        }
+        throw new HSException("INVALID_OPERATION");
     }
 
     @Override
@@ -178,33 +225,23 @@ public class PpeServiceImpl implements PpeService {
                 .toList();
     }
 
+    /**
+     * Conservé pour compatibilité : applique le MÊME mouvement à plusieurs EPI, chacun
+     * tracé et cloisonné, en une transaction. Délègue à {@link #applyStockMovement}.
+     * (Corrige l'ancienne version : findByIdIn SANS filtre mine + mutation non tracée.)
+     */
     @Override
     @Transactional
-    @Caching(evict = {
-            @CacheEvict(cacheNames = "ppeById", allEntries = true),
-            @CacheEvict(cacheNames = "ppeActive", allEntries = true),
-            @CacheEvict(cacheNames = "ppesAll", allEntries = true)
-    })
     public List<Integer> updateStockQuantities(List<Long> ids, Integer quantity, String operation) throws HSException {
-        if (quantity <= 0) {
+        if (quantity == null || quantity <= 0) {
             throw new HSException("INVALID_STOCK_QUANTITY");
         }
-        List<Ppe> ppes = ppeRepository.findByIdIn(ids);
-        for (Ppe ppe : ppes) {
-            if (operation.equals("ADD")) {
-                ppe.setStock(ppe.getStock() + quantity);
-            } else if (operation.equals("SUBTRACT")) {
-                if (ppe.getStock() < quantity) {
-                    throw new HSException("INSUFFICIENT_STOCK_FOR_PPE");
-                }
-                ppe.setStock(ppe.getStock() - quantity);
-            } else {
-                throw new HSException("INVALID_OPERATION");
-            }
+        int delta = signedDeltaFor(operation, quantity);
+        List<Integer> balances = new java.util.ArrayList<>();
+        for (Long id : ids) {
+            balances.add(applyStockMovement(id, delta, PpeMovementType.ADJUSTMENT, "MANUAL", null, null));
         }
-        ppeRepository.saveAll(ppes);
-
-        return ppes.stream().map(Ppe::getStock).toList();
+        return balances;
     }
 
 }
