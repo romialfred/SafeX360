@@ -569,11 +569,16 @@ const EmergencyDashboardPage = () => {
                         </div>
                     </div>
 
-                    {/* ════ Footer info ════ */}
+                    {/* ════ Footer info ════
+                        « (live WebSocket) » a été retiré : le transport technique
+                        ne regarde pas l'utilisateur, seul le fait que l'écran se
+                        rafraîchit seul lui est utile.
+                        Pluriel accordé plutôt que « événement(s) ». */}
                     <p className="mt-4 text-[10.5px] text-slate-400 italic text-right flex items-center justify-end gap-1.5">
                         <IconHeartRateMonitor size={12} stroke={1.6} />
-                        {totalEvents} événement(s) sur {windowDays}j · Données à {new Date(data.generatedAt).toLocaleTimeString('fr-FR')} ·
-                        Mise à jour automatique (live WebSocket)
+                        {totalEvents} {totalEvents > 1 ? 'événements' : 'événement'} sur {windowDays} j ·
+                        Données à {new Date(data.generatedAt).toLocaleTimeString('fr-FR')} ·
+                        Mise à jour automatique
                     </p>
                 </>
             ) : null}

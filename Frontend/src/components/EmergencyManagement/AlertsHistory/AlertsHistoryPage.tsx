@@ -298,7 +298,16 @@ const AlertsHistoryPage = () => {
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder={isGeneral ? 'Motif, message, déclencheur…' : 'Motif, employé, coordinateur…'}
+                        // Le libellé complet était tronqué dans le champ (« …déclencheu »).
+                        // On garde une amorce courte, qui tient à coup sûr, et on
+                        // déporte la liste exhaustive des critères dans l'infobulle.
+                        placeholder={isGeneral ? 'Motif, message…' : 'Motif, employé…'}
+                        title={isGeneral
+                            ? 'Rechercher dans le motif, le message et le déclencheur'
+                            : 'Rechercher dans le motif, l’employé et le coordinateur'}
+                        aria-label={isGeneral
+                            ? 'Rechercher dans le motif, le message et le déclencheur'
+                            : 'Rechercher dans le motif, l’employé et le coordinateur'}
                         className="w-64 max-w-full pl-8 pr-3 py-1.5 text-[12.5px] border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-red-500/25 focus:border-red-400"
                     />
                 </div>

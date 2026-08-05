@@ -293,8 +293,15 @@ const Recommendation = () => {
                                     className="absolute inset-0 opacity-10"
                                     style={{ background: `linear-gradient(135deg, ${item.color} 0%, transparent 70%)` }}
                                 />
-                                <div className="relative flex justify-between items-center p-4">
-                                    <div className="flex flex-col gap-1">
+                                {/* `items-start` et non `items-center` : centrer l'icône sur le
+                                    bloc de texte la faisait DESCENDRE dès que le libellé passait
+                                    sur deux lignes (« Total recommandations », « Mises en œuvre »,
+                                    « Taux de réalisation »), où elle finissait collée au cadre.
+                                    Ancrée en haut, elle occupe la même position sur les 5 tuiles,
+                                    quelle que soit la longueur du libellé — y compris traduit.
+                                    `gap-3` garantit qu'un libellé long ne vient jamais la toucher. */}
+                                <div className="relative flex items-start justify-between gap-3 p-4">
+                                    <div className="flex min-w-0 flex-col gap-1">
                                         <p className="text-xs text-slate-500 uppercase tracking-wide">{item.label}</p>
                                         <span className="text-lg text-slate-800">
                                             {countMap[item.id] ?? (item.id === 'execRate' ? '0%' : 0)}

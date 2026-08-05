@@ -88,11 +88,11 @@ export const listAlerts = (companyId: number): Promise<GeneralAlertDTO[]> =>
         .get('/hns/emergency/alerts/general', { params: { companyId } })
         .then((r) => r.data);
 
-export const getAlert = (id: number): Promise<GeneralAlertDTO> =>
-    axiosInstance.get(`/hns/emergency/alerts/general/${id}`).then((r) => r.data);
+export const getAlert = (id: number, background = false): Promise<GeneralAlertDTO> =>
+    axiosInstance.get(`/hns/emergency/alerts/general/${id}`, { background }).then((r) => r.data);
 
-export const getAlertCheckIns = (id: number): Promise<EvacuationCheckInDTO[]> =>
-    axiosInstance.get(`/hns/emergency/alerts/general/${id}/check-ins`).then((r) => r.data);
+export const getAlertCheckIns = (id: number, background = false): Promise<EvacuationCheckInDTO[]> =>
+    axiosInstance.get(`/hns/emergency/alerts/general/${id}/check-ins`, { background }).then((r) => r.data);
 
 // ── Transitions ─────────────────────────────────────────────────────────────
 
@@ -174,8 +174,8 @@ export interface AlertMessageDTO {
     createdAt: string;
 }
 
-export const listAlertMessages = (alertId: number): Promise<AlertMessageDTO[]> =>
-    axiosInstance.get(`/hns/emergency/alerts/general/${alertId}/messages`).then((r) => r.data);
+export const listAlertMessages = (alertId: number, background = false): Promise<AlertMessageDTO[]> =>
+    axiosInstance.get(`/hns/emergency/alerts/general/${alertId}/messages`, { background }).then((r) => r.data);
 
 export const postAlertMessage = (
     alertId: number,

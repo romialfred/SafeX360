@@ -682,7 +682,8 @@ const BlastRegistryPage = () => {
                             className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500"
                             aria-hidden="true"
                         />
-                        <div className="flex items-start gap-3 min-w-0 flex-1">
+                        {/* Largeur plancher du bloc titre : sans elle, le bloc de tuiles impose sa largeur et le titre se comprime a un mot par ligne, jusqu'a passer sous les tuiles. Le flex-wrap du parent fait desormais descendre les tuiles a la ligne. */}
+                        <div className="flex items-start gap-3 min-w-[280px] flex-1">
                             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-700 flex items-center justify-center shadow-md shadow-amber-200 flex-shrink-0">
                                 <IconBolt size={22} stroke={1.8} className="text-white" />
                             </div>

@@ -33,6 +33,35 @@ const axiosInstance = axios.create({
 });
 
 
+/**
+ * Extension de la configuration axios : `background`.
+ *
+ * Déclarée ici plutôt que forcée par un cast à chaque appel — le drapeau devient
+ * ainsi une option de premier ordre, connue du compilateur et documentée pour
+ * quiconque écrira un futur sondage.
+ */
+declare module 'axios' {
+    interface AxiosRequestConfig {
+        /**
+         * Requête de FOND (sondage périodique d'un écran temps réel).
+         * N'alimente pas le compteur du sablier global : sans cela,
+         * « Chargement… » réapparaissait toutes les 4 à 5 s sur des écrans que
+         * l'utilisateur ne quitte jamais (Salle de Crise, console SOS…).
+         */
+        background?: boolean;
+    }
+}
+
+// Une requête de fond n'est pas comptée à l'aller : elle ne doit pas l'être non
+// plus au retour, sinon le compteur passerait sous zéro et le sablier ne
+// s'afficherait PLUS JAMAIS. Les deux côtés lisent donc le même drapeau.
+const isBackground = (cfg: unknown): boolean =>
+    Boolean(cfg && (cfg as { background?: boolean }).background);
+
+const endRequestFor = (cfg: unknown) => {
+    if (!isBackground(cfg)) endRequest();
+};
+
 // axiosInstance.interceptors.request.use(
 //     (config: InternalAxiosRequestConfig) => {
 //         const token = localStorage.getItem('token');
@@ -50,21 +79,27 @@ const axiosInstance = axios.create({
 // requêtes, y compris celles qui court-circuitent l'injection companyId.
 axiosInstance.interceptors.request.use(
     (config) => {
-        startRequest();
+        // Les requêtes de FOND (sondages périodiques des écrans temps réel :
+        // urgences, console SOS, salle de crise…) ne doivent PAS allumer le
+        // sablier : elles se répètent toutes les 4 à 5 s et faisaient
+        // réapparaître « Chargement… » en boucle alors que l'utilisateur ne
+        // quittait pas sa page. Seules les actions qu'il déclenche comptent.
+        // Opt-in explicite via `{ background: true }` — par défaut, rien ne change.
+        if (!isBackground(config)) startRequest();
         return config;
     },
     (error) => {
-        endRequest();
+        endRequestFor(error?.config);
         return Promise.reject(error);
     }
 );
 axiosInstance.interceptors.response.use(
     (response: AxiosResponse) => {
-        endRequest();
+        endRequestFor(response.config);
         return response;
     },
     async (error) => {
-        endRequest();
+        endRequestFor(error?.config);
         // Cold-start Render : au tout premier chargement, la gateway/HRMS peut
         // renvoyer un 5xx transitoire le temps de se réveiller — observé sur les
         // sondes d'auth (/hrms/auth/me) qui échouent puis repassent au 2e essai.

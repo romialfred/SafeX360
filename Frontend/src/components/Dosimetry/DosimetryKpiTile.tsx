@@ -356,14 +356,23 @@ function DosimetryKpiTileImpl({
             {children ? (
                 <div className="text-[11px] text-slate-600 leading-tight">{children}</div>
             ) : (
+                /* `min-w-0` sur le sous-titre : sans lui, la largeur MINIMALE d'un
+                   élément flex reste celle de son contenu. Un libellé long
+                   (« Tirs tirés à +/- 15 min de l'heure prévue ») élargissait donc
+                   la tuile au lieu de se replier, débordait sur la tuile voisine —
+                   d'où l'impression de chevauchement — et `line-clamp-2` ne
+                   pouvait jamais s'appliquer faute de largeur contrainte.
+                   `shrink-0` sur la tendance pour qu'elle ne soit pas écrasée. */
                 <div className="flex items-center justify-between gap-2 min-h-[14px]">
                     {sub ? (
-                        <span className="text-[11px] text-slate-600 leading-tight line-clamp-2">{sub}</span>
+                        <span className="min-w-0 text-[11px] text-slate-600 leading-tight line-clamp-2">{sub}</span>
                     ) : (
                         <span />
                     )}
                     {trendPct != null && Number.isFinite(trendPct) && (
-                        <TrendArrow pct={trendPct} direction={trendDirection} />
+                        <span className="shrink-0">
+                            <TrendArrow pct={trendPct} direction={trendDirection} />
+                        </span>
                     )}
                 </div>
             )}

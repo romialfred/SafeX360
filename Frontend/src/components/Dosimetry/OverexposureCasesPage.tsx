@@ -298,7 +298,14 @@ const OverexposureCasesPage = () => {
                             className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-orange-500 to-amber-500"
                             aria-hidden="true"
                         />
-                        <div className="flex items-start gap-3 min-w-0 flex-1">
+                        {/* `min-w-[280px]` et NON `min-w-0` : le bloc de tuiles à droite
+                            impose sa largeur intrinsèque (4 tuiles), tandis que ce bloc
+                            titre, autorisé à se réduire à zéro, se retrouvait comprimé à
+                            un mot par ligne et passait SOUS les tuiles.
+                            Avec une largeur plancher, le `flex-wrap` du parent fait
+                            descendre les tuiles à la ligne suivante dès qu'il manque de
+                            place — plus de chevauchement, à aucune largeur d'écran. */}
+                        <div className="flex items-start gap-3 min-w-[280px] flex-1">
                             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center shadow-md shadow-red-200 flex-shrink-0">
                                 <IconFolderOpen size={22} stroke={1.8} className="text-white" />
                             </div>

@@ -371,7 +371,7 @@ function LiaisonView({ alertId, companyId, currentUserId, controllerName }: {
 
     useEffect(() => { if (companyId) listRescueTeams(companyId).then(setTeams).catch(() => setTeams([])); }, [companyId]);
     const refetch = useCallback(() => {
-        if (alertId) listAlertMessages(alertId).then(setMessages).catch(() => setMessages([]));
+        if (alertId) listAlertMessages(alertId, true).then(setMessages).catch(() => setMessages([]));
     }, [alertId]);
     useEffect(() => { refetch(); const iv = setInterval(refetch, 4000); return () => clearInterval(iv); }, [refetch]);
     useEffect(() => { const el = listRef.current; if (el) el.scrollTop = el.scrollHeight; }, [messages]);
@@ -544,9 +544,11 @@ export default function EvacuationWallboard() {
         const tick = async () => {
             setSyncing(true);
             try {
+                // `true` = requête de fond : le mur se rafraîchit tout seul
+                // toutes les 5 s, il ne doit pas rallumer le sablier à chaque tour.
                 const [ci, al] = await Promise.all([
-                    getAlertCheckIns(Number(id)).catch(() => null),
-                    getAlert(Number(id)).catch(() => null),
+                    getAlertCheckIns(Number(id), true).catch(() => null),
+                    getAlert(Number(id), true).catch(() => null),
                 ]);
                 if (!alive) return;
                 if (ci) setCheckIns(ci);

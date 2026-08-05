@@ -62,16 +62,27 @@ export default function PremiumKpiTile({
                     : undefined
             }
         >
+            {/* ALIGNEMENT DES TUILES D'UNE MÊME RANGÉE.
+                Les tuiles sont déjà toutes à la hauteur de la plus haute (grille
+                en `stretch`). En revanche, un libellé sur DEUX lignes
+                (« Audits planifiés », « Taux d'exécution ») décalait vers le bas
+                la valeur et la légende de cette tuile-là : la rangée paraissait
+                bancale et les blocs colorés « longs ».
+                On réserve donc une hauteur de deux lignes au libellé ET à la
+                légende : les valeurs se posent alors sur la même ligne de base
+                d'une tuile à l'autre. Hauteurs en `em` — elles suivent la taille
+                de police et restent justes une fois l'interface traduite.
+                La hauteur des tuiles, elle, ne change pas. */}
             <div className="relative z-10">
                 <div className="flex justify-between gap-5">
                     <Text
                         size="sm"
-                        className="text-slate-700 group-hover:text-slate-800 transition-opacity duration-300"
+                        className="text-slate-700 group-hover:text-slate-800 transition-opacity duration-300 leading-snug min-h-[2.75em]"
                     >
                         {label}
                     </Text>
                     <div
-                        className={`mt-1 rounded-xl ${getKpiIconBg(index)} transition-all duration-300 p-1 group-hover:scale-110`}
+                        className={`mt-1 shrink-0 self-start rounded-xl ${getKpiIconBg(index)} transition-all duration-300 p-1 group-hover:scale-110`}
                     >
                         <Icon
                             size={16}
@@ -86,7 +97,7 @@ export default function PremiumKpiTile({
                     {value}
                 </Text>
                 {trend && (
-                    <Text size="xs" className="text-slate-500 mt-1">
+                    <Text size="xs" className="text-slate-500 mt-1 leading-snug min-h-[2.75em]">
                         {trend}
                     </Text>
                 )}
