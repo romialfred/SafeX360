@@ -157,7 +157,51 @@ const CSS = `
      on resserre le menu, avant de le masquer completement sous 960 px. */
   @media(max-width:1180px){.lp .logo-sub{display:none}}
   @media(max-width:1080px){.lp .menu{gap:15px;font-size:13.5px;margin-left:10px}}
-  @media(max-width:960px){.lp .menu,.lp .link-b,.lp .lang{display:none}}
+  /* ── MENU MOBILE (≤960 px) ──────────────────────────────────────────────
+     Sous 960 px, le menu, « Se connecter » et le selecteur de langue etaient
+     masques SANS REMPLACEMENT : sur telephone il ne restait que le logo et
+     « Demander une demo ». Un visiteur ne pouvait ni naviguer, ni se
+     connecter — il devait basculer le navigateur en « mode ordinateur »
+     (defaut releve au test du 2026-07-29).
+     Le bouton hamburger et le panneau n'existent QUE sous 960 px ; au-dessus
+     ils sont display:none et la barre reste rigoureusement identique. */
+  .lp .burger{display:none;align-items:center;justify-content:center;width:42px;height:42px;flex:0 0 auto;
+    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);border-radius:10px;cursor:pointer;padding:0}
+  .lp .burger:hover{background:rgba(255,255,255,.16)}
+  .lp .burger:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+  .lp .burger span{display:block;width:19px;height:2px;background:#fff;border-radius:2px;transition:transform .2s,opacity .2s}
+  .lp .burger span+span{margin-top:4px}
+  .lp .burger[aria-expanded="true"] span:nth-child(1){transform:translateY(6px) rotate(45deg)}
+  .lp .burger[aria-expanded="true"] span:nth-child(2){opacity:0}
+  .lp .burger[aria-expanded="true"] span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+
+  .lp .mnav{display:none;border-top:1px solid rgba(255,255,255,.10);
+    background:linear-gradient(180deg,#12294A 0%,var(--navy) 100%);padding:10px 0 16px}
+  .lp .mnav .mwrap{max-width:1180px;margin:0 auto;padding:0 22px}
+  /* Entrees en <button> : un <a> sans href n'est pas focalisable au clavier.
+     Sur mobile c'est la SEULE navigation disponible, elle doit donc rester
+     utilisable au clavier et correctement annoncee par un lecteur d'ecran. */
+  .lp .mnav .mlink{display:block;width:100%;text-align:left;background:none;border:0;font-family:inherit;
+    padding:13px 2px;font-size:15px;font-weight:600;color:rgba(255,255,255,.85);
+    cursor:pointer;border-bottom:1px solid rgba(255,255,255,.07)}
+  .lp .mnav .mlink:hover,.lp .mnav .mlink:focus-visible{color:#fff}
+  .lp .mnav .mlink:focus-visible,.lp .mnav .mlogin:focus-visible{outline:2px solid var(--amber);outline-offset:-2px}
+  .lp .mnav .mact{display:flex;align-items:center;gap:12px;padding-top:14px}
+  .lp .mnav .mact .btn{flex:1 1 auto;text-align:center}
+  .lp .mnav .mlogin{flex:0 0 auto;background:none;border:0;font-family:inherit;font-size:15px;font-weight:700;color:#fff;cursor:pointer;padding:11px 4px}
+  .lp .mnav .mlogin:hover{color:var(--amber)}
+
+  @media(max-width:960px){
+    .lp .menu,.lp .link-b,.lp .lang{display:none}
+    .lp .burger{display:flex;flex-direction:column}
+    .lp .mnav.open{display:block}
+    /* La barre reste collante : le panneau doit pouvoir defiler seul sur les
+       petits ecrans plutot que de pousser le contenu hors de vue. */
+    .lp .mnav{max-height:calc(100vh - 72px);overflow-y:auto}
+  }
+  /* Filet de securite : si le panneau etait ouvert au passage en grand ecran,
+     on le neutralise — sinon il resterait affiche sur le bureau. */
+  @media(min-width:961px){.lp .mnav,.lp .mnav.open{display:none}}
 
   .lp .hero{position:relative;overflow:hidden;background:linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%);border-bottom:1px solid var(--line)}
   /* Aurora douce et lente en fond — donne vie au hero sans distraire. */
@@ -344,6 +388,9 @@ export default function LandingPage() {
     const rootRef = useRef<HTMLDivElement | null>(null);
     const [slideIdx, setSlideIdx] = useState(0);
     const [count, setCount] = useState(0);
+    // Panneau de navigation mobile (≤960 px). Sans lui, le téléphone n'offrait
+    // ni navigation ni accès à la connexion — cf. bloc « MENU MOBILE » du CSS.
+    const [menuOpen, setMenuOpen] = useState(false);
 
     // Hero défilant : image + titre changent ensemble toutes les 5 s.
     useEffect(() => {
@@ -388,8 +435,42 @@ export default function LandingPage() {
         return () => io.disconnect();
     }, []);
 
+    // Échap referme le panneau mobile — attendu de tout menu déroulant, et
+    // seule issue au clavier quand il occupe l'écran.
+    useEffect(() => {
+        if (!menuOpen) return;
+        const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false); };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [menuOpen]);
+
+    // Repassage en grand écran (rotation de l'appareil, redimensionnement) : le
+    // CSS masque déjà le panneau, on remet l'état d'accord avec l'affichage pour
+    // que le bouton ne reste pas marqué « ouvert ».
+    useEffect(() => {
+        // `matchMedia` est un CONFORT, pas le mécanisme : c'est le CSS qui décide
+        // de l'affichage à chaque largeur. On ne suppose donc pas son existence —
+        // elle manque en environnement de test (jsdom) et sur navigateurs anciens,
+        // où son absence ferait planter le rendu de toute la vitrine.
+        const mq = typeof window.matchMedia === 'function'
+            ? window.matchMedia('(min-width: 961px)')
+            : null;
+        if (!mq) return;
+        const sync = () => { if (mq.matches) setMenuOpen(false); };
+        sync();
+        // `addEventListener` sur MediaQueryList n'existe pas sur Safari < 14.
+        if (typeof mq.addEventListener !== 'function') return;
+        mq.addEventListener('change', sync);
+        return () => mq.removeEventListener('change', sync);
+    }, []);
+
     const login = () => navigate('/login');
-    const goTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    // Toute navigation referme le panneau : sinon il masquerait la section
+    // vers laquelle on vient de défiler.
+    const goTo = (id: string) => {
+        setMenuOpen(false);
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    };
 
     return (
         <div className="lp" ref={rootRef}>
@@ -415,8 +496,38 @@ export default function LandingPage() {
                     <span className="lang">FR</span>
                     <a className="link-b" onClick={login}>Se connecter</a>
                     <button className="btn btn-a" onClick={() => goTo('demo')}>Demander une démo</button>
+                    {/* Visible uniquement ≤960 px (cf. CSS). */}
+                    <button
+                        type="button"
+                        className="burger"
+                        aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+                        aria-expanded={menuOpen}
+                        aria-controls="lp-menu-mobile"
+                        onClick={() => setMenuOpen((v) => !v)}
+                    >
+                        <span /><span /><span />
+                    </button>
                 </div>
-            </div></nav>
+            </div>
+
+            {/* Panneau mobile — porte la navigation ET la connexion, que la barre
+                masque sous 960 px. Rendu en permanence pour rester accessible
+                aux lecteurs d'écran ; c'est le CSS qui décide de l'affichage. */}
+            <div id="lp-menu-mobile" className={`mnav${menuOpen ? ' open' : ''}`}>
+                <div className="mwrap">
+                    <button type="button" className="mlink" onClick={() => goTo('modules')}>Solution</button>
+                    <button type="button" className="mlink" onClick={() => goTo('modules')}>Modules</button>
+                    <button type="button" className="mlink" onClick={() => goTo('secteurs')}>Secteurs</button>
+                    <button type="button" className="mlink" onClick={() => goTo('features')}>Fonctionnalités</button>
+                    <button type="button" className="mlink" onClick={() => goTo('features')}>Conformité</button>
+                    <button type="button" className="mlink" onClick={() => goTo('demo')}>À propos</button>
+                    <div className="mact">
+                        <button type="button" className="mlogin" onClick={() => { setMenuOpen(false); login(); }}>Se connecter</button>
+                        <button className="btn btn-a" onClick={() => goTo('demo')}>Demander une démo</button>
+                    </div>
+                </div>
+            </div>
+            </nav>
 
             {/* HERO */}
             <header className="hero"><div className="wrap">
