@@ -31,6 +31,15 @@ public class PpeRequestDTO {
     private LocalDateTime deliveredAt;
     private Long companyId;
 
+    /**
+     * Incrément 2 — LIGNES de la demande : un élément par (bénéficiaire, EPI) avec
+     * sa quantité propre. Remplace le couple emp_ids/ppe_ids (listes plates, même
+     * EPI pour tous, 1 unité) : « employé A → 2 gants, employé B → 1 casque ».
+     * Champ de transport (non persisté sur l'en-tête) ; les listes plates ci-dessus
+     * restent synchronisées pour compatibilité ascendante des anciens lecteurs.
+     */
+    private List<PpeEmpDTO> lines;
+
     public PpeRequest toEntity() {
         return new PpeRequest(id, StringListConverter.listToString(empIds), StringListConverter.listToString(ppeIds),
                 desiredDate, priority, reason, comment, status,

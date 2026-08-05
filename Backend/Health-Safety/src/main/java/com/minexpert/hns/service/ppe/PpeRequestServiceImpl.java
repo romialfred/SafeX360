@@ -2,12 +2,14 @@ package com.minexpert.hns.service.ppe;
 
 import com.minexpert.hns.dto.ppe.PpeEmpDTO;
 import com.minexpert.hns.dto.ppe.PpeRequestDTO;
+import com.minexpert.hns.entity.ppe.PpeEmp;
 import com.minexpert.hns.entity.ppe.PpeEmpStatus;
+import com.minexpert.hns.entity.ppe.PpeMovementType;
 import com.minexpert.hns.entity.ppe.PpeRequest;
 import com.minexpert.hns.entity.ppe.PpeRequestStatus;
 import com.minexpert.hns.exception.HSException;
+import com.minexpert.hns.repository.ppe.PpeEmpRepository;
 import com.minexpert.hns.repository.ppe.PpeRequestRepository;
-import com.minexpert.hns.utility.StringListConverter;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
@@ -16,14 +18,69 @@ import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class PpeRequestServiceImpl implements PpeRequestService {
         private final PpeRequestRepository requestRepository;
         private final PpeEmpService ppeEmpService;
+        private final PpeEmpRepository ppeEmpRepository;
         private final PpeService ppeService;
+
+        /** Attache à la demande ses lignes (bénéficiaire × EPI × quantités). */
+        private PpeRequestDTO withLines(PpeRequestDTO dto) {
+                if (dto == null || dto.getId() == null) {
+                        return dto;
+                }
+                dto.setLines(ppeEmpRepository.findByPpeRequestId(dto.getId())
+                                .stream().map(PpeEmp::toDTO).toList());
+                return dto;
+        }
+
+        /**
+         * Normalise l'entrée de création en lignes exploitables. Priorité au format
+         * `lines` (avec quantités) ; à défaut, reconstruit un produit cartésien
+         * empIds×ppeIds à 1 unité (compatibilité legacy / mobile).
+         */
+        private List<PpeEmpDTO> normalizeLines(PpeRequestDTO dto) throws HSException {
+                if (dto.getLines() != null && !dto.getLines().isEmpty()) {
+                        List<PpeEmpDTO> out = new java.util.ArrayList<>();
+                        for (PpeEmpDTO line : dto.getLines()) {
+                                if (line.getEmpId() == null || line.getPpeId() == null) {
+                                        throw new HSException("PPE_REQUEST_LINE_INVALID");
+                                }
+                                int qty = line.getQuantityRequested() != null ? line.getQuantityRequested() : 1;
+                                if (qty <= 0) {
+                                        throw new HSException("PPE_REQUEST_LINE_INVALID");
+                                }
+                                PpeEmpDTO l = new PpeEmpDTO();
+                                l.setEmpId(line.getEmpId());
+                                l.setPpeId(line.getPpeId());
+                                l.setQuantityRequested(qty);
+                                out.add(l);
+                        }
+                        return out;
+                }
+                // Legacy : produit cartésien, 1 unité par (employé, EPI).
+                if (dto.getEmpIds() == null || dto.getEmpIds().isEmpty()
+                                || dto.getPpeIds() == null || dto.getPpeIds().isEmpty()) {
+                        return List.of();
+                }
+                List<PpeEmpDTO> out = new java.util.ArrayList<>();
+                for (Long empId : dto.getEmpIds()) {
+                        for (Long ppeId : dto.getPpeIds()) {
+                                PpeEmpDTO l = new PpeEmpDTO();
+                                l.setEmpId(empId);
+                                l.setPpeId(ppeId);
+                                l.setQuantityRequested(1);
+                                out.add(l);
+                        }
+                }
+                return out;
+        }
 
         @Override
         @Transactional
@@ -41,29 +98,33 @@ public class PpeRequestServiceImpl implements PpeRequestService {
                         throw new HSException("COMPANY_ID_REQUIRED");
                 }
 
-                if (dto.getEmpIds() == null || dto.getEmpIds().isEmpty()
-                                || dto.getPpeIds() == null || dto.getPpeIds().isEmpty()) {
+                final Long companyId = dto.getCompanyId();
+                // Incrément 2 — deux formats acceptés :
+                //   • NOUVEAU : `lines` = liste de (bénéficiaire, EPI, quantité). Chaque
+                //     ligne a sa propre quantité → « employé A : 2 gants, employé B : 1 casque ».
+                //   • LEGACY  : empIds + ppeIds (listes plates) → produit cartésien, 1 unité
+                //     par (employé, EPI). Conservé pour l'ascendant / la version mobile.
+                List<PpeEmpDTO> lines = normalizeLines(dto);
+                if (lines.isEmpty()) {
                         throw new HSException("PPE_REQUEST_EMPTY");
                 }
+                // On (re)synchronise les listes plates depuis les lignes : les anciens
+                // lecteurs (liste, mobile) restent fonctionnels sans connaître les lignes.
+                dto.setEmpIds(lines.stream().map(PpeEmpDTO::getEmpId).distinct().toList());
+                dto.setPpeIds(lines.stream().map(PpeEmpDTO::getPpeId).distinct().toList());
                 dto.setStatus(PpeRequestStatus.PENDING);
-                PpeRequest req = dto.toEntity();
-                PpeRequest saved = requestRepository.save(req);
-                // Propager le companyId de la demande vers les attributions EPI filles.
-                final Long companyId = dto.getCompanyId();
-                List<PpeEmpDTO> ppeEmpDTOs = dto.getEmpIds().stream().flatMap(empId -> {
-                        return dto.getPpeIds().stream().map(ppeId -> {
-                                PpeEmpDTO ppeEmpDTO = new PpeEmpDTO();
-                                ppeEmpDTO.setEmpId(empId);
-                                ppeEmpDTO.setPpeId(ppeId);
-                                ppeEmpDTO.setPpeRequestId(saved.getId());
-                                ppeEmpDTO.setDate(dto.getDesiredDate());
-                                ppeEmpDTO.setStatus(PpeEmpStatus.PENDING);
-                                ppeEmpDTO.setCompanyId(companyId);
-                                return ppeEmpDTO;
-                        });
-                }).toList();
-                ppeEmpService.createMultiple(ppeEmpDTOs);
-                return saved.toDTO();
+                PpeRequest saved = requestRepository.save(dto.toEntity());
+
+                for (PpeEmpDTO line : lines) {
+                        line.setPpeRequestId(saved.getId());
+                        line.setDate(dto.getDesiredDate());
+                        line.setStatus(PpeEmpStatus.PENDING);
+                        line.setCompanyId(companyId);
+                        line.setQuantityApproved(0);
+                        line.setQuantityIssued(0);
+                }
+                ppeEmpService.createMultiple(lines);
+                return withLines(saved.toDTO());
         }
 
         @Override
@@ -107,25 +168,34 @@ public class PpeRequestServiceImpl implements PpeRequestService {
                 }
                 req.setStatus(PpeRequestStatus.APPROVED);
                 req.setComment(comment);
-                // Sortie de stock : un mouvement ISSUE par EPI, cloisonné sur la mine de
-                // la demande et tracé (référence « REQ-<id> »). Quantité = nombre de
-                // bénéficiaires (modèle actuel : 1 unité par employé — sera remplacé par
-                // les quantités par ligne à l'incrément 2). Gardes null-safe sur les CSV.
-                List<Long> ppeIds = StringListConverter.convertToLongList(req.getPpeIds());
-                List<Long> empIds = StringListConverter.convertToLongList(req.getEmpIds());
-                if (ppeIds == null || ppeIds.isEmpty() || empIds == null || empIds.isEmpty()) {
+
+                // Incrément 2 — sortie de stock pilotée par les LIGNES et leurs quantités.
+                // Chaque ligne (bénéficiaire × EPI) est approuvée pour sa quantité demandée,
+                // puis le stock sort par EPI de la SOMME des quantités approuvées — un seul
+                // mouvement ISSUE par EPI, tracé (« REQ-<id> ») et cloisonné sur la mine.
+                List<PpeEmp> lines = ppeEmpRepository.findByPpeRequestId(id);
+                if (lines.isEmpty()) {
                         throw new HSException("PPE_REQUEST_EMPTY");
                 }
-                int quantityPerPpe = empIds.size();
-                for (Long ppeId : ppeIds) {
-                        ppeService.applyStockMovement(ppeId, -quantityPerPpe,
-                                        com.minexpert.hns.entity.ppe.PpeMovementType.ISSUE,
+                Map<Long, Integer> issueByPpe = new LinkedHashMap<>();
+                for (PpeEmp line : lines) {
+                        int requested = line.getQuantityRequested() != null ? line.getQuantityRequested() : 1;
+                        line.setQuantityApproved(requested);       // approbation intégrale (l'ajustement fin par ligne viendra plus tard)
+                        line.setQuantityIssued(requested);          // dans le modèle actuel, approuver = sortir (distribution séparée à l'incrément 4)
+                        line.setStatus(PpeEmpStatus.ACTIVE);
+                        Long ppeId = line.getPpe() != null ? line.getPpe().getId() : null;
+                        if (ppeId != null) {
+                                issueByPpe.merge(ppeId, requested, Integer::sum);
+                        }
+                }
+                for (Map.Entry<Long, Integer> e : issueByPpe.entrySet()) {
+                        ppeService.applyStockMovement(e.getKey(), -e.getValue(), PpeMovementType.ISSUE,
                                         "REQ-" + id, req.getCompanyId(), null);
                 }
+                ppeEmpRepository.saveAll(lines);
                 PpeRequest approved = requestRepository.save(req);
-                ppeEmpService.activate(id);
 
-                return approved.toDTO();
+                return withLines(approved.toDTO());
         }
 
         @Override
@@ -183,15 +253,18 @@ public class PpeRequestServiceImpl implements PpeRequestService {
                 if (companyId != null && !companyId.equals(req.getCompanyId())) {
                         throw new HSException("REQUEST_NOT_FOUND");
                 }
-                return req.toDTO();
+                return withLines(req.toDTO());
         }
 
         @Override
         @Cacheable(cacheNames = "ppeRequestsAll", key = "#companyId != null ? #companyId : 'ALL'")
         public List<PpeRequestDTO> getAllRequests(Long companyId) throws HSException {
+                // Les lignes (avec quantités) sont attachées à chaque demande pour que
+                // la liste puisse afficher le détail par bénéficiaire et par EPI.
                 return requestRepository.findAllByCompany(companyId)
                                 .stream()
                                 .map(PpeRequest::toDTO)
+                                .map(this::withLines)
                                 .toList();
         }
 

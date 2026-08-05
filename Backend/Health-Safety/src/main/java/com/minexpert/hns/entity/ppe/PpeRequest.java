@@ -55,8 +55,10 @@ public class PpeRequest {
     }
 
     public PpeRequestDTO toDTO() {
+        // Dernier argument = lines (transport incrément 2) : null ici, le service
+        // l'alimente séparément en chargeant les PpeEmp de la demande.
         return new PpeRequestDTO(id, StringListConverter.convertToLongList(empIds),
                 StringListConverter.convertToLongList(ppeIds), desiredDate, priority, reason, comment,
-                status, createdAt, updatedAt, deliveredAt, companyId);
+                status, createdAt, updatedAt, deliveredAt, companyId, null);
     }
 }

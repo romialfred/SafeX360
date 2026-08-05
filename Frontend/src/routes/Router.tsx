@@ -109,6 +109,7 @@ const OpportunitiesPage = lazy(() => import('../components/RiskManagement/Opport
 const PPECreateFormPage = lazy(() => import('../pages/dashboard/RiskManagement/PPECreateFormPage'));
 const PPEStockEntryFormPage = lazy(() => import('../pages/dashboard/RiskManagement/PPEStockEntryFormPage'));
 const PPERequestTablePage = lazy(() => import('../pages/dashboard/RiskManagement/PPERequestTablePage'));
+const PPERequestMatrixPage = lazy(() => import('../components/PPEManagement/PPERequestMatrixPage'));
 const DetailViewPage = lazy(() => import('../pages/dashboard/RiskManagement/DetailViewPage'));
 const RegisterFormPage = lazy(() => import('../pages/dashboard/RiskManagement/RegisterFormPage'));
 const PPEEmployeeDetailsPage = lazy(() => import('../pages/dashboard/RiskManagement/PPEEmployeeDetailsPage'));
@@ -466,6 +467,7 @@ const router = createBrowserRouter([
             { path: 'ppe-management/stock-form', element: <ModuleGuard moduleId='ppe-overview'><PPEStockEntryFormPage /></ModuleGuard>, },
             { path: 'ppe-management/request-table', element: <ModuleGuard moduleId='ppe-request'><PPERequestTablePage /></ModuleGuard>, },
             { path: 'ppe-request', element: <ModuleGuard moduleId='ppe-request'><PPERequestTablePage /></ModuleGuard>, },
+            { path: 'ppe-management/request-matrix', element: <ModuleGuard moduleId='ppe-request'><PPERequestMatrixPage /></ModuleGuard>, },
             { path: "ppe-management/ppe-details/:id", element: <ModuleGuard moduleId='ppe-overview'><PPEEmployeeDetailsPage /></ModuleGuard> },
 
             { path: 'notifications', element: <ModuleGuard moduleId='notifications'><NotificationsManagement /></ModuleGuard>, },

@@ -22,6 +22,11 @@ public class PpeEmpDTO {
     private Long ppeRequestId;
     private PpeEmpStatus status;
 
+    // Incrément 2 — quantités par ligne (demandé / approuvé / distribué).
+    private Integer quantityRequested;
+    private Integer quantityApproved;
+    private Integer quantityIssued;
+
     private LocalDate date;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -34,6 +39,9 @@ public class PpeEmpDTO {
                 ppeId != null ? new Ppe(ppeId) : null,
                 ppeRequestId != null ? new PpeRequest(ppeRequestId) : null,
                 status,
+                quantityRequested,
+                quantityApproved,
+                quantityIssued,
                 date,
                 createdAt,
                 updatedAt,

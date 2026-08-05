@@ -2,35 +2,31 @@ import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
     ActionIcon,
     Button,
+    Drawer,
     LoadingOverlay,
-    Modal,
-    MultiSelect,
-    Select,
     Textarea,
     TextInput,
     Tooltip,
 } from '@mantine/core';
 import { IconCheck, IconClipboardList, IconEye, IconPlus, IconSearch, IconTruckDelivery, IconX } from '@tabler/icons-react';
 import { useForm } from '@mantine/form';
-import { DateInput } from '@mantine/dates';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
-import { getActivePPE, getAllPPE } from '../../services/PPEService';
+import { getAllPPE } from '../../services/PPEService';
 import { getEmployeesWithDepartment } from '../../services/EmployeeService';
 import {
     approvePpeRequest,
-    createPpeRequest,
     deliverPpeRequest,
     getAllPpeRequests,
     rejectPpeRequest,
 } from '../../services/PpeRequestService';
 import { notifyError } from '../../utility/notifyError';
 import { errorNotification, successNotification } from '../../utility/NotificationUtility';
-import { toLocalDate } from '../../utility/dateConversion';
 import { mapIdToName } from '../../utility/OtherUtilities';
 import PageHeader from '../UtilityComp/PageHeader';
 import SegmentedFilter from '../UtilityComp/SegmentedFilter';
@@ -38,8 +34,6 @@ import EmptyState from '../UtilityComp/EmptyState';
 import {
     CHIP_BASE,
     formatDateFr,
-    ppeCategoryLabel,
-    PRIORITY_OPTIONS,
     priorityConfig,
     requestStatusConfig,
 } from './ppeLabels';
@@ -52,20 +46,12 @@ const ALL = 'ALL';
  */
 const PPERequestsTable = () => {
     const { t } = useTranslation('ppe');
+    const navigate = useNavigate();
     // Libellés bilingues : clés i18n `ppe:*`, repli sur les libellés FR centralisés (ppeLabels.ts).
     const tPriority = (code?: string | null): string =>
         t(`priority.${(code ?? '').toUpperCase()}`, { defaultValue: priorityConfig(code).label });
     const tRequestStatus = (code?: string | null): string =>
         t(`requestStatus.${(code ?? '').toUpperCase()}`, { defaultValue: requestStatusConfig(code).label });
-    // Options de priorité traduites pour le <Select> (mêmes valeurs backend).
-    const priorityOptions = PRIORITY_OPTIONS.map((o) => ({
-        value: o.value,
-        label: t(`priority.${o.value.toUpperCase()}`, { defaultValue: o.label }),
-    }));
-    const [showRequestForm, setShowRequestForm] = useState(false);
-    const [employees, setEmployees] = useState<any[]>([]);
-    // EPI actifs : pour le formulaire de demande (on ne demande que des EPI encore au catalogue)
-    const [activePpe, setActivePpe] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [loadingList, setLoadingList] = useState(true);
     const [requests, setRequests] = useState<any[]>([]);
@@ -82,23 +68,6 @@ const PPERequestsTable = () => {
     const [statusFilter, setStatusFilter] = useState<string>(ALL);
     const [search, setSearch] = useState('');
 
-    const requestForm = useForm({
-        initialValues: {
-            empIds: [] as string[],
-            ppeIds: [] as string[],
-            desiredDate: null as Date | null,
-            priority: 'Medium',
-            reason: '',
-        },
-        validate: {
-            empIds: (value) => (value.length > 0 ? null : t('requests.validateEmployees')),
-            ppeIds: (value) => (value.length > 0 ? null : t('requests.validatePpe')),
-            desiredDate: (value) => (value ? null : t('requests.validateDesiredDate')),
-            priority: (value) => (value ? null : t('requests.validatePriority')),
-            reason: (value) => (value ? null : t('requests.validateReason')),
-        },
-    });
-
     const approveForm = useForm({ initialValues: { comment: '' } });
     const rejectForm = useForm({
         initialValues: { comment: '' },
@@ -107,10 +76,7 @@ const PPERequestsTable = () => {
 
     useEffect(() => {
         getEmployeesWithDepartment()
-            .then((data) => {
-                setEmployees(data);
-                setEmpMap(mapIdToName(data));
-            })
+            .then((data) => setEmpMap(mapIdToName(data)))
             .catch((err) => console.error(err));
 
         // Catalogue complet (actifs + inactifs) → table de correspondance ID → nom
@@ -118,10 +84,6 @@ const PPERequestsTable = () => {
             .then((data) => setPpeMap(mapIdToName(data)))
             .catch((err) => console.error(err));
 
-        // EPI actifs uniquement → formulaire de demande
-        getActivePPE()
-            .then(setActivePpe)
-            .catch((err) => console.error(err));
 
         fetchRequests();
     }, []);
@@ -209,43 +171,6 @@ const PPERequestsTable = () => {
         }
     };
 
-    const handleSubmitRequest = (values: typeof requestForm.values) => {
-        const empSize = values.empIds?.length || 0;
-        let error = '';
-
-        for (const x of values.ppeIds) {
-            const ppeItem = ppeMap[x];
-            if (ppeItem && ppeItem.stock < empSize) {
-                error = t('requests.insufficientStock', { name: ppeItem.name });
-                break;
-            }
-        }
-
-        if (error) {
-            errorNotification(error);
-            return;
-        }
-
-        setLoading(true);
-        const payload = {
-            ...values,
-            empIds: values.empIds.map(Number),
-            ppeIds: values.ppeIds.map(Number),
-            desiredDate: toLocalDate(values.desiredDate),
-        };
-        createPpeRequest(payload)
-            .then(() => {
-                successNotification(t('requests.createSuccess'));
-                setShowRequestForm(false);
-                requestForm.reset();
-                fetchRequests();
-            })
-            .catch((err) => {
-                errorNotification(err.response?.data?.errorMessage || t('requests.createError'));
-            })
-            .finally(() => setLoading(false));
-    };
-
     // ─── Rendus de colonnes ──────────────────────────────────────────────────
 
     const employeeTemplate = (rowData: any) => {
@@ -263,6 +188,27 @@ const PPERequestsTable = () => {
     };
 
     const requestedPpeTemplate = (rowData: any) => {
+        // Incrément 2 : si la demande porte des LIGNES (bénéficiaire × EPI × quantité),
+        // on agrège la quantité totale demandée par EPI (« Gants ×5 »). Repli sur la
+        // liste d'ID pour les demandes legacy sans lignes.
+        const lines: any[] = rowData.lines || [];
+        if (lines.length) {
+            const totals = new Map<string, number>();
+            lines.forEach((l) => {
+                const key = String(l.ppeId);
+                totals.set(key, (totals.get(key) || 0) + (Number(l.quantityRequested) || 0));
+            });
+            return (
+                <div className="flex flex-col gap-0.5">
+                    {Array.from(totals.entries()).map(([ppeId, qty]) => (
+                        <span key={ppeId} className="text-[13px] text-slate-800">
+                            {ppeMap[ppeId]?.name || t('requests.ppeFallback', { id: ppeId })}
+                            <span className="text-slate-400"> ×{qty}</span>
+                        </span>
+                    ))}
+                </div>
+            );
+        }
         const ids: any[] = rowData.ppeIds || [];
         if (!ids.length) return <span className="text-[12.5px] text-slate-400">—</span>;
         return (
@@ -372,7 +318,7 @@ const PPERequestsTable = () => {
                         leftSection={<IconPlus size={14} />}
                         color="teal"
                         size="sm"
-                        onClick={() => setShowRequestForm(true)}
+                        onClick={() => navigate('/ppe-management/request-matrix')}
                     >
                         {t('requests.newRequest')}
                     </Button>
@@ -424,7 +370,7 @@ const PPERequestsTable = () => {
                         compact
                         action={
                             statusFilter === ALL ? (
-                                <Button size="xs" color="teal" leftSection={<IconPlus size={14} />} onClick={() => setShowRequestForm(true)}>
+                                <Button size="xs" color="teal" leftSection={<IconPlus size={14} />} onClick={() => navigate('/ppe-management/request-matrix')}>
                                     {t('requests.newRequest')}
                                 </Button>
                             ) : undefined
@@ -455,84 +401,15 @@ const PPERequestsTable = () => {
                 )}
             </div>
 
-            {/* Modale : nouvelle demande */}
-            <Modal
-                opened={showRequestForm}
-                onClose={() => setShowRequestForm(false)}
-                title={<span className="text-base text-slate-900">{t('requests.modalNewTitle')}</span>}
-                size="xl"
-                centered
-                radius="md"
-            >
-                <LoadingOverlay visible={loading} />
-                <form className="grid grid-cols-1 gap-4" onSubmit={requestForm.onSubmit(handleSubmitRequest)}>
-                    <MultiSelect
-                        label={t('requests.fieldEmployees')}
-                        placeholder={t('requests.fieldEmployeesPlaceholder')}
-                        data={employees.map((emp: any) => ({ value: '' + emp.id, label: emp.name }))}
-                        searchable
-                        hidePickedOptions
-                        withAsterisk
-                        size="sm"
-                        {...requestForm.getInputProps('empIds')}
-                    />
-                    <MultiSelect
-                        label={t('requests.fieldRequestedPpe')}
-                        placeholder={t('requests.fieldRequestedPpePlaceholder')}
-                        data={activePpe.map((item: any) => ({
-                            value: '' + item.id,
-                            label: t('requests.ppeOptionLabel', { name: item.name, category: ppeCategoryLabel(item.category), stock: item.stock }),
-                        }))}
-                        hidePickedOptions
-                        searchable
-                        withAsterisk
-                        size="sm"
-                        {...requestForm.getInputProps('ppeIds')}
-                    />
-                    <div className="grid grid-cols-2 gap-3">
-                        <DateInput
-                            label={t('requests.fieldDesiredDate')}
-                            placeholder={t('requests.datePlaceholder')}
-                            withAsterisk
-                            size="sm"
-                            valueFormat="DD/MM/YYYY"
-                            {...requestForm.getInputProps('desiredDate')}
-                        />
-                        <Select
-                            label={t('requests.fieldPriority')}
-                            placeholder={t('requests.fieldPriorityPlaceholder')}
-                            data={priorityOptions}
-                            withAsterisk
-                            size="sm"
-                            {...requestForm.getInputProps('priority')}
-                        />
-                    </div>
-                    <Textarea
-                        label={t('requests.fieldReason')}
-                        placeholder={t('requests.fieldReasonPlaceholder')}
-                        rows={3}
-                        withAsterisk
-                        size="sm"
-                        {...requestForm.getInputProps('reason')}
-                    />
-                    <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
-                        <Button variant="default" size="sm" onClick={() => setShowRequestForm(false)}>
-                            {t('common.cancel')}
-                        </Button>
-                        <Button type="submit" size="sm" color="teal" leftSection={<IconClipboardList size={14} />}>
-                            {t('requests.submit')}
-                        </Button>
-                    </div>
-                </form>
-            </Modal>
+            {/* Création : page matrice plein écran (/ppe-management/request-matrix) — plus de modale de saisie. */}
 
             {/* Modale : approbation */}
-            <Modal
+            <Drawer
+                position="right"
                 opened={showApproveModal}
                 onClose={() => setShowApproveModal(false)}
-                title={<span className="text-base text-slate-900">{t('requests.modalApproveTitle')}</span>}
-                centered
-                radius="md"
+                title={<span className="text-base font-semibold text-slate-900">{t('requests.modalApproveTitle')}</span>}
+                size="md"
             >
                 <LoadingOverlay visible={loading} />
                 <form onSubmit={approveForm.onSubmit(handleApprove)}>
@@ -551,15 +428,15 @@ const PPERequestsTable = () => {
                         </Button>
                     </div>
                 </form>
-            </Modal>
+            </Drawer>
 
             {/* Modale : rejet */}
-            <Modal
+            <Drawer
+                position="right"
                 opened={showRejectModal}
                 onClose={() => setShowRejectModal(false)}
-                title={<span className="text-base text-slate-900">{t('requests.modalRejectTitle')}</span>}
-                centered
-                radius="md"
+                title={<span className="text-base font-semibold text-slate-900">{t('requests.modalRejectTitle')}</span>}
+                size="md"
             >
                 <LoadingOverlay visible={loading} />
                 <form onSubmit={rejectForm.onSubmit(handleReject)}>
@@ -579,16 +456,15 @@ const PPERequestsTable = () => {
                         </Button>
                     </div>
                 </form>
-            </Modal>
+            </Drawer>
 
             {/* Modale : détail */}
-            <Modal
+            <Drawer
+                position="right"
                 opened={showViewModal}
                 onClose={() => setShowViewModal(false)}
-                title={<span className="text-base text-slate-900">{t('requests.modalViewTitle')}</span>}
+                title={<span className="text-base font-semibold text-slate-900">{t('requests.modalViewTitle')}</span>}
                 size="lg"
-                centered
-                radius="md"
             >
                 {viewData && (
                     <div className="flex flex-col gap-2 text-[12.5px]">
@@ -604,6 +480,31 @@ const PPERequestsTable = () => {
                                 {(viewData.ppeIds || []).map((id: any) => ppeMap[id]?.name || `#${id}`).join(', ') || '—'}
                             </span>
                         </div>
+                        {/* Détail par bénéficiaire × EPI (quantités demandée / approuvée). */}
+                        {Array.isArray(viewData.lines) && viewData.lines.length > 0 && (
+                            <div className="mt-1 rounded-lg border border-slate-200 overflow-hidden">
+                                <table className="w-full text-[12px]">
+                                    <thead className="bg-slate-50 text-slate-500">
+                                        <tr>
+                                            <th className="text-left p-2 font-medium">Bénéficiaire</th>
+                                            <th className="text-left p-2 font-medium">EPI</th>
+                                            <th className="text-right p-2 font-medium">Demandé</th>
+                                            <th className="text-right p-2 font-medium">Approuvé</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {viewData.lines.map((l: any) => (
+                                            <tr key={l.id} className="border-t border-slate-100">
+                                                <td className="p-2 text-slate-800">{empMap[l.empId]?.name || `#${l.empId}`}</td>
+                                                <td className="p-2 text-slate-800">{ppeMap[l.ppeId]?.name || `#${l.ppeId}`}</td>
+                                                <td className="p-2 text-right tabular-nums">{l.quantityRequested ?? '—'}</td>
+                                                <td className="p-2 text-right tabular-nums">{l.quantityApproved ?? '—'}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                         <div className="grid grid-cols-[140px_1fr] gap-2">
                             <span className="text-slate-500">{t('requests.detailReason')}</span>
                             <span className="text-slate-800">{viewData.reason || '—'}</span>
@@ -641,7 +542,7 @@ const PPERequestsTable = () => {
                         {t('requests.close')}
                     </Button>
                 </div>
-            </Modal>
+            </Drawer>
         </div>
     );
 };

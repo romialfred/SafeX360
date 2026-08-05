@@ -41,6 +41,18 @@ public class PpeEmp {
     @Enumerated(EnumType.STRING)
     private PpeEmpStatus status;
 
+    // ── Incrément 2 : la ligne porte désormais des QUANTITÉS ────────────────────
+    // Avant, PpeEmp était le produit cartésien empIds×ppeIds sans quantité (même
+    // liste pour tous, 1 unité implicite). Ces trois colonnes permettent enfin
+    // « employé A → 2 gants, employé B → 1 casque », et séparent les étapes du
+    // cycle de vie (demandé / approuvé / distribué) comme l'exige la mission.
+    /** Quantité demandée pour ce bénéficiaire et cet EPI. */
+    private Integer quantityRequested;
+    /** Quantité réellement approuvée (peut être < demandée). */
+    private Integer quantityApproved;
+    /** Quantité effectivement sortie du stock / distribuée. */
+    private Integer quantityIssued;
+
     private LocalDate date;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -62,6 +74,8 @@ public class PpeEmp {
     /** Convert entity to DTO */
     public PpeEmpDTO toDTO() {
         return new PpeEmpDTO(id, empId, ppe != null ? ppe.getId() : null,
-                ppeRequest != null ? ppeRequest.getId() : null, status, date, createdAt, updatedAt, companyId);
+                ppeRequest != null ? ppeRequest.getId() : null, status,
+                quantityRequested, quantityApproved, quantityIssued,
+                date, createdAt, updatedAt, companyId);
     }
 }
