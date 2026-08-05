@@ -42,10 +42,16 @@ public interface IncidentRepository extends CrudRepository<Incident, Long> {
     @Query("SELECT i.id as id, i.title AS title, i.location AS location, i.occurredAt AS occurredAt, i.status AS status FROM Incident i WHERE (:companyId IS NULL OR i.companyId = :companyId)")
     List<IncidentResponse> findAllIncidents(@Param("companyId") Long companyId);
 
+    // ⚠️ `IncidentResponse` est une PROJECTION : un getter dont la colonne n'est
+    // pas sélectionnée ici renvoie null SANS ERREUR. `i.number` manquait — d'où
+    // une colonne « Numéro » présente mais VIDE sur toutes les lignes du registre
+    // et de son export (constaté au test du 2026-07-29). Toute colonne ajoutée à
+    // `IncidentResponse` doit être ajoutée ici, sinon elle sera silencieusement nulle.
     @Query(value = """
                             SELECT
                                 i.id AS id,
                                 i.title AS title,
+                                i.number AS number,
                                 i.department_id as departmentId,
                                 i.occurred_at AS incidentDate,
                                 i.reporter_id AS reporterId,
@@ -83,6 +89,7 @@ public interface IncidentRepository extends CrudRepository<Incident, Long> {
                             SELECT
                                 i.id AS id,
                                 i.title AS title,
+                                i.number AS number,
                                 i.occurred_at AS incidentDate,
                                 i.status AS status,
                                 severity_info.level AS maxSeverityLevel,

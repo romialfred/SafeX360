@@ -13,7 +13,25 @@ describe('budget PWA terrain', () => {
 
     it('conserve un cache à la demande pour les ressources statiques visitées', () => {
         expect(config).toContain("['script', 'style', 'font'].includes(request.destination)");
-        expect(config).toContain("cacheName: 'safex-static'");
+        // Le nom du cache est VERSIONNÉ (`safex-static-v2`, …) : un incrément est
+        // le moyen de repartir d'une base saine chez les utilisateurs existants
+        // quand la stratégie change. On verrouille donc l'INTENTION — un cache
+        // runtime dédié aux ressources statiques existe — et non le littéral,
+        // qui faisait échouer ce test au premier versionnage légitime.
+        expect(config).toMatch(/cacheName: 'safex-static(-v\d+)?'/);
+    });
+
+    it('ne laisse le Service Worker intercepter que notre propre origine', () => {
+        // Un fetch émis DEPUIS le SW suit la CSP de /sw.js, pas celle de la page :
+        // intercepter une ressource tierce la fait échouer en net::ERR_FAILED.
+        expect(config).toContain('sameOrigin');
+    });
+
+    it("refuse de mettre en cache une réponse HTML servie sous une URL d'asset", () => {
+        // Un chunk au hash périmé retombe sur la réécriture SPA (200 + text/html) ;
+        // sans cette garde, CacheFirst empoisonne le cache pour 30 jours.
+        expect(config).toContain('cacheWillUpdate');
+        expect(config).toContain('text/html');
     });
 
     it('charge les pages métier à la demande derrière un fallback global', () => {

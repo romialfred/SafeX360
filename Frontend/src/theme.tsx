@@ -24,6 +24,7 @@
  */
 
 import { createTheme, colorsTuple, MantineColorsTuple } from '@mantine/core';
+import { Z } from './constants/zIndex';
 
 // ────────────────────────────────────────────────────────────────
 // Palette tokens (11 nuances chacune, 50→950)
@@ -132,17 +133,38 @@ export const theme = createTheme({
   },
 
   components: {
+    // ─────────────────────────────────────────────────────────────────────
+    // Z-INDEX DES LISTES DÉROULANTES — régression corrigée le 2026-08-03.
+    //
+    // Mantine sort la liste d'un champ dans un PORTAIL (racine du document)
+    // avec un z-index par défaut de 300, alors que nos modales sont à 1100
+    // (`Z.modal`). Tout champ à liste placé dans une modale ouvrait donc sa
+    // liste DERRIÈRE elle : au clic, l'utilisateur ne voyait « rien ».
+    // 225 champs sur 69 écrans étaient concernés (famille d'équipement,
+    // dispatch d'équipe, responsable de campagne, travailleurs exposés…) :
+    // cinq symptômes remontés séparément, une seule et même cause.
+    //
+    // On corrige ICI, une fois pour toutes : aucun des 69 écrans n'est
+    // touché (donc aucun risque de régression) et tout champ ajouté plus
+    // tard hérite automatiquement du correctif. Un composant qui passe
+    // explicitement `comboboxProps`/`popoverProps` garde la main.
+    // L'invariant est verrouillé par src/governance/fieldDropdownZIndex.test.ts.
+    // ─────────────────────────────────────────────────────────────────────
     TextInput:       { defaultProps: { size: 'md' } },
-    Select:          { defaultProps: { size: 'md', comboboxProps: { shadow: 'xl' } } },
+    Select:          { defaultProps: { size: 'md', comboboxProps: { shadow: 'xl', zIndex: Z.fieldDropdown } } },
     NumberInput:     { defaultProps: { size: 'md' } },
     PasswordInput:   { defaultProps: { size: 'md' } },
     Textarea:        { defaultProps: { size: 'md' } },
-    DateTimePicker:  { defaultProps: { size: 'md' } },
+    DateTimePicker:  { defaultProps: { size: 'md', popoverProps: { zIndex: Z.fieldDropdown } } },
     Checkbox:        { defaultProps: { size: 'md' } },
-    MultiSelect:     { defaultProps: { size: 'md', comboboxProps: { shadow: 'xl' } } },
-    DatePickerInput: { defaultProps: { size: 'md' } },
+    MultiSelect:     { defaultProps: { size: 'md', comboboxProps: { shadow: 'xl', zIndex: Z.fieldDropdown } } },
+    Autocomplete:    { defaultProps: { size: 'md', comboboxProps: { shadow: 'xl', zIndex: Z.fieldDropdown } } },
+    TagsInput:       { defaultProps: { size: 'md', comboboxProps: { shadow: 'xl', zIndex: Z.fieldDropdown } } },
+    DatePickerInput: { defaultProps: { size: 'md', popoverProps: { zIndex: Z.fieldDropdown } } },
+    MonthPickerInput:{ defaultProps: { size: 'md', popoverProps: { zIndex: Z.fieldDropdown } } },
+    YearPickerInput: { defaultProps: { size: 'md', popoverProps: { zIndex: Z.fieldDropdown } } },
     TimeInput:       { defaultProps: { size: 'md' } },
-    DateInput:       { defaultProps: { size: 'md' } },
+    DateInput:       { defaultProps: { size: 'md', popoverProps: { zIndex: Z.fieldDropdown } } },
     FileInput:       { defaultProps: { size: 'md' } },
     Button:          { defaultProps: { radius: 'md' } },
     Badge:           { defaultProps: { radius: 'sm', variant: 'light' } },

@@ -28,6 +28,7 @@ import {
 import { NonConformity } from './NonConformity';
 import { useNavigate } from 'react-router-dom';
 import { getAllNonConformities } from '../../../services/NonConformityService';
+import { getEmployeesWithDepartment } from '../../../services/EmployeeService';
 import PageHeader from '../../UtilityComp/PageHeader';
 import { useTranslation } from 'react-i18next';
 import KpiTile from '../../UtilityComp/KpiTile';
@@ -72,6 +73,26 @@ const NonConformityDashboard = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
+    /**
+     * Département d'une non-conformité — dérivé du DÉCLARANT.
+     *
+     * ⚠️ La non-conformité ne PORTE pas de département : ni l'entité, ni la
+     * table `non_conformity`, ni le DTO n'ont ce champ. Le filtre lisait
+     * `nc.department ?? nc.departmentName`, deux propriétés qui n'existent
+     * nulle part : la liste était donc TOUJOURS vide, quelle que soit la mine.
+     *
+     * On rattache la non-conformité au département de l'employé qui l'a
+     * déclarée (`reportedBy`), seule dimension réellement disponible. Vérifié
+     * sur les données de production : les 17 non-conformités se résolvent.
+     */
+    const [departmentByEmployee, setDepartmentByEmployee] = useState<Record<string, string>>({});
+
+    const departmentOfNc = (nc: any): string => {
+        const direct = String(nc?.department ?? nc?.departmentName ?? '').trim();
+        if (direct) return direct;                       // si le back en expose un un jour
+        return departmentByEmployee[String(nc?.reportedBy ?? '')] ?? '';
+    };
+
     useEffect(() => {
         dispatch(showOverlay());
         getAllNonConformities().then((data) => {
@@ -79,6 +100,21 @@ const NonConformityDashboard = () => {
         }).finally(() => {
             dispatch(hideOverlay());
         });
+    }, []);
+
+    useEffect(() => {
+        getEmployeesWithDepartment()
+            .then((rows: any[]) => {
+                const map: Record<string, string> = {};
+                (Array.isArray(rows) ? rows : []).forEach((e) => {
+                    const dept = String(e?.department ?? '').trim();
+                    if (e?.id != null && dept) map[String(e.id)] = dept;
+                });
+                setDepartmentByEmployee(map);
+            })
+            // Un référentiel indisponible ne doit pas casser la page : le filtre
+            // se contente alors de rester sur « Tous départements ».
+            .catch(() => setDepartmentByEmployee({}));
     }, []);
 
     const onView = (nc: NonConformity) => {
@@ -92,7 +128,7 @@ const NonConformityDashboard = () => {
         const severityMatch = selectedSeverity === 'all' || nc.severityLevel === selectedSeverity;
         // LOT 43 — filtre département
         const departmentMatch = selectedDepartment === 'all'
-            || String(nc.department || nc.departmentName || '') === selectedDepartment;
+            || departmentOfNc(nc) === selectedDepartment;
         const today = new Date();
         const ncDate = new Date(nc.date);
         let periodMatch = true;
@@ -132,14 +168,16 @@ const NonConformityDashboard = () => {
         return statusMatch && typeMatch && severityMatch && departmentMatch && periodMatch;
     });
 
-    // LOT 43 — Liste des départements distincts présents dans la donnée
+    // Départements réellement représentés parmi les non-conformités affichées.
+    // MÊME résolveur que le prédicat de filtrage ci-dessus : une option proposée
+    // ramène donc toujours au moins une ligne (pas de filtre qui vide l'écran).
     const departmentOptions = (() => {
         const set = new Set<string>();
-        nonConformities.forEach(nc => {
-            const d = String(nc.department || nc.departmentName || '').trim();
+        nonConformities.forEach((nc) => {
+            const d = departmentOfNc(nc);
             if (d) set.add(d);
         });
-        return ['all', ...Array.from(set).sort()];
+        return ['all', ...Array.from(set).sort((a, b) => a.localeCompare(b, 'fr'))];
     })();
 
     // Dynamic counts for tabs
