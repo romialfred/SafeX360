@@ -18,7 +18,13 @@ describe('langue et encodage des sources UI', () => {
             .map((path) => relative(root, path));
 
         expect(corrupted).toEqual([]);
-    });
+        // Délai explicite : ce test lit la TOTALITÉ des sources de src/. Sur une
+        // machine chargée (build concurrent, suite complète en séquentiel) la
+        // lecture dépasse le délai par défaut de 5 s de Vitest, et l'échec se
+        // présente alors comme une violation d'encodage — un faux positif
+        // coûteux à diagnostiquer, constaté le 2026-08-05. Le budget ci-dessous
+        // ne masque rien : une vraie séquence de mojibake échoue immédiatement.
+    }, 60_000);
 
     it('empêche le retour des libellés anglais génériques corrigés', () => {
         const files = [

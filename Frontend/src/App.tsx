@@ -8,6 +8,7 @@ import '@mantine/tiptap/styles.css';
 import '@mantine/dropzone/styles.css';
 import '@mantine/carousel/styles.css';
 import 'leaflet/dist/leaflet.css';
+import { useEffect } from 'react';
 import { MantineProvider } from '@mantine/core';
 import { theme } from './theme';
 import { Router } from './routes/Router';
@@ -18,6 +19,8 @@ import { NavigationProgress } from '@mantine/nprogress';
 import { Notifications } from '@mantine/notifications';
 import GlobalLoadingIndicator from './components/UtilityComp/GlobalLoadingIndicator';
 import { Z } from './constants/zIndex';
+import { installInvalidSubmitFeedback } from './utility/invalidSubmitFeedback';
+import { errorNotification } from './utility/NotificationUtility';
 
 
 
@@ -29,6 +32,20 @@ import { Z } from './constants/zIndex';
 
 
 
+/**
+ * Retour visuel quand une soumission est bloquée par la validation.
+ *
+ * 63 formulaires appellent `form.onSubmit(handler)` sans gestionnaire d'échec :
+ * l'erreur s'affiche sous le champ fautif, souvent hors écran, et le bouton
+ * paraît sans effet. On branche ici, en un seul endroit, un filet qui amène le
+ * champ concerné sous les yeux de l'utilisateur et l'en informe.
+ * Voir src/utility/invalidSubmitFeedback.ts.
+ */
+function InvalidSubmitFeedback() {
+  useEffect(() => installInvalidSubmitFeedback(errorNotification), []);
+  return null;
+}
+
 function App() {
   return (
     <Provider store={store}>
@@ -37,6 +54,7 @@ function App() {
           <NavigationProgress color="red" />
           <Notifications position="bottom-right" zIndex={Z.toast} />
           <GlobalLoadingIndicator />
+          <InvalidSubmitFeedback />
           <Router />
         </MantineProvider>
       </PrimeReactProvider>

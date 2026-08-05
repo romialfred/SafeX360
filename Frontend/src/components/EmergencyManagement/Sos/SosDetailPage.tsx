@@ -120,6 +120,18 @@ const SosDetailPage = () => {
     const [alert, setAlert] = useState<SosAlertDTO | null>(null);
     const [lifecycle, setLifecycle] = useState<SosLifecycleEventDTO[]>([]);
     const [teams, setTeams] = useState<RescueTeamDTO[]>([]);
+
+    /**
+     * Équipes réellement dispatchables (les inactives sont exclues).
+     * SOURCE UNIQUE : l'état vide affiché, les options de la liste et la garde
+     * du bouton « Dispatcher » en découlent tous — ils ne peuvent pas diverger.
+     */
+    const dispatchableTeams = useMemo(
+        () => teams
+            .filter((t) => t.status !== 'INACTIVE')
+            .map((t) => ({ value: String(t.id), label: `${t.name} (${t.memberCount ?? 0} membres)` })),
+        [teams],
+    );
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [acting, setActing] = useState(false);
@@ -803,17 +815,27 @@ const SosDetailPage = () => {
                 size="sm"
             >
                 <div className="space-y-3 mt-2">
-                    <Select
-                        label="Équipe à dispatcher"
-                        data={teams.filter((t) => t.status !== 'INACTIVE').map((t) => ({
-                            value: String(t.id),
-                            label: `${t.name} (${t.memberCount ?? 0} membres)`,
-                        }))}
-                        value={dispatchTeam}
-                        onChange={setDispatchTeam}
-                        searchable
-                        placeholder="Choisir une équipe"
-                    />
+                    {/* Une mine sans equipe de secours configuree donnait une liste
+                        vide et un « Nothing found » en anglais : l'utilisateur ne
+                        savait ni pourquoi, ni quoi faire. On le dit explicitement
+                        et on l'oriente vers le referentiel. */}
+                    {dispatchableTeams.length === 0 ? (
+                        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-[12.5px] text-amber-900">
+                            Aucune équipe de secours n'est configurée pour cette mine.
+                            Renseignez-les dans <strong>Paramètres › Urgences › Équipes de secours</strong>,
+                            puis relancez le dispatch.
+                        </div>
+                    ) : (
+                        <Select
+                            label="Équipe à dispatcher"
+                            data={dispatchableTeams}
+                            value={dispatchTeam}
+                            onChange={setDispatchTeam}
+                            searchable
+                            placeholder="Choisir une équipe"
+                            nothingFoundMessage="Aucune équipe ne correspond"
+                        />
+                    )}
                     <textarea
                         value={dispatchNote}
                         onChange={(e) => setDispatchNote(e.target.value)}
@@ -831,7 +853,7 @@ const SosDetailPage = () => {
                         </button>
                         <button
                             onClick={handleDispatch}
-                            disabled={acting || !dispatchTeam}
+                            disabled={acting || !dispatchTeam || dispatchableTeams.length === 0}
                             className="px-3.5 py-1.5 rounded-md bg-amber-600 text-white text-[12.5px] font-semibold hover:bg-amber-700 disabled:opacity-40"
                         >
                             {acting ? '…' : 'Dispatcher'}
