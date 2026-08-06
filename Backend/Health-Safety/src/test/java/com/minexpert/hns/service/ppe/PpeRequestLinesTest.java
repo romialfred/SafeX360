@@ -97,23 +97,27 @@ class PpeRequestLinesTest {
     }
 
     @Test
-    @DisplayName("approbation : la sortie de stock = SOMME des quantités par EPI")
-    void approve_issuesSummedQuantityPerPpe() throws HSException {
+    @DisplayName("approbation : DÉCISION seule — fixe l'approuvé, AUCUNE sortie de stock (incrément 4)")
+    void approve_setsApprovedQuantities_withoutStockMovement() throws HSException {
         PpeRequest req = new PpeRequest();
         req.setId(99L);
         req.setCompanyId(1L);
         req.setStatus(PpeRequestStatus.PENDING);
         when(requestRepository.findById(99L)).thenReturn(java.util.Optional.of(req));
         when(requestRepository.save(any(PpeRequest.class))).thenAnswer(i -> i.getArgument(0));
-        // ppe 1 : 2 (emp 10) + 1 (emp 20) = 3 ; ppe 2 : 3 (emp 10).
-        when(ppeEmpRepository.findByPpeRequestId(99L)).thenReturn(List.of(
-                lineEntity(10L, 1L, 2), lineEntity(20L, 1L, 1), lineEntity(10L, 2L, 3)));
+        List<PpeEmp> lines = List.of(lineEntity(10L, 1L, 2), lineEntity(20L, 1L, 1), lineEntity(10L, 2L, 3));
+        when(ppeEmpRepository.findByPpeRequestId(99L)).thenReturn(lines);
 
         service.approveRequest(99L, "ok", 1L);
 
-        // Un mouvement ISSUE par EPI, quantité = somme des lignes, cloisonné mine 1.
-        verify(ppeService).applyStockMovement(eq(1L), eq(-3), eq(PpeMovementType.ISSUE), eq("REQ-99"), eq(1L), isNull());
-        verify(ppeService).applyStockMovement(eq(2L), eq(-3), eq(PpeMovementType.ISSUE), eq("REQ-99"), eq(1L), isNull());
+        // L'approbation ne touche PLUS le stock : c'est la distribution qui sort le stock.
+        org.mockito.Mockito.verify(ppeService, org.mockito.Mockito.never())
+                .applyStockMovement(anyLong(), org.mockito.ArgumentMatchers.anyInt(),
+                        any(PpeMovementType.class), org.mockito.ArgumentMatchers.anyString(),
+                        org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+        // Chaque ligne est approuvée à sa quantité demandée, rien de distribué encore.
+        assertThat(lines).extracting(PpeEmp::getQuantityApproved).containsExactly(2, 1, 3);
+        assertThat(lines).allMatch(l -> l.getQuantityIssued() == 0);
         assertThat(req.getStatus()).isEqualTo(PpeRequestStatus.APPROVED);
     }
 

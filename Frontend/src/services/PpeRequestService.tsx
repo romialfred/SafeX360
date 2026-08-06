@@ -31,6 +31,15 @@ const deliverPpeRequest = async (id: any, comment?: string) => {
         .then((response) => response.data);
 };
 
+// Retour des dotations d'une demande distribuée (DELIVERED -> RETURNED).
+// restock=true (défaut) remet en stock ; false = réforme (stock inchangé).
+const returnPpeRequest = async (id: any, comment?: string, restock: boolean = true) => {
+    return axiosInstance.put(`${url}/return/${id}`, null, {
+        params: { comment, restock }
+    })
+        .then((response) => response.data);
+};
+
 const getPpeRequestById = async (id: any) => {
     return axiosInstance.get(`${url}/get/${id}`)
         .then((response) => response.data);
@@ -41,4 +50,4 @@ const getAllPpeRequests = async () => {
         .then((response) => response.data);
 };
 
-export { createPpeRequest, updatePpeRequest, approvePpeRequest, rejectPpeRequest, deliverPpeRequest, getPpeRequestById, getAllPpeRequests }
+export { createPpeRequest, updatePpeRequest, approvePpeRequest, rejectPpeRequest, deliverPpeRequest, returnPpeRequest, getPpeRequestById, getAllPpeRequests }

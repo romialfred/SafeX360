@@ -169,28 +169,24 @@ public class PpeRequestServiceImpl implements PpeRequestService {
                 req.setStatus(PpeRequestStatus.APPROVED);
                 req.setComment(comment);
 
-                // Incrément 2 — sortie de stock pilotée par les LIGNES et leurs quantités.
-                // Chaque ligne (bénéficiaire × EPI) est approuvée pour sa quantité demandée,
-                // puis le stock sort par EPI de la SOMME des quantités approuvées — un seul
-                // mouvement ISSUE par EPI, tracé (« REQ-<id> ») et cloisonné sur la mine.
+                // Incrément 4 — l'APPROBATION est une DÉCISION, pas un mouvement physique.
+                // On fixe seulement la quantité approuvée par ligne ; AUCUNE sortie de stock
+                // ici (la sortie relève de la DISTRIBUTION, cf. deliverRequest). Séparer
+                // approuvé / distribué est l'exigence même de cet incrément.
                 List<PpeEmp> lines = ppeEmpRepository.findByPpeRequestId(id);
                 if (lines.isEmpty()) {
                         throw new HSException("PPE_REQUEST_EMPTY");
                 }
-                Map<Long, Integer> issueByPpe = new LinkedHashMap<>();
                 for (PpeEmp line : lines) {
                         int requested = line.getQuantityRequested() != null ? line.getQuantityRequested() : 1;
                         line.setQuantityApproved(requested);       // approbation intégrale (l'ajustement fin par ligne viendra plus tard)
-                        line.setQuantityIssued(requested);          // dans le modèle actuel, approuver = sortir (distribution séparée à l'incrément 4)
-                        line.setStatus(PpeEmpStatus.ACTIVE);
-                        Long ppeId = line.getPpe() != null ? line.getPpe().getId() : null;
-                        if (ppeId != null) {
-                                issueByPpe.merge(ppeId, requested, Integer::sum);
+                        if (line.getQuantityIssued() == null) {
+                                line.setQuantityIssued(0);          // rien de distribué tant que la demande n'est pas livrée
                         }
-                }
-                for (Map.Entry<Long, Integer> e : issueByPpe.entrySet()) {
-                        ppeService.applyStockMovement(e.getKey(), -e.getValue(), PpeMovementType.ISSUE,
-                                        "REQ-" + id, req.getCompanyId(), null);
+                        if (line.getQuantityReturned() == null) {
+                                line.setQuantityReturned(0);
+                        }
+                        line.setStatus(PpeEmpStatus.ACTIVE);
                 }
                 ppeEmpRepository.saveAll(lines);
                 PpeRequest approved = requestRepository.save(req);
@@ -226,6 +222,7 @@ public class PpeRequestServiceImpl implements PpeRequestService {
                         @CacheEvict(cacheNames = "ppeRequestById", allEntries = true),
                         @CacheEvict(cacheNames = "ppeRequestsAll", allEntries = true)
         })
+        @Transactional
         public PpeRequestDTO deliverRequest(Long id, String comment, Long companyId) throws HSException {
                 PpeRequest req = requestRepository.findById(id)
                                 .orElseThrow(() -> new HSException("REQUEST_NOT_FOUND"));
@@ -236,13 +233,98 @@ public class PpeRequestServiceImpl implements PpeRequestService {
                 if (req.getStatus() != PpeRequestStatus.APPROVED) {
                         throw new HSException("REQUEST_NOT_APPROVED");
                 }
+
+                // Incrément 4 — la DISTRIBUTION est le mouvement physique : elle sort du stock.
+                // Quantité à sortir MAINTENANT, par ligne = approuvé − déjà distribué. Cette
+                // formule est IDEMPOTENTE et rétro-compatible :
+                //  • demande prod déjà APPROVED sous incrément 2 (approuvé == distribué, stock
+                //    DÉJÀ sorti) ⇒ delta = 0 ⇒ aucun double décrément ;
+                //  • nouvelle demande (approuvé fixé, distribué = 0) ⇒ delta = approuvé ⇒ sortie.
+                // Le stock sort par EPI (un seul mouvement ISSUE par EPI), tracé et cloisonné.
+                List<PpeEmp> lines = ppeEmpRepository.findByPpeRequestId(id);
+                Map<Long, Integer> issueByPpe = new LinkedHashMap<>();
+                for (PpeEmp line : lines) {
+                        int approved = line.getQuantityApproved() != null ? line.getQuantityApproved() : 0;
+                        int alreadyIssued = line.getQuantityIssued() != null ? line.getQuantityIssued() : 0;
+                        int toIssue = approved - alreadyIssued;
+                        if (toIssue > 0) {
+                                Long ppeId = line.getPpe() != null ? line.getPpe().getId() : null;
+                                if (ppeId != null) {
+                                        issueByPpe.merge(ppeId, toIssue, Integer::sum);
+                                }
+                                line.setQuantityIssued(approved);
+                        }
+                }
+                for (Map.Entry<Long, Integer> e : issueByPpe.entrySet()) {
+                        ppeService.applyStockMovement(e.getKey(), -e.getValue(), PpeMovementType.ISSUE,
+                                        "REQ-" + id, req.getCompanyId(), null);
+                }
+                ppeEmpRepository.saveAll(lines);
+
                 req.setStatus(PpeRequestStatus.DELIVERED);
                 req.setDeliveredAt(java.time.LocalDateTime.now());
                 if (comment != null && !comment.isBlank()) {
                         req.setComment(comment);
                 }
                 PpeRequest delivered = requestRepository.save(req);
-                return delivered.toDTO();
+                return withLines(delivered.toDTO());
+        }
+
+        @Override
+        @Transactional
+        @Caching(evict = {
+                        @CacheEvict(cacheNames = "ppeRequestById", allEntries = true),
+                        @CacheEvict(cacheNames = "ppeRequestsAll", allEntries = true)
+        })
+        public PpeRequestDTO returnRequest(Long id, String comment, boolean restock, Long companyId) throws HSException {
+                PpeRequest req = requestRepository.findById(id)
+                                .orElseThrow(() -> new HSException("REQUEST_NOT_FOUND"));
+                if (companyId != null && !companyId.equals(req.getCompanyId())) {
+                        throw new HSException("REQUEST_NOT_FOUND");
+                }
+                // On ne retourne que ce qui a été effectivement DISTRIBUÉ. Une demande
+                // seulement approuvée (rien de sorti) n'a rien à rendre.
+                if (req.getStatus() != PpeRequestStatus.DELIVERED) {
+                        throw new HSException("REQUEST_NOT_DELIVERED");
+                }
+
+                // Incrément 4 — RETOUR total des dotations. Quantité rendable par ligne =
+                // distribué − déjà rendu. Si `restock`, chaque EPI est REMIS en stock (un
+                // mouvement RETURN par EPI, delta positif) ; sinon la sortie est définitive
+                // (réforme : le stock ne bouge pas, on trace seulement le rendu). Idempotent
+                // (un second appel ne trouve plus rien à rendre → delta 0).
+                List<PpeEmp> lines = ppeEmpRepository.findByPpeRequestId(id);
+                Map<Long, Integer> returnByPpe = new LinkedHashMap<>();
+                boolean somethingReturned = false;
+                for (PpeEmp line : lines) {
+                        int issued = line.getQuantityIssued() != null ? line.getQuantityIssued() : 0;
+                        int alreadyReturned = line.getQuantityReturned() != null ? line.getQuantityReturned() : 0;
+                        int toReturn = issued - alreadyReturned;
+                        if (toReturn > 0) {
+                                somethingReturned = true;
+                                Long ppeId = line.getPpe() != null ? line.getPpe().getId() : null;
+                                if (restock && ppeId != null) {
+                                        returnByPpe.merge(ppeId, toReturn, Integer::sum);
+                                }
+                                line.setQuantityReturned(alreadyReturned + toReturn);
+                                line.setStatus(PpeEmpStatus.INACTIVE);
+                        }
+                }
+                if (!somethingReturned) {
+                        throw new HSException("NOTHING_TO_RETURN");
+                }
+                for (Map.Entry<Long, Integer> e : returnByPpe.entrySet()) {
+                        ppeService.applyStockMovement(e.getKey(), e.getValue(), PpeMovementType.RETURN,
+                                        "RET-" + id, req.getCompanyId(), null);
+                }
+                ppeEmpRepository.saveAll(lines);
+
+                req.setStatus(PpeRequestStatus.RETURNED);
+                if (comment != null && !comment.isBlank()) {
+                        req.setComment(comment);
+                }
+                PpeRequest returned = requestRepository.save(req);
+                return withLines(returned.toDTO());
         }
 
         @Override

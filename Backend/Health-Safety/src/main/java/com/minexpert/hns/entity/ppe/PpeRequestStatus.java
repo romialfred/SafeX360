@@ -6,5 +6,8 @@ public enum PpeRequestStatus {
     REJECTED,
     // Ajouté en fin d'enum (append) : sûr pour un stockage STRING (PpeRequest.status
     // est @Enumerated(STRING)). Livraison effective d'une demande APPROVED.
-    DELIVERED
+    DELIVERED,
+    // Incrément 4 — retour total des dotations d'une demande déjà distribuée
+    // (remise en stock ou réforme). Append en fin d'enum = sûr pour STRING.
+    RETURNED
 }

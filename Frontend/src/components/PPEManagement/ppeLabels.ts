@@ -83,7 +83,8 @@ export const REQUEST_STATUS_CONFIG: Record<string, { label: string; chip: string
     PENDING: { label: 'En attente', chip: 'bg-violet-50 text-violet-700 border-violet-200' },
     APPROVED: { label: 'Approuvée', chip: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
     REJECTED: { label: 'Rejetée', chip: 'bg-rose-50 text-rose-700 border-rose-200' },
-    DELIVERED: { label: 'Livrée', chip: 'bg-cyan-50 text-cyan-700 border-cyan-200' },
+    DELIVERED: { label: 'Distribuée', chip: 'bg-cyan-50 text-cyan-700 border-cyan-200' },
+    RETURNED: { label: 'Retournée', chip: 'bg-slate-100 text-slate-600 border-slate-300' },
 };
 
 export const requestStatusConfig = (status?: string | null) =>

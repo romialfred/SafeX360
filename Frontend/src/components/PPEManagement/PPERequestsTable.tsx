@@ -9,11 +9,12 @@ import {
     Button,
     Drawer,
     LoadingOverlay,
+    Switch,
     Textarea,
     TextInput,
     Tooltip,
 } from '@mantine/core';
-import { IconCheck, IconClipboardList, IconEye, IconPlus, IconSearch, IconTruckDelivery, IconX } from '@tabler/icons-react';
+import { IconArrowBackUp, IconCheck, IconClipboardList, IconEye, IconPlus, IconSearch, IconTruckDelivery, IconX } from '@tabler/icons-react';
 import { useForm } from '@mantine/form';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
@@ -24,6 +25,7 @@ import {
     deliverPpeRequest,
     getAllPpeRequests,
     rejectPpeRequest,
+    returnPpeRequest,
 } from '../../services/PpeRequestService';
 import { notifyError } from '../../utility/notifyError';
 import { errorNotification, successNotification } from '../../utility/NotificationUtility';
@@ -57,6 +59,7 @@ const PPERequestsTable = () => {
     const [requests, setRequests] = useState<any[]>([]);
     const [showApproveModal, setShowApproveModal] = useState(false);
     const [showRejectModal, setShowRejectModal] = useState(false);
+    const [showReturnModal, setShowReturnModal] = useState(false);
     const [showViewModal, setShowViewModal] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState<any>(null);
     const [viewData, setViewData] = useState<any>(null);
@@ -73,6 +76,8 @@ const PPERequestsTable = () => {
         initialValues: { comment: '' },
         validate: { comment: (val) => (val.trim() ? null : t('requests.validateRejectComment')) },
     });
+    // Retour : remise en stock (défaut) ou réforme, avec motif optionnel.
+    const returnForm = useForm({ initialValues: { comment: '', restock: true } });
 
     useEffect(() => {
         getEmployeesWithDepartment()
@@ -106,9 +111,11 @@ const PPERequestsTable = () => {
                     if (status === 'PENDING') acc.PENDING += 1;
                     else if (status === 'APPROVED') acc.APPROVED += 1;
                     else if (status === 'REJECTED') acc.REJECTED += 1;
+                    else if (status === 'DELIVERED') acc.DELIVERED += 1;
+                    else if (status === 'RETURNED') acc.RETURNED += 1;
                     return acc;
                 },
-                { PENDING: 0, APPROVED: 0, REJECTED: 0 }
+                { PENDING: 0, APPROVED: 0, REJECTED: 0, DELIVERED: 0, RETURNED: 0 }
             ),
         [requests]
     );
@@ -126,6 +133,7 @@ const PPERequestsTable = () => {
 
     const openApproveModal = (row: any) => { setSelectedRequest(row); approveForm.reset(); setShowApproveModal(true); };
     const openRejectModal = (row: any) => { setSelectedRequest(row); rejectForm.reset(); setShowRejectModal(true); };
+    const openReturnModal = (row: any) => { setSelectedRequest(row); returnForm.reset(); setShowReturnModal(true); };
     const openViewModal = (row: any) => { setViewData(row); setShowViewModal(true); };
 
     const handleApprove = async (values: typeof approveForm.values) => {
@@ -156,16 +164,37 @@ const PPERequestsTable = () => {
         }
     };
 
-    // Livraison EPI : passe une demande APPROVED en DELIVERED (garde d'état côté
-    // backend). Message clair si l'état n'est pas APPROVED (REQUEST_NOT_APPROVED).
+    // Distribution EPI : passe une demande APPROVED en DELIVERED et SORT le stock
+    // (approuvé − déjà distribué, idempotent côté backend). Message clair si l'état
+    // n'est pas APPROVED (REQUEST_NOT_APPROVED) ou si le stock manque (INSUFFICIENT_STOCK).
     const handleDeliver = async (row: any) => {
         try {
             setLoading(true);
             await deliverPpeRequest(row.id);
-            successNotification(t('requests.deliverSuccess', 'Demande marquée comme livrée'));
+            successNotification(t('requests.deliverSuccess', 'Dotation distribuée — stock mis à jour'));
             fetchRequests();
         } catch (err: any) {
-            notifyError(err, t('requests.deliverError', 'Échec de la livraison'));
+            notifyError(err, t('requests.deliverError', 'Échec de la distribution'));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Retour EPI : passe une demande DELIVERED en RETURNED. restock=true remet en
+    // stock (mouvement RETURN), false = réforme. Idempotent côté backend.
+    const handleReturn = async (values: typeof returnForm.values) => {
+        try {
+            setLoading(true);
+            await returnPpeRequest(selectedRequest.id, values.comment, values.restock);
+            successNotification(
+                values.restock
+                    ? t('requests.returnSuccessRestock', 'Dotation retournée — matériel remis en stock')
+                    : t('requests.returnSuccessScrap', 'Dotation retournée — matériel réformé')
+            );
+            setShowReturnModal(false);
+            fetchRequests();
+        } catch (err: any) {
+            notifyError(err, t('requests.returnError', 'Échec du retour'));
         } finally {
             setLoading(false);
         }
@@ -275,15 +304,28 @@ const PPERequestsTable = () => {
                 </>
             )}
             {String(rowData.status).toUpperCase() === 'APPROVED' && (
-                <Tooltip label={t('requests.tooltipDeliver', 'Marquer comme livré')} withArrow>
+                <Tooltip label={t('requests.tooltipDeliver', 'Distribuer (sortie de stock)')} withArrow>
                     <ActionIcon
                         variant="light"
                         color="grape"
                         size="sm"
                         onClick={() => handleDeliver(rowData)}
-                        aria-label={t('requests.ariaDeliver', 'Marquer la demande comme livrée')}
+                        aria-label={t('requests.ariaDeliver', 'Distribuer la dotation')}
                     >
                         <IconTruckDelivery size={14} stroke={1.5} />
+                    </ActionIcon>
+                </Tooltip>
+            )}
+            {String(rowData.status).toUpperCase() === 'DELIVERED' && (
+                <Tooltip label={t('requests.tooltipReturn', 'Retour de dotation')} withArrow>
+                    <ActionIcon
+                        variant="light"
+                        color="orange"
+                        size="sm"
+                        onClick={() => openReturnModal(rowData)}
+                        aria-label={t('requests.ariaReturn', 'Retourner la dotation')}
+                    >
+                        <IconArrowBackUp size={14} stroke={1.5} />
                     </ActionIcon>
                 </Tooltip>
             )}
@@ -334,6 +376,8 @@ const PPERequestsTable = () => {
                         { value: ALL, label: t('requests.filterAll'), count: requests.length, color: 'slate' },
                         { value: 'PENDING', label: t('requests.filterPending'), count: statusCounts.PENDING, color: 'violet' },
                         { value: 'APPROVED', label: t('requests.filterApproved'), count: statusCounts.APPROVED, color: 'green' },
+                        { value: 'DELIVERED', label: t('requests.filterDelivered', 'Distribuées'), count: statusCounts.DELIVERED, color: 'blue' },
+                        { value: 'RETURNED', label: t('requests.filterReturned', 'Retournées'), count: statusCounts.RETURNED, color: 'slate' },
                         { value: 'REJECTED', label: t('requests.filterRejected'), count: statusCounts.REJECTED, color: 'rose' },
                     ]}
                     rightElement={
@@ -458,6 +502,44 @@ const PPERequestsTable = () => {
                 </form>
             </Drawer>
 
+            {/* Volet : retour de dotation */}
+            <Drawer
+                position="right"
+                opened={showReturnModal}
+                onClose={() => setShowReturnModal(false)}
+                title={<span className="text-base font-semibold text-slate-900">{t('requests.modalReturnTitle', 'Retour de dotation')}</span>}
+                size="md"
+            >
+                <LoadingOverlay visible={loading} />
+                <form onSubmit={returnForm.onSubmit(handleReturn)}>
+                    <p className="text-[12.5px] text-slate-600 mb-3">
+                        {t('requests.returnHint', "Enregistre le retour du matériel distribué. Remettre en stock rend les EPI de nouveau disponibles ; sinon ils sont réformés (stock inchangé).")}
+                    </p>
+                    <Switch
+                        label={t('requests.fieldRestock', 'Remettre en stock')}
+                        description={t('requests.fieldRestockDesc', 'Décocher pour réformer (matériel hors d\'usage)')}
+                        checked={returnForm.values.restock}
+                        onChange={(e) => returnForm.setFieldValue('restock', e.currentTarget.checked)}
+                        size="sm"
+                        mb="sm"
+                    />
+                    <Textarea
+                        label={t('requests.fieldReturnComment', 'Motif / observation')}
+                        placeholder={t('requests.fieldReturnCommentPlaceholder', 'ex. Fin de mission, EPI endommagé…')}
+                        size="sm"
+                        {...returnForm.getInputProps('comment')}
+                    />
+                    <div className="flex justify-end gap-2 mt-4 pt-2 border-t border-slate-200">
+                        <Button variant="default" size="sm" onClick={() => setShowReturnModal(false)}>
+                            {t('common.cancel')}
+                        </Button>
+                        <Button type="submit" size="sm" color="orange" leftSection={<IconArrowBackUp size={14} />}>
+                            {t('requests.confirmReturn', 'Confirmer le retour')}
+                        </Button>
+                    </div>
+                </form>
+            </Drawer>
+
             {/* Modale : détail */}
             <Drawer
                 position="right"
@@ -490,6 +572,8 @@ const PPERequestsTable = () => {
                                             <th className="text-left p-2 font-medium">EPI</th>
                                             <th className="text-right p-2 font-medium">Demandé</th>
                                             <th className="text-right p-2 font-medium">Approuvé</th>
+                                            <th className="text-right p-2 font-medium">Distribué</th>
+                                            <th className="text-right p-2 font-medium">Retourné</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -499,6 +583,8 @@ const PPERequestsTable = () => {
                                                 <td className="p-2 text-slate-800">{ppeMap[l.ppeId]?.name || `#${l.ppeId}`}</td>
                                                 <td className="p-2 text-right tabular-nums">{l.quantityRequested ?? '—'}</td>
                                                 <td className="p-2 text-right tabular-nums">{l.quantityApproved ?? '—'}</td>
+                                                <td className="p-2 text-right tabular-nums">{l.quantityIssued ?? '—'}</td>
+                                                <td className="p-2 text-right tabular-nums">{l.quantityReturned ?? '—'}</td>
                                             </tr>
                                         ))}
                                     </tbody>

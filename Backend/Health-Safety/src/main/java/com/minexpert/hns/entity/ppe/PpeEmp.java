@@ -17,11 +17,13 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class PpeEmp {
@@ -52,6 +54,8 @@ public class PpeEmp {
     private Integer quantityApproved;
     /** Quantité effectivement sortie du stock / distribuée. */
     private Integer quantityIssued;
+    /** Quantité retournée (remise en stock ou réformée) — incrément 4. */
+    private Integer quantityReturned;
 
     private LocalDate date;
     private LocalDateTime createdAt;
@@ -73,9 +77,15 @@ public class PpeEmp {
 
     /** Convert entity to DTO */
     public PpeEmpDTO toDTO() {
-        return new PpeEmpDTO(id, empId, ppe != null ? ppe.getId() : null,
-                ppeRequest != null ? ppeRequest.getId() : null, status,
-                quantityRequested, quantityApproved, quantityIssued,
-                date, createdAt, updatedAt, companyId);
+        // Builder : plus de constructeur positionnel (fin du piège d'arité Lombok).
+        return PpeEmpDTO.builder()
+                .id(id).empId(empId)
+                .ppeId(ppe != null ? ppe.getId() : null)
+                .ppeRequestId(ppeRequest != null ? ppeRequest.getId() : null)
+                .status(status)
+                .quantityRequested(quantityRequested).quantityApproved(quantityApproved)
+                .quantityIssued(quantityIssued).quantityReturned(quantityReturned)
+                .date(date).createdAt(createdAt).updatedAt(updatedAt).companyId(companyId)
+                .build();
     }
 }

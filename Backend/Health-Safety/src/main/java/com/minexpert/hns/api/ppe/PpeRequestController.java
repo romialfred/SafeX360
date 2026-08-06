@@ -49,13 +49,26 @@ public class PpeRequestController {
         return ResponseEntity.ok(requestService.rejectRequest(id, comment, companyId));
     }
 
-    // Livraison effective d'une demande EPI APPROVED (passage -> DELIVERED, horodaté).
+    // Distribution effective d'une demande EPI APPROVED : SORT le stock (approuvé -
+    // déjà distribué, idempotent) puis passe -> DELIVERED, horodaté.
     @PutMapping("/deliver/{id}")
     public ResponseEntity<PpeRequestDTO> deliver(
             @PathVariable Long id,
             @RequestParam(required = false) String comment,
             @RequestParam(required = false) Long companyId) throws HSException {
         return ResponseEntity.ok(requestService.deliverRequest(id, comment, companyId));
+    }
+
+    // Retour des dotations d'une demande DELIVERED : passage -> RETURNED. Par défaut
+    // le matériel est REMIS en stock (restock=true, mouvement RETURN par EPI) ;
+    // restock=false = réforme (rendu tracé, stock inchangé).
+    @PutMapping("/return/{id}")
+    public ResponseEntity<PpeRequestDTO> returnRequest(
+            @PathVariable Long id,
+            @RequestParam(required = false) String comment,
+            @RequestParam(required = false, defaultValue = "true") boolean restock,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(requestService.returnRequest(id, comment, restock, companyId));
     }
 
     @GetMapping("/get/{id}")
