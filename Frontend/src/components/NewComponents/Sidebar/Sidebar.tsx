@@ -287,6 +287,7 @@ const menuItems: MenuItem[] = [
             { id: 'ppe-overview', label: 'Vue d\'Ensemble EPI', icon: IconChartBar },
             { id: 'ppe-monitoring', label: 'Suivi des EPI', icon: IconActivity },
             { id: 'ppe-request', label: 'Gestion des demandes', icon: IconClipboardList },
+            { id: 'ppe-mine', label: 'Mes EPI', icon: IconUserCheck },
             { id: 'ppe-stocktake', label: 'Inventaire EPI', icon: IconClipboardCheck },
             { id: 'ppe-analytics', label: 'Analyse & valorisation', icon: IconChartLine }
         ]

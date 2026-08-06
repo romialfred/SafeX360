@@ -60,4 +60,12 @@ public interface PpeEmpRepository extends JpaRepository<PpeEmp, Long> {
             + "WHERE (:companyId IS NULL OR e.companyId = :companyId) "
             + "AND e.quantityApproved > COALESCE(e.quantityIssued,0) GROUP BY e.ppe.id")
     List<Object[]> reservedByPpe(@Param("companyId") Long companyId);
+
+    // ── Consommation & coût EPI par employé (page « Mes EPI ») ──
+    // quantité = Σ distribué ; coût = Σ distribué × prix de référence de l'EPI.
+    @Query("SELECT e.empId, SUM(COALESCE(e.quantityIssued,0)), "
+            + "SUM(COALESCE(e.quantityIssued,0) * COALESCE(e.ppe.referencePrice,0)) "
+            + "FROM PpeEmp e WHERE (:companyId IS NULL OR e.companyId = :companyId) "
+            + "AND e.empId IS NOT NULL GROUP BY e.empId")
+    List<Object[]> consumptionByEmp(@Param("companyId") Long companyId);
 }
