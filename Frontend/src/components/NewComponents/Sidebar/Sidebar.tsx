@@ -285,7 +285,9 @@ const menuItems: MenuItem[] = [
         subItems: [
             { id: 'ppe-overview', label: 'Vue d\'Ensemble EPI', icon: IconChartBar },
             { id: 'ppe-monitoring', label: 'Suivi des EPI', icon: IconActivity },
-            { id: 'ppe-request', label: 'Demande d\'EPI', icon: IconPlus }
+            { id: 'ppe-request', label: 'Demande d\'EPI', icon: IconPlus },
+            { id: 'ppe-stocktake', label: 'Inventaire EPI', icon: IconClipboardCheck },
+            { id: 'ppe-analytics', label: 'Analyse & valorisation', icon: IconChartLine }
         ]
     },
     {
@@ -507,6 +509,8 @@ export const menuIdToUrl: Record<string, string> = {
     "ppe-overview": "/ppe-management",
     "ppe-monitoring": "/ppe-monitoring",
     "ppe-request": "/ppe-request",
+    "ppe-stocktake": "/ppe-management/stocktake",
+    "ppe-analytics": "/ppe-management/analytics",
 
     // Audits Management
     "audit-program": "/audit-program",
@@ -665,6 +669,10 @@ const MENU_PERMISSION_OVERRIDES: Record<string, string> = {
     'param-incidents': 'settings',
     'param-tools-templates': 'settings',
     'annual-audit-plan': 'auditPlan',
+    // Inventaire & Analyse EPI : mêmes droits que la vue d'ensemble EPI (les routes
+    // sont gardées par ModuleGuard moduleId='ppe-overview').
+    'ppe-stocktake': 'ppeOverview',
+    'ppe-analytics': 'ppeOverview',
     // Ces trois-là avaient été rabattus sur un module voisin faute d'exister
     // dans la matrice de droits ; ils sont désormais attribuables pour eux-mêmes.
     'audit-program': 'auditProgram',
