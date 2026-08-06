@@ -154,8 +154,11 @@ def run():
                 if target == "incomplete" and ref == DRIVER:
                     continue
                 used_ppe.append(pid)
-                for j in range(nlines):
-                    newest = (j == nlines - 1)
+                # Pour l'EPI PILOTE sur les cibles à écart, une SEULE ligne datée domine
+                # (sinon une ligne d'historique « sauverait » la conformité).
+                eff_lines = 1 if (ref == DRIVER and target in ("renew", "critique")) else nlines
+                for j in range(eff_lines):
+                    newest = (j == eff_lines - 1)
                     if newest and ref == DRIVER and target == "renew":
                         d = today - timedelta(days=DRIVER_LIFE_DAYS - random.randint(5, 25))   # expire sous ~30 j
                     elif newest and ref == DRIVER and target == "critique":
