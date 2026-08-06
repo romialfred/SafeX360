@@ -61,7 +61,11 @@ public class GatewayAuthorizationMatrix {
             case "INCIDENT_INVESTIGATOR" -> operation == Operation.READ
                     || operation == Operation.DECLARE
                     || operation == Operation.SELF_SERVICE
-                    || operation == Operation.WRITE;
+                    // Granularité EPI (incrément 7) : gérer le stock/les dotations EPI
+                    // (approbation, distribution, retour, inventaire, catalogue) relève
+                    // de l'autorité EPI = admins + coordinateurs HSE. L'enquêteur incident
+                    // garde le WRITE partout AILLEURS, mais pas sur les chemins EPI.
+                    || (operation == Operation.WRITE && !isPpePath(normalizePath(requestUri)));
             case "AUDITOR" -> operation == Operation.READ
                     || operation == Operation.EXPORT
                     || operation == Operation.DECLARE
@@ -117,6 +121,16 @@ public class GatewayAuthorizationMatrix {
 
     private static boolean isAuditPath(String path) {
         return path.contains("/audit") || path.contains("/inspection");
+    }
+
+    /**
+     * Chemins du module EPI (catalogue, stock, demandes/dotations, inventaire,
+     * tableau de bord). Sert à réserver l'ÉCRITURE EPI à l'autorité EPI (admins +
+     * coordinateurs HSE). Le préfixe « /ppe » couvre /ppe, /ppe-request, /ppe-stock,
+     * /ppe-stocktake, /ppe-dashboard.
+     */
+    private static boolean isPpePath(String path) {
+        return path.contains("/ppe");
     }
 
     private static String normalizePath(String path) {
