@@ -64,4 +64,37 @@ public final class RegulatoryConformity {
         }
         return ChronoUnit.DAYS.between(today != null ? today : LocalDate.now(), dueDate);
     }
+
+    // ─── Autorisations de travaux (permis a fenetre temporelle) ────────────────
+    // Une autorisation de travaux (excavation, hauteur, forage, dynamitage…) n'est
+    // pas « renouvelable » comme une licence : elle est valide sur une fenetre, puis
+    // close. Son cycle de vie a donc ses propres etats.
+
+    public static final String EN_COURS = "EN_COURS";
+    public static final String PLANIFIE = "PLANIFIE";
+    public static final String CLOTURE = "CLOTURE";
+
+    /**
+     * @param status    ACTIVE (permis vivant) / INACTIVE (cloture manuellement)
+     * @param validFrom debut de validite (null = non planifie)
+     * @param validTo   fin de validite (null = non evaluee)
+     * @param today     date de reference (injectable pour les tests)
+     */
+    public static String authorizationStatus(Status status, LocalDate validFrom, LocalDate validTo,
+            LocalDate today) {
+        if (status == Status.INACTIVE) {
+            return CLOTURE;
+        }
+        LocalDate ref = today != null ? today : LocalDate.now();
+        if (validTo == null) {
+            return A_EVALUER;
+        }
+        if (validTo.isBefore(ref)) {
+            return EXPIRE;
+        }
+        if (validFrom != null && validFrom.isAfter(ref)) {
+            return PLANIFIE;
+        }
+        return EN_COURS;
+    }
 }

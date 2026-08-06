@@ -312,6 +312,7 @@ const menuItems: MenuItem[] = [
         subItems: [
             { id: 'compliance-dashboard', label: 'Tableau de bord', icon: IconChartBar },
             { id: 'regulatory-licenses', label: 'Licences & permis', icon: IconCertificate },
+            { id: 'work-authorizations', label: 'Autorisations de travaux', icon: IconTools },
             { id: 'requirements', label: 'Exigences légales', icon: IconFileCheck },
             { id: 'position-assignments', label: 'Affectations par poste', icon: IconUserCheck },
             { id: 'employee-assignments', label: 'Affectations employés', icon: IconUsers },
@@ -525,6 +526,7 @@ export const menuIdToUrl: Record<string, string> = {
     // Compliance Management
     "compliance-dashboard": "/compliance-dashboard",
     "regulatory-licenses": "/compliance-licenses",
+    "work-authorizations": "/compliance-authorizations",
     requirements: "/compliance-requirements",
     "position-assignments": "/compliance-assignment",
     "employee-assignments": "/employee-assignment",

@@ -53,6 +53,46 @@ export const licenseTypeLabel = (code?: string | null): string =>
 export const LICENSE_TYPE_OPTIONS = Object.entries(LICENSE_TYPE_LABELS)
     .map(([value, label]) => ({ value, label }));
 
+// ─── Autorisations de travaux ────────────────────────────────────────────────
+export const AUTHORIZATION_TYPE_LABELS: Record<string, string> = {
+    EXCAVATION:         'Excavation / terrassement',
+    TRAVAIL_EN_HAUTEUR: 'Travail en hauteur',
+    FORAGE:             'Forage',
+    DYNAMITAGE:         'Dynamitage / tir de mines',
+    TRAVAIL_A_CHAUD:    'Travail à chaud (permis feu)',
+    ESPACE_CONFINE:     'Espace confiné',
+    TERRASSEMENT:       'Terrassement',
+    LEVAGE:             'Levage',
+    ELECTRIQUE:         'Travaux électriques',
+    AUTRE:              'Autre travail',
+};
+export const authorizationTypeLabel = (c?: string | null): string =>
+    AUTHORIZATION_TYPE_LABELS[c || ''] || c || '—';
+export const AUTHORIZATION_TYPE_OPTIONS = Object.entries(AUTHORIZATION_TYPE_LABELS)
+    .map(([value, label]) => ({ value, label }));
+
+/** Statut de vie d'une autorisation (calculé serveur). */
+export const AUTH_STATUS_CONFIG: Record<string, ConfCfg> = {
+    EN_COURS:  { label: 'En cours',   chip: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: '#10b981' },
+    PLANIFIE:  { label: 'Planifié',   chip: 'bg-sky-50 text-sky-700 border-sky-200',             dot: '#0284c7' },
+    EXPIRE:    { label: 'Expiré',     chip: 'bg-rose-50 text-rose-700 border-rose-200',           dot: '#f43f5e' },
+    CLOTURE:   { label: 'Clôturé',    chip: 'bg-slate-100 text-slate-500 border-slate-300',       dot: '#64748b' },
+    A_EVALUER: { label: 'À évaluer',  chip: 'bg-slate-50 text-slate-600 border-slate-200',        dot: '#94a3b8' },
+};
+export const authStatusConfig = (c?: string | null): ConfCfg =>
+    AUTH_STATUS_CONFIG[c || ''] ?? AUTH_STATUS_CONFIG.A_EVALUER;
+
+export const RISK_LEVEL_CONFIG: Record<string, ConfCfg> = {
+    FAIBLE:   { label: 'Faible',   chip: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: '#10b981' },
+    MODERE:   { label: 'Modéré',   chip: 'bg-amber-50 text-amber-700 border-amber-200',       dot: '#f59e0b' },
+    ELEVE:    { label: 'Élevé',    chip: 'bg-orange-50 text-orange-700 border-orange-200',    dot: '#ea580c' },
+    CRITIQUE: { label: 'Critique', chip: 'bg-rose-50 text-rose-700 border-rose-200',           dot: '#f43f5e' },
+};
+export const riskLevelConfig = (c?: string | null): ConfCfg | null =>
+    c ? (RISK_LEVEL_CONFIG[c] ?? null) : null;
+export const RISK_LEVEL_OPTIONS = Object.entries(RISK_LEVEL_CONFIG)
+    .map(([value, cfg]) => ({ value, label: cfg.label }));
+
 // ─── Formateurs (fr-FR) ──────────────────────────────────────────────────────
 export const formatDateFr = (value?: string | null): string => {
     if (!value) return '—';

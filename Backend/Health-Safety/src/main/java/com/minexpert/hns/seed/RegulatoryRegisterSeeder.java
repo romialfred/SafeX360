@@ -13,8 +13,10 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import com.minexpert.hns.entity.compliance.ExploitationLicense;
+import com.minexpert.hns.entity.compliance.WorkAuthorization;
 import com.minexpert.hns.enums.Status;
 import com.minexpert.hns.repository.compliance.ExploitationLicenseRepository;
+import com.minexpert.hns.repository.compliance.WorkAuthorizationRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -39,6 +41,7 @@ public class RegulatoryRegisterSeeder implements ApplicationRunner {
     private static final long MINE_SANAMA_YIRI = 6L;
 
     private final ExploitationLicenseRepository licenseRepository;
+    private final WorkAuthorizationRepository authorizationRepository;
 
     @Override
     public void run(ApplicationArguments args) {
@@ -51,7 +54,12 @@ public class RegulatoryRegisterSeeder implements ApplicationRunner {
         try {
             seedLicenses();
         } catch (Exception ex) {
-            log.warn("[RegulatoryRegisterSeeder] Seed interrompu (non bloquant) : {}", ex.getMessage());
+            log.warn("[RegulatoryRegisterSeeder] Seed licences interrompu (non bloquant) : {}", ex.getMessage());
+        }
+        try {
+            seedWorkAuthorizations();
+        } catch (Exception ex) {
+            log.warn("[RegulatoryRegisterSeeder] Seed autorisations interrompu (non bloquant) : {}", ex.getMessage());
         }
     }
 
@@ -118,6 +126,75 @@ public class RegulatoryRegisterSeeder implements ApplicationRunner {
 
         licenseRepository.saveAll(toSave);
         log.info("[RegulatoryRegisterSeeder] {} licences seedees (mines 1 & 6).", toSave.size());
+    }
+
+    // ─── Autorisations de travaux ───────────────────────────────────────────
+
+    private void seedWorkAuthorizations() {
+        if (authorizationRepository.count() > 0) {
+            log.info("[RegulatoryRegisterSeeder] Autorisations deja presentes — seed ignore.");
+            return;
+        }
+        LocalDate today = LocalDate.now();
+        List<WorkAuthorization> toSave = new ArrayList<>();
+
+        // Mine 1 — Burkina GOLD SA
+        toSave.add(authorization(MINE_BURKINA_GOLD, "DYNAMITAGE", "PT-DYN-2026-054",
+                "Tir de mines — gradin 1080, fosse principale", "Fosse principale — gradin 1080", "ELEVE",
+                today.minusDays(2), today.minusDays(2), today.plusDays(5),
+                "Perimetre de securite 500 m, sirene, comptage des detonateurs, boutefeu habilite present.",
+                "Autorisation delivree au titre du plan de tir hebdomadaire."));
+        toSave.add(authorization(MINE_BURKINA_GOLD, "TRAVAIL_EN_HAUTEUR", "PT-HAU-2026-071",
+                "Maintenance convoyeur — passerelle 12 m", "Usine de traitement — convoyeur CV-04", "MODERE",
+                today, today, today.plusDays(3),
+                "Harnais + ligne de vie obligatoires, nacelle inspectee, zone balisee au sol.",
+                "Travaux de maintenance planifiee."));
+        toSave.add(authorization(MINE_BURKINA_GOLD, "TRAVAIL_A_CHAUD", "PT-CHA-2026-088",
+                "Soudure sur cuve de cyanuration", "Zone CIL — cuve n°3", "ELEVE",
+                today.plusDays(4), today.plusDays(4), today.plusDays(5),
+                "Permis feu, extincteurs a poste, surveillance incendie 2 h apres travaux, atmosphere controlee.",
+                "Autorisation planifiee — a demarrer dans 4 jours."));
+        toSave.add(authorization(MINE_BURKINA_GOLD, "EXCAVATION", "PT-EXC-2026-039",
+                "Terrassement tranchee reseau electrique", "Aire industrielle nord", "MODERE",
+                today.minusDays(20), today.minusDays(20), today.minusDays(6),
+                "DICT effectuee, blindage des parois, detection reseaux enterres.",
+                "Travaux clotures — conservation pour tracabilite."));
+
+        // Mine 6 — SANAMA YIRI
+        toSave.add(authorization(MINE_SANAMA_YIRI, "FORAGE", "PT-FOR-2026-012",
+                "Foration reconnaissance — zone extension nord", "Extension nord", "MODERE",
+                today.minusDays(1), today.minusDays(1), today.plusDays(9),
+                "Controle poussieres, EPI respiratoires, balisage foreuse.",
+                "Campagne de foration en cours."));
+        toSave.add(authorization(MINE_SANAMA_YIRI, "ESPACE_CONFINE", "PT-CON-2026-006",
+                "Inspection interne reservoir process", "Reservoir R-02", "CRITIQUE",
+                today.minusDays(9), today.minusDays(9), today.minusDays(2),
+                "Mesure d'atmosphere (O2, H2S), surveillant a l'entree, moyens d'extraction, ventilation forcee.",
+                "Intervention close."));
+
+        authorizationRepository.saveAll(toSave);
+        log.info("[RegulatoryRegisterSeeder] {} autorisations de travaux seedees (mines 1 & 6).", toSave.size());
+    }
+
+    private WorkAuthorization authorization(Long companyId, String type, String reference, String title,
+            String zone, String riskLevel, LocalDate issue, LocalDate from, LocalDate to,
+            String precautions, String notes) {
+        WorkAuthorization a = new WorkAuthorization();
+        a.setCompanyId(companyId);
+        a.setAuthorizationType(type);
+        a.setReference(reference);
+        a.setTitle(title);
+        a.setZone(zone);
+        a.setRiskLevel(riskLevel);
+        a.setIssueDate(issue);
+        a.setValidFrom(from);
+        a.setValidTo(to);
+        a.setPrecautions(precautions);
+        a.setNotes(notes);
+        a.setStatus(Status.ACTIVE);
+        a.setCreatedAt(LocalDateTime.now());
+        a.setUpdatedAt(LocalDateTime.now());
+        return a;
     }
 
     private ExploitationLicense license(Long companyId, String type, String reference, String title,
