@@ -93,6 +93,20 @@ export const requestStatusConfig = (status?: string | null) =>
         chip: 'bg-slate-50 text-slate-600 border-slate-200',
     };
 
+// ─── Statut d'un inventaire physique EPI (incrément 5) ─────────────────────
+
+export const STOCKTAKE_STATUS_CONFIG: Record<string, { label: string; chip: string }> = {
+    DRAFT: { label: 'Brouillon', chip: 'bg-amber-50 text-amber-700 border-amber-200' },
+    VALIDATED: { label: 'Validé', chip: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    CANCELLED: { label: 'Annulé', chip: 'bg-slate-100 text-slate-500 border-slate-200' },
+};
+
+export const stocktakeStatusConfig = (status?: string | null) =>
+    STOCKTAKE_STATUS_CONFIG[(status ?? '').toUpperCase()] ?? {
+        label: status ?? '—',
+        chip: 'bg-slate-50 text-slate-600 border-slate-200',
+    };
+
 // ─── Priorité d'une demande (codes backend Low / Medium / High) ────────────
 
 export const PRIORITY_CONFIG: Record<string, { label: string; chip: string }> = {

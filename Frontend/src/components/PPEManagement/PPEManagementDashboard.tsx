@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@mantine/core';
 import { BarChart } from '@mantine/charts';
 import {
+    IconClipboardCheck,
     IconClipboardList,
     IconDownload,
     IconHourglassHigh,
@@ -151,6 +152,9 @@ const PPEManagementDashboard = () => {
                         </Button>
                         <Button size="sm" color="teal" leftSection={<IconPackage size={14} />} onClick={() => navigate('stock-form')}>
                             {t('common.stockEntry')}
+                        </Button>
+                        <Button size="sm" variant="default" leftSection={<IconClipboardCheck size={14} />} onClick={() => navigate('stocktake')}>
+                            {t('dashboard.stocktake', 'Inventaire')}
                         </Button>
                         <Button size="sm" variant="default" leftSection={<IconClipboardList size={14} />} onClick={() => navigate('request-table')}>
                             {t('dashboard.requests')}
