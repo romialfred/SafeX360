@@ -215,7 +215,7 @@ const PPERequestsTable = () => {
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-[13px]">
-                            <thead className="bg-slate-50 text-slate-400 text-[11.5px] uppercase tracking-wider">
+                            <thead className="bg-slate-50 text-slate-400 text-[11.5px] tracking-wide">
                                 <tr>
                                     <th className="w-9 p-2.5"><Checkbox size="xs" disabled /></th>
                                     <th className="text-left font-semibold p-2.5">N° demande</th>

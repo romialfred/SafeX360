@@ -140,19 +140,19 @@ const EscalationRulesSection = ({ companyId }: Props) => {
                         <table className="w-full text-[12px]">
                             <thead className="bg-slate-50 border-b border-slate-200">
                                 <tr>
-                                    <th className="px-3 py-2 text-center font-semibold text-[10.5px] uppercase tracking-wider text-slate-600 w-12">
+                                    <th className="px-3 py-2 text-center font-semibold text-[10.5px] tracking-wider text-slate-600 w-12">
                                         Étape
                                     </th>
-                                    <th className="px-3 py-2 text-left font-semibold text-[10.5px] uppercase tracking-wider text-slate-600">
+                                    <th className="px-3 py-2 text-left font-semibold text-[10.5px] tracking-wider text-slate-600">
                                         Nom de la règle
                                     </th>
-                                    <th className="px-3 py-2 text-left font-semibold text-[10.5px] uppercase tracking-wider text-slate-600">
+                                    <th className="px-3 py-2 text-left font-semibold text-[10.5px] tracking-wider text-slate-600">
                                         Cible
                                     </th>
-                                    <th className="px-3 py-2 text-left font-semibold text-[10.5px] uppercase tracking-wider text-slate-600">
+                                    <th className="px-3 py-2 text-left font-semibold text-[10.5px] tracking-wider text-slate-600">
                                         Délai
                                     </th>
-                                    <th className="px-3 py-2 text-right font-semibold text-[10.5px] uppercase tracking-wider text-slate-600 w-20">
+                                    <th className="px-3 py-2 text-right font-semibold text-[10.5px] tracking-wider text-slate-600 w-20">
                                         Action
                                     </th>
                                 </tr>

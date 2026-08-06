@@ -140,11 +140,11 @@ const WorkedHoursManager = () => {
             <table className="min-w-full text-sm border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="sticky left-0 z-10 bg-slate-50 text-left px-3 py-2 text-[11px] uppercase tracking-wide text-slate-500 min-w-[200px]">Périmètre</th>
+                  <th className="sticky left-0 z-10 bg-slate-50 text-left px-3 py-2 text-[11px] tracking-wide text-slate-500 min-w-[200px]">Périmètre</th>
                   {MONTHS.map((m) => (
                     <th key={m} className="px-1 py-2 text-[11px] text-slate-500 font-medium text-center min-w-[84px]">{m}</th>
                   ))}
-                  <th className="px-3 py-2 text-[11px] uppercase tracking-wide text-slate-500 text-right min-w-[90px]">Total</th>
+                  <th className="px-3 py-2 text-[11px] tracking-wide text-slate-500 text-right min-w-[90px]">Total</th>
                 </tr>
               </thead>
               <tbody>

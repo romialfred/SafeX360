@@ -200,7 +200,7 @@ const PPEDotationPage = () => {
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-[13px]">
-                            <thead className="bg-slate-50 text-slate-400 text-[11.5px] uppercase tracking-wider">
+                            <thead className="bg-slate-50 text-slate-400 text-[11.5px] tracking-wide">
                                 <tr>
                                     <th className="w-9 p-2.5"><Checkbox size="xs" disabled /></th>
                                     <th className="text-left font-semibold p-2.5">Employé</th>
@@ -332,7 +332,7 @@ const EpiIcons = ({ e }: { e: DotationEmployee }) => (
             const Icon = CAT_ICON[c.category] || IconShieldCheck;
             const st = catStateColor(c.state);
             return (
-                <Tooltip key={c.category} withArrow label={`${c.categoryLabel} — ${c.state === 'MISSING' ? 'Manquant' : c.state === 'EXPIRED' ? 'Expiré' : c.state === 'DUE' ? 'À renouveler' : 'OK'}`}>
+                <Tooltip key={c.category} withArrow label={`${c.categoryLabel} · ${c.state === 'MISSING' ? 'Manquant' : c.state === 'EXPIRED' ? 'Expiré' : c.state === 'DUE' ? 'À renouveler' : 'OK'}`}>
                     <span className={`w-6 h-6 rounded-md border flex items-center justify-center ${st.ring} ${c.state === 'MISSING' ? 'border-dashed' : ''}`}>
                         <Icon size={13} style={{ color: st.color }} />
                     </span>
@@ -386,7 +386,7 @@ const DetailPanel = ({ d, onComplete, onHistory }: { d: any; onComplete: () => v
             </div>
             <div className={`mt-3 px-3 py-2 rounded-lg border text-[13px] font-semibold flex items-center gap-2 ${cfg.chip}`}>
                 <span className="w-2 h-2 rounded-full" style={{ background: cfg.dot }} />
-                {d.status === 'CONFORME' ? 'Dotation conforme' : d.status === 'A_RENOUVELER' ? 'Renouvellement à prévoir' : d.status === 'CRITIQUE' ? 'Dotation critique' : 'Dotation incomplète'} — {d.compliancePct} %
+                {d.status === 'CONFORME' ? 'Dotation conforme' : d.status === 'A_RENOUVELER' ? 'Renouvellement à prévoir' : d.status === 'CRITIQUE' ? 'Dotation critique' : 'Dotation incomplète'} · {d.compliancePct} %
             </div>
 
             <ScrollArea className="flex-1 -mr-4 pr-4 mt-3" type="auto">

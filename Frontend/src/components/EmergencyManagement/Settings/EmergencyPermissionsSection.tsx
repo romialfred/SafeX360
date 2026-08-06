@@ -77,16 +77,16 @@ function HoldersTable({
                 <table className="w-full text-[12px]">
                     <thead className="bg-slate-50 border-b border-slate-200">
                         <tr>
-                            <th className="px-3 py-2 text-left font-semibold text-[10.5px] uppercase tracking-wider text-slate-600">
+                            <th className="px-3 py-2 text-left font-semibold text-[10.5px] tracking-wider text-slate-600">
                                 Nom & Prénom
                             </th>
-                            <th className="px-3 py-2 text-left font-semibold text-[10.5px] uppercase tracking-wider text-slate-600">
+                            <th className="px-3 py-2 text-left font-semibold text-[10.5px] tracking-wider text-slate-600">
                                 Position
                             </th>
-                            <th className="px-3 py-2 text-left font-semibold text-[10.5px] uppercase tracking-wider text-slate-600">
+                            <th className="px-3 py-2 text-left font-semibold text-[10.5px] tracking-wider text-slate-600">
                                 Département
                             </th>
-                            <th className="px-3 py-2 text-right font-semibold text-[10.5px] uppercase tracking-wider text-slate-600 w-20">
+                            <th className="px-3 py-2 text-right font-semibold text-[10.5px] tracking-wider text-slate-600 w-20">
                                 Action
                             </th>
                         </tr>

@@ -437,25 +437,25 @@ function AssemblyPointsTable({
                 <table className="w-full text-[12px]">
                     <thead className="bg-slate-50 border-b border-slate-200">
                         <tr>
-                            <th className="px-3 py-2.5 text-left font-semibold text-[10.5px] uppercase tracking-wider text-slate-600 w-16">
+                            <th className="px-3 py-2.5 text-left font-semibold text-[10.5px] tracking-wider text-slate-600 w-16">
                                 Priorité
                             </th>
-                            <th className="px-3 py-2.5 text-left font-semibold text-[10.5px] uppercase tracking-wider text-slate-600">
+                            <th className="px-3 py-2.5 text-left font-semibold text-[10.5px] tracking-wider text-slate-600">
                                 Nom & emplacement
                             </th>
-                            <th className="px-3 py-2.5 text-left font-semibold text-[10.5px] uppercase tracking-wider text-slate-600">
+                            <th className="px-3 py-2.5 text-left font-semibold text-[10.5px] tracking-wider text-slate-600">
                                 Responsable
                             </th>
-                            <th className="px-3 py-2.5 text-left font-semibold text-[10.5px] uppercase tracking-wider text-slate-600">
+                            <th className="px-3 py-2.5 text-left font-semibold text-[10.5px] tracking-wider text-slate-600">
                                 Capacité
                             </th>
-                            <th className="px-3 py-2.5 text-left font-semibold text-[10.5px] uppercase tracking-wider text-slate-600">
+                            <th className="px-3 py-2.5 text-left font-semibold text-[10.5px] tracking-wider text-slate-600">
                                 Départements
                             </th>
-                            <th className="px-3 py-2.5 text-left font-semibold text-[10.5px] uppercase tracking-wider text-slate-600 w-28">
+                            <th className="px-3 py-2.5 text-left font-semibold text-[10.5px] tracking-wider text-slate-600 w-28">
                                 Coordonnées
                             </th>
-                            <th className="px-3 py-2.5 text-right font-semibold text-[10.5px] uppercase tracking-wider text-slate-600 w-28">
+                            <th className="px-3 py-2.5 text-right font-semibold text-[10.5px] tracking-wider text-slate-600 w-28">
                                 Actions
                             </th>
                         </tr>

@@ -188,7 +188,7 @@ function MatrixView({ searchTerm, standardFilter }: { searchTerm: string; standa
                     <thead className="border-b border-slate-200 bg-slate-50">
                         <tr>
                             {['Référence', 'Processus', 'Responsable', 'Preuve attendue', 'Contrôle', 'État', 'Résultat', 'Écart', 'Supports'].map((label) => (
-                                <th key={label} scope="col" className="px-3 py-2.5 text-[10px] uppercase tracking-[0.12em] text-slate-500">{label}</th>
+                                <th key={label} scope="col" className="px-3 py-2.5 text-[10px] tracking-[0.12em] text-slate-500">{label}</th>
                             ))}
                         </tr>
                     </thead>

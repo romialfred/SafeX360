@@ -832,11 +832,11 @@ const UsersManagement = () => {
                             <table className="w-full">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">User</th>
-                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Statut</th>
-                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Last Activity</th>
-                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Session</th>
-                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Actions</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 tracking-wider">User</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 tracking-wider">Statut</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 tracking-wider">Last Activity</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 tracking-wider">Session</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
@@ -902,12 +902,12 @@ const UsersManagement = () => {
                             <table className="w-full">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">User</th>
-                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Session Status</th>
-                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Login Time</th>
-                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Pages Visited</th>
-                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Actions</th>
-                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Détails</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 tracking-wider">User</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 tracking-wider">Session Status</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 tracking-wider">Login Time</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 tracking-wider">Pages Visited</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 tracking-wider">Actions</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 tracking-wider">Détails</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
@@ -982,12 +982,12 @@ const UsersManagement = () => {
                             <table className="w-full">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">User</th>
-                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Role</th>
-                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Department</th>
-                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Statut</th>
-                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Last Login</th>
-                                        <th className="px-6 py-3 text-left text-xs text-gray-500 uppercase tracking-wider">Actions</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 tracking-wider">User</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 tracking-wider">Role</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 tracking-wider">Department</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 tracking-wider">Statut</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 tracking-wider">Last Login</th>
+                                        <th className="px-6 py-3 text-left text-xs text-gray-500 tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">

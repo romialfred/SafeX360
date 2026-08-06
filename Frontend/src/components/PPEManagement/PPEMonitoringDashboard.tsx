@@ -302,7 +302,7 @@ const PPEMonitoringDashboard = () => {
             ) : (
                 <div className="overflow-x-auto">
                     <table className="w-full text-[13px]">
-                        <thead className="text-slate-400 text-[11.5px] uppercase tracking-wider">
+                        <thead className="text-slate-400 text-[11.5px] tracking-wide">
                             <tr>
                                 <th className="text-left font-semibold py-1.5 pr-2">EPI</th>
                                 <th className="text-left font-semibold py-1.5 px-2">Catégorie</th>
@@ -366,7 +366,7 @@ const PPEMonitoringDashboard = () => {
             action={<button className="text-[12px] text-teal-600 font-semibold" onClick={() => navigate('/ppe-management/overview-legacy')}>Voir toutes les références ({data?.totalReferences}) →</button>}>
             <div className="overflow-x-auto">
                 <table className="w-full text-[13px]">
-                    <thead className="text-slate-400 text-[11.5px] uppercase tracking-wider">
+                    <thead className="text-slate-400 text-[11.5px] tracking-wide">
                         <tr>
                             <th className="text-left font-semibold py-1.5 pr-2">EPI</th>
                             <th className="text-left font-semibold py-1.5 px-2">Catégorie</th>

@@ -130,8 +130,8 @@ const PPEMinePage = () => {
         const posIds = employees.filter((e) => e.position && norm(e.position) === norm(selected.position)).map((e) => e.id);
         const allIds = employees.map((e) => e.id);
         return [
-            build(`Département — ${selected.department || 'Sans département'}`, deptIds),
-            build(`Poste — ${selected.position || 'Non précisé'}`, posIds),
+            build(`Département · ${selected.department || 'Sans département'}`, deptIds),
+            build(`Poste · ${selected.position || 'Non précisé'}`, posIds),
             build('Tous les employés', allIds),
         ];
     }, [employees, consumption, selected, selectedId]);
@@ -232,7 +232,7 @@ const PPEMinePage = () => {
                                 <EmptyState icon={<IconHelmet size={24} />} title="Aucune dotation pour cet employé" compact />
                             ) : (
                                 <table className="w-full text-[13px]">
-                                    <thead className="text-slate-400 text-[11.5px] uppercase tracking-wider">
+                                    <thead className="text-slate-400 text-[11.5px] tracking-wide">
                                         <tr>
                                             <th className="text-left font-semibold py-1.5 px-2">EPI</th>
                                             <th className="text-left font-semibold py-1.5 px-2">Catégorie</th>
