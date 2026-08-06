@@ -311,6 +311,7 @@ const menuItems: MenuItem[] = [
         color: 'text-green-600',
         subItems: [
             { id: 'compliance-dashboard', label: 'Tableau de bord', icon: IconChartBar },
+            { id: 'regulatory-licenses', label: 'Licences & permis', icon: IconCertificate },
             { id: 'requirements', label: 'Exigences légales', icon: IconFileCheck },
             { id: 'position-assignments', label: 'Affectations par poste', icon: IconUserCheck },
             { id: 'employee-assignments', label: 'Affectations employés', icon: IconUsers },
@@ -523,6 +524,7 @@ export const menuIdToUrl: Record<string, string> = {
 
     // Compliance Management
     "compliance-dashboard": "/compliance-dashboard",
+    "regulatory-licenses": "/compliance-licenses",
     requirements: "/compliance-requirements",
     "position-assignments": "/compliance-assignment",
     "employee-assignments": "/employee-assignment",
@@ -643,6 +645,7 @@ const PERMISSION_VOCABULARY = new Set([
     'auditPlan', 'audits', 'auditRecommendations',
     'complianceDashboard', 'requirements', 'positionAssignments',
     'employeeAssignments', 'documents', 'documentValidation',
+    'regulatoryRegister', 'regulatoryLicenses', 'workAuthorizations', 'mandatoryInspections',
     'riskOverview', 'riskRegister', 'riskAssessment', 'chemicalRegister',
     'lessonsLearned', 'documentManager',
     'commDashboard', 'employeeComm', 'notifications',

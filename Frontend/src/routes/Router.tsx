@@ -62,6 +62,7 @@ const UpdateTeamPage = lazy(() => import('../pages/dashboard/SettingFolder/TeamS
 const TeamDetailsPage = lazy(() => import('../pages/dashboard/SettingFolder/TeamSetup/TeamDetailsPage'));
 const RecommendationDetailsPage = lazy(() => import('../pages/dashboard/LaggingIndicator/AuditManagement/RecommendationDetailsPage'));
 const CompDashboardPage = lazy(() => import('../pages/dashboard/ComplianceManagemennt/CompDashboardPage'));
+const LicenseRegisterPage = lazy(() => import('../components/ComplianceManagement/RegulatoryLicenses/LicenseRegisterPage'));
 const MbaCardPage = lazy(() => import('../pages/dashboard/LeadingIndicator/MbaCard/MbaCardPage'));
 const AddCardPage = lazy(() => import('../pages/dashboard/LeadingIndicator/MbaCard/AddCardPage'));
 const CompRequirementPage = lazy(() => import('../pages/dashboard/ComplianceManagemennt/CompRequirementPage'));
@@ -587,6 +588,7 @@ const router = createBrowserRouter([
             { path: 'steering-tours/edit/:id', element: <ModuleGuard moduleId='management-tour'><EditTourPage /></ModuleGuard>, },
 
             { path: 'compliance-dashboard', element: <ModuleGuard moduleId='compliance-dashboard'><CompDashboardPage /></ModuleGuard>, },
+            { path: 'compliance-licenses', element: <ModuleGuard moduleId='regulatory-licenses'><LicenseRegisterPage /></ModuleGuard>, },
             { path: 'compliance-requirements', element: <ModuleGuard moduleId='requirements'><CompRequirementPage /></ModuleGuard>, },
             { path: 'compliance-requirements/add-requirement', element: <ModuleGuard moduleId='requirements'><AddRequirementPage /></ModuleGuard>, },
             { path: 'compliance-requirements/edit-requirement/:id', element: <ModuleGuard moduleId='requirements'><EditRequirementPage /></ModuleGuard>, },

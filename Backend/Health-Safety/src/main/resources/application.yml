@@ -177,6 +177,12 @@ REQUIREMENT_ALREADY_EXISTS: Requirement already exists
 REQUIREMENT_NOT_FOUND: Requirement not found
 REQUIREMENT_NAME_ALREADY_EXISTS: Requirement Name already exists
 
+# Registres reglementaires par mine (licences, autorisations, inspections, obligations)
+LICENSE_NOT_FOUND: Licence introuvable
+WORK_AUTHORIZATION_NOT_FOUND: Autorisation de travaux introuvable
+MANDATORY_INSPECTION_NOT_FOUND: Inspection reglementaire introuvable
+REGULATORY_OBLIGATION_NOT_FOUND: Obligation reglementaire introuvable
+
 LESSON_LEARNED_ALREADY_EXISTS_FOR_INCIDENT: Lesson Learned already exists for incident
 
 LESSON_LEARNED_NOT_FOUND: Lesson Learned not found

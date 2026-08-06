@@ -93,6 +93,11 @@ public final class ModuleCatalog {
             m("requirements", "compliance"),
             m("positionAssignments", "compliance"),
             m("employeeAssignments", "compliance"),
+            // Registres reglementaires par mine (conformite de la MINE, pas du personnel)
+            m("regulatoryRegister", "compliance"),
+            m("regulatoryLicenses", "compliance"),
+            m("workAuthorizations", "compliance"),
+            m("mandatoryInspections", "compliance"),
 
             m("documents", "documentation"),
             m("documentValidation", "documentation"),
@@ -133,6 +138,8 @@ public final class ModuleCatalog {
             // Sous-modules EPI alignes sur la sidebar (Inventaire, Analyse & valorisation,
             // Mes EPI) : livres apres les colonnes historiques, portes par le seul CSV.
             "ppeStocktake", "ppeAnalytics", "ppeMine",
+            // Registres reglementaires par mine (conformite de la mine).
+            "regulatoryRegister", "regulatoryLicenses", "workAuthorizations", "mandatoryInspections",
             "emergency", "dosimetry", "blast", "planning", "reports");
 
     /** Ne conserve que les cles connues — une cle inventee par un client est ignoree. */
