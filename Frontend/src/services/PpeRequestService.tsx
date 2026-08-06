@@ -24,6 +24,11 @@ const rejectPpeRequest = async (id: any, comment: string) => {
         .then((response) => response.data);
 };
 
+const preparePpeRequest = async (id: any, comment?: string) => {
+    return axiosInstance.put(`${url}/prepare/${id}`, null, { params: { comment } })
+        .then((response) => response.data);
+};
+
 const deliverPpeRequest = async (id: any, comment?: string) => {
     return axiosInstance.put(`${url}/deliver/${id}`, null, {
         params: { comment }
@@ -50,4 +55,4 @@ const getAllPpeRequests = async () => {
         .then((response) => response.data);
 };
 
-export { createPpeRequest, updatePpeRequest, approvePpeRequest, rejectPpeRequest, deliverPpeRequest, returnPpeRequest, getPpeRequestById, getAllPpeRequests }
+export { createPpeRequest, updatePpeRequest, approvePpeRequest, rejectPpeRequest, preparePpeRequest, deliverPpeRequest, returnPpeRequest, getPpeRequestById, getAllPpeRequests }

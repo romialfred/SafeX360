@@ -1,636 +1,471 @@
-import 'primereact/resources/themes/lara-light-indigo/theme.css';
-import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { ActionIcon, Avatar, Button, Checkbox, Drawer, Menu, Pagination, ScrollArea, Select, Textarea, TextInput, Tooltip } from '@mantine/core';
 import {
-    ActionIcon,
-    Button,
-    Drawer,
-    LoadingOverlay,
-    Switch,
-    Textarea,
-    TextInput,
-    Tooltip,
-} from '@mantine/core';
-import { IconArrowBackUp, IconCheck, IconClipboardList, IconEye, IconPlus, IconSearch, IconTruckDelivery, IconX } from '@tabler/icons-react';
-import { useForm } from '@mantine/form';
-import { DataTable } from 'primereact/datatable';
-import { Column } from 'primereact/column';
+    IconAdjustmentsHorizontal, IconBox, IconCalendar, IconCheck, IconChevronDown, IconCircleCheck, IconCircleX,
+    IconClipboardList, IconClock, IconDots, IconDownload, IconEye, IconMapPin, IconPackage, IconPlus, IconRefresh,
+    IconSearch, IconTruck, IconX,
+} from '@tabler/icons-react';
 import { getAllPPE } from '../../services/PPEService';
 import { getEmployeesWithDepartment } from '../../services/EmployeeService';
+import { getAllCompanies } from '../../services/HrmsService';
+import { useAppSelector } from '../../slices/hooks';
 import {
-    approvePpeRequest,
-    deliverPpeRequest,
-    getAllPpeRequests,
-    rejectPpeRequest,
-    returnPpeRequest,
+    approvePpeRequest, deliverPpeRequest, getAllPpeRequests, preparePpeRequest, rejectPpeRequest,
 } from '../../services/PpeRequestService';
-import { notifyError } from '../../utility/notifyError';
 import { errorNotification, successNotification } from '../../utility/NotificationUtility';
-import { mapIdToName } from '../../utility/OtherUtilities';
+import { notifyError } from '../../utility/notifyError';
 import PageHeader from '../UtilityComp/PageHeader';
-import SegmentedFilter from '../UtilityComp/SegmentedFilter';
 import EmptyState from '../UtilityComp/EmptyState';
-import {
-    CHIP_BASE,
-    formatDateFr,
-    priorityConfig,
-    requestStatusConfig,
-} from './ppeLabels';
-
-const ALL = 'ALL';
 
 /**
- * Demandes d'EPI : création, validation (approbation / rejet motivé) et
- * consultation des demandes de dotation.
+ * Gestion des demandes EPI — suivi, validation et traitement des demandes de dotation.
+ * Données réelles (getAllPpeRequests + catalogue + employés) ; workflow serveur
+ * (approbation → préparation → distribution / rejet). Volet détail à droite.
+ * NB : la demande ne porte pas de « demandeur » distinct → 1er bénéficiaire affiché.
  */
+
+const STATUS_CFG: Record<string, { label: string; chip: string; dot: string }> = {
+    PENDING: { label: 'En attente', chip: 'bg-amber-50 text-amber-700 border-amber-200', dot: '#f59e0b' },
+    APPROVED: { label: 'Approuvée', chip: 'bg-sky-50 text-sky-700 border-sky-200', dot: '#0ea5e9' },
+    PREPARATION: { label: 'En préparation', chip: 'bg-violet-50 text-violet-700 border-violet-200', dot: '#8b5cf6' },
+    DELIVERED: { label: 'Distribuée', chip: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: '#10b981' },
+    RETURNED: { label: 'Retournée', chip: 'bg-slate-100 text-slate-600 border-slate-300', dot: '#64748b' },
+    REJECTED: { label: 'Rejetée', chip: 'bg-rose-50 text-rose-700 border-rose-200', dot: '#f43f5e' },
+};
+
+const priorityCfg = (p?: string) => {
+    const v = (p || '').toUpperCase();
+    if (v.includes('CRITIC') || v.includes('URGENT')) return { label: 'Critique', chip: 'bg-rose-50 text-rose-700 border-rose-200' };
+    if (v.includes('HIGH') || v.includes('ELEV')) return { label: 'Élevée', chip: 'bg-orange-50 text-orange-700 border-orange-200' };
+    if (v.includes('LOW') || v.includes('FAIB')) return { label: 'Faible', chip: 'bg-slate-100 text-slate-600 border-slate-200' };
+    return { label: 'Moyenne', chip: 'bg-sky-50 text-sky-700 border-sky-200' };
+};
+
+const AV = ['#0ea5e9', '#10b981', '#f59e0b', '#8b5cf6', '#f43f5e', '#14b8a6', '#6366f1', '#ec4899'];
+const initials = (n: string) => n.split(' ').filter(Boolean).slice(0, 2).map((s) => s[0]?.toUpperCase()).join('');
+const avColor = (k: string) => AV[Math.abs([...(k || '?')].reduce((a, c) => a + c.charCodeAt(0), 0)) % AV.length];
+const fmtDate = (d?: string | null) => { if (!d) return '—'; const dt = new Date(d); return Number.isNaN(dt.getTime()) ? '—' : dt.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }); };
+const reqNo = (r: any) => `DEM-${new Date(r.createdAt || Date.now()).getFullYear()}-${String(r.id).padStart(4, '0')}`;
+const stockBadge = (p: any) => {
+    const s = p?.stock ?? 0, m = p?.minStock ?? 0;
+    if (s <= 0) return { label: 'Rupture', chip: 'bg-rose-50 text-rose-700 border-rose-200' };
+    if (s <= m) return { label: 'Stock faible', chip: 'bg-amber-50 text-amber-700 border-amber-200' };
+    return { label: 'Disponible', chip: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+};
+
+const TABS = [
+    { id: '', label: 'Toutes' }, { id: 'PENDING', label: 'En attente' }, { id: 'APPROVED', label: 'Approuvées' },
+    { id: 'PREPARATION', label: 'En préparation' }, { id: 'DELIVERED', label: 'Distribuées' }, { id: 'REJECTED', label: 'Rejetées' },
+];
+
 const PPERequestsTable = () => {
-    const { t } = useTranslation('ppe');
     const navigate = useNavigate();
-    // Libellés bilingues : clés i18n `ppe:*`, repli sur les libellés FR centralisés (ppeLabels.ts).
-    const tPriority = (code?: string | null): string =>
-        t(`priority.${(code ?? '').toUpperCase()}`, { defaultValue: priorityConfig(code).label });
-    const tRequestStatus = (code?: string | null): string =>
-        t(`requestStatus.${(code ?? '').toUpperCase()}`, { defaultValue: requestStatusConfig(code).label });
-    const [loading, setLoading] = useState(false);
-    const [loadingList, setLoadingList] = useState(true);
+    const selectedCompanyId = useAppSelector((s: any) => s.companySelection?.selectedCompanyId);
+    const [mineName, setMineName] = useState('');
     const [requests, setRequests] = useState<any[]>([]);
-    const [showApproveModal, setShowApproveModal] = useState(false);
-    const [showRejectModal, setShowRejectModal] = useState(false);
-    const [showReturnModal, setShowReturnModal] = useState(false);
-    const [showViewModal, setShowViewModal] = useState(false);
-    const [selectedRequest, setSelectedRequest] = useState<any>(null);
-    const [viewData, setViewData] = useState<any>(null);
     const [empMap, setEmpMap] = useState<Record<string, any>>({});
-    // ppeMap est construit à partir de TOUS les EPI (actifs + inactifs) pour résoudre
-    // les références historiques liées à un EPI désactivé.
     const [ppeMap, setPpeMap] = useState<Record<string, any>>({});
+    const [loading, setLoading] = useState(true);
+    const [refreshedAt, setRefreshedAt] = useState('');
 
-    const [statusFilter, setStatusFilter] = useState<string>(ALL);
+    const [tab, setTab] = useState('');
+    const [searchInput, setSearchInput] = useState('');
     const [search, setSearch] = useState('');
+    const [department, setDepartment] = useState<string | null>(null);
+    const [priority, setPriority] = useState<string | null>(null);
+    const [page, setPage] = useState(1);
+    const [size, setSize] = useState('10');
 
-    const approveForm = useForm({ initialValues: { comment: '' } });
-    const rejectForm = useForm({
-        initialValues: { comment: '' },
-        validate: { comment: (val) => (val.trim() ? null : t('requests.validateRejectComment')) },
-    });
-    // Retour : remise en stock (défaut) ou réforme, avec motif optionnel.
-    const returnForm = useForm({ initialValues: { comment: '', restock: true } });
+    const [selected, setSelected] = useState<any | null>(null);
+    const [comment, setComment] = useState('');
+    const [acting, setActing] = useState(false);
 
-    useEffect(() => {
-        getEmployeesWithDepartment()
-            .then((data) => setEmpMap(mapIdToName(data)))
-            .catch((err) => console.error(err));
+    const debounce = useRef<any>(null);
+    useEffect(() => { clearTimeout(debounce.current); debounce.current = setTimeout(() => { setSearch(searchInput); setPage(1); }, 300); return () => clearTimeout(debounce.current); }, [searchInput]);
 
-        // Catalogue complet (actifs + inactifs) → table de correspondance ID → nom
-        getAllPPE()
-            .then((data) => setPpeMap(mapIdToName(data)))
-            .catch((err) => console.error(err));
-
-
-        fetchRequests();
-    }, []);
-
-    const fetchRequests = () => {
-        setLoadingList(true);
-        getAllPpeRequests()
-            .then(setRequests)
-            .catch((error) => {
-                errorNotification(error.response?.data?.errorMessage || t('requests.loadError'));
+    const fetchAll = () => {
+        setLoading(true);
+        Promise.all([getAllPpeRequests(), getEmployeesWithDepartment().catch(() => []), getAllPPE().catch(() => [])])
+            .then(([reqs, emps, ppes]: any[]) => {
+                setRequests(Array.isArray(reqs) ? reqs : []);
+                const em: Record<string, any> = {}; (emps || []).forEach((e: any) => { em[e.id] = { name: e.name || `${e.firstName ?? ''} ${e.lastName ?? ''}`.trim() || `#${e.id}`, department: e.department, position: e.position }; });
+                setEmpMap(em);
+                const pm: Record<string, any> = {}; (ppes || []).forEach((p: any) => { pm[p.id] = p; }); setPpeMap(pm);
+                setRefreshedAt(new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
             })
-            .finally(() => setLoadingList(false));
+            .catch((e) => errorNotification('Chargement des demandes impossible'))
+            .finally(() => setLoading(false));
     };
+    useEffect(fetchAll, []);
+    useEffect(() => { getAllCompanies().then((cs: any[]) => setMineName((cs || []).find((c) => c.id === selectedCompanyId)?.name || '')).catch(() => {}); }, [selectedCompanyId]);
 
-    const statusCounts = useMemo(
-        () =>
-            requests.reduce(
-                (acc, req) => {
-                    const status = String(req.status ?? '').toUpperCase();
-                    if (status === 'PENDING') acc.PENDING += 1;
-                    else if (status === 'APPROVED') acc.APPROVED += 1;
-                    else if (status === 'REJECTED') acc.REJECTED += 1;
-                    else if (status === 'DELIVERED') acc.DELIVERED += 1;
-                    else if (status === 'RETURNED') acc.RETURNED += 1;
-                    return acc;
-                },
-                { PENDING: 0, APPROVED: 0, REJECTED: 0, DELIVERED: 0, RETURNED: 0 }
-            ),
-        [requests]
-    );
+    // Enrichissement (dérivé, cloisonné côté serveur).
+    const rows = useMemo(() => requests.map((r) => {
+        const lines: any[] = r.lines || [];
+        const beneficiaries = Array.from(new Set(lines.map((l) => l.empId).filter(Boolean)));
+        if (beneficiaries.length === 0 && Array.isArray(r.empIds)) r.empIds.forEach((e: any) => beneficiaries.push(e));
+        const demandeurId = beneficiaries[0];
+        const units = lines.reduce((a, l) => a + (Number(l.quantityRequested) || 0), 0);
+        const refs = new Set(lines.map((l) => l.ppeId)).size || (Array.isArray(r.ppeIds) ? r.ppeIds.length : 0);
+        return { ...r, _no: reqNo(r), _benef: beneficiaries, _demandeurId: demandeurId, _units: units, _refs: refs };
+    }), [requests]);
 
-    const filteredRequests = useMemo(() => {
+    const kpi = useMemo(() => {
+        const c: Record<string, number> = { PENDING: 0, APPROVED: 0, PREPARATION: 0, DELIVERED: 0, REJECTED: 0, RETURNED: 0 };
+        rows.forEach((r) => { c[r.status] = (c[r.status] || 0) + 1; });
+        const priorityPending = rows.filter((r) => r.status === 'PENDING' && priorityCfg(r.priority).label !== 'Moyenne' && priorityCfg(r.priority).label !== 'Faible').length;
+        return {
+            total: rows.length, priorityPending,
+            PENDING: c.PENDING, APPROVED: c.APPROVED, PREPARATION: c.PREPARATION,
+            DELIVERED: c.DELIVERED, REJECTED: c.REJECTED, RETURNED: c.RETURNED,
+        };
+    }, [rows]);
+
+    const filtered = useMemo(() => {
         const q = search.trim().toLowerCase();
-        return requests.filter((req) => {
-            if (statusFilter !== ALL && String(req.status ?? '').toUpperCase() !== statusFilter) return false;
+        return rows.filter((r) => {
+            if (tab && r.status !== tab) return false;
+            if (department && empMap[r._demandeurId]?.department !== department) return false;
+            if (priority && priorityCfg(r.priority).label !== priority) return false;
             if (!q) return true;
-            const names = (req.empIds || []).map((id: any) => empMap[id]?.name).filter(Boolean);
-            const ppeNames = (req.ppeIds || []).map((id: any) => ppeMap[id]?.name).filter(Boolean);
-            return [...names, ...ppeNames, req.reason].filter(Boolean).join(' ').toLowerCase().includes(q);
+            const demandeur = empMap[r._demandeurId]?.name || '';
+            const epi = (r.lines || []).map((l: any) => ppeMap[l.ppeId]?.name).join(' ');
+            return `${r._no} ${demandeur} ${r.reason || ''} ${epi}`.toLowerCase().includes(q);
         });
-    }, [requests, statusFilter, search, empMap, ppeMap]);
+    }, [rows, tab, department, priority, search, empMap, ppeMap]);
 
-    const openApproveModal = (row: any) => { setSelectedRequest(row); approveForm.reset(); setShowApproveModal(true); };
-    const openRejectModal = (row: any) => { setSelectedRequest(row); rejectForm.reset(); setShowRejectModal(true); };
-    const openReturnModal = (row: any) => { setSelectedRequest(row); returnForm.reset(); setShowReturnModal(true); };
-    const openViewModal = (row: any) => { setViewData(row); setShowViewModal(true); };
+    const total = filtered.length;
+    const pageSize = Number(size);
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const pageRows = filtered.slice((page - 1) * pageSize, page * pageSize);
 
-    const handleApprove = async (values: typeof approveForm.values) => {
-        try {
-            setLoading(true);
-            await approvePpeRequest(selectedRequest.id, values.comment);
-            successNotification(t('requests.approveSuccess'));
-            setShowApproveModal(false);
-            fetchRequests();
-        } catch (err: any) {
-            errorNotification(err.response?.data?.errorMessage || t('requests.approveError'));
-        } finally {
-            setLoading(false);
-        }
+    const departments = useMemo(() => Array.from(new Set(Object.values(empMap).map((e: any) => e.department).filter(Boolean))).sort() as string[], [empMap]);
+    const distribution = useMemo(() => {
+        const t = kpi.total || 1;
+        return [['PENDING', kpi.PENDING], ['APPROVED', kpi.APPROVED], ['PREPARATION', kpi.PREPARATION], ['DELIVERED', kpi.DELIVERED], ['REJECTED', kpi.REJECTED]]
+            .map(([s, n]) => ({ status: s as string, count: n as number, pct: Math.round(1000 * (n as number) / t) / 10 }));
+    }, [kpi]);
+
+    const openRow = (r: any) => { setSelected(r); setComment(''); };
+
+    const act = async (fn: () => Promise<any>, ok: string) => {
+        try { setActing(true); await fn(); successNotification(ok); setSelected(null); fetchAll(); }
+        catch (e) { notifyError(e, "L'action a échoué"); } finally { setActing(false); }
     };
-
-    const handleReject = async (values: typeof rejectForm.values) => {
-        try {
-            setLoading(true);
-            await rejectPpeRequest(selectedRequest.id, values.comment);
-            successNotification(t('requests.rejectSuccess'));
-            setShowRejectModal(false);
-            fetchRequests();
-        } catch (err: any) {
-            errorNotification(err.response?.data?.errorMessage || t('requests.rejectError'));
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Distribution EPI : passe une demande APPROVED en DELIVERED et SORT le stock
-    // (approuvé − déjà distribué, idempotent côté backend). Message clair si l'état
-    // n'est pas APPROVED (REQUEST_NOT_APPROVED) ou si le stock manque (INSUFFICIENT_STOCK).
-    const handleDeliver = async (row: any) => {
-        try {
-            setLoading(true);
-            await deliverPpeRequest(row.id);
-            successNotification(t('requests.deliverSuccess', 'Dotation distribuée — stock mis à jour'));
-            fetchRequests();
-        } catch (err: any) {
-            notifyError(err, t('requests.deliverError', 'Échec de la distribution'));
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Retour EPI : passe une demande DELIVERED en RETURNED. restock=true remet en
-    // stock (mouvement RETURN), false = réforme. Idempotent côté backend.
-    const handleReturn = async (values: typeof returnForm.values) => {
-        try {
-            setLoading(true);
-            await returnPpeRequest(selectedRequest.id, values.comment, values.restock);
-            successNotification(
-                values.restock
-                    ? t('requests.returnSuccessRestock', 'Dotation retournée — matériel remis en stock')
-                    : t('requests.returnSuccessScrap', 'Dotation retournée — matériel réformé')
-            );
-            setShowReturnModal(false);
-            fetchRequests();
-        } catch (err: any) {
-            notifyError(err, t('requests.returnError', 'Échec du retour'));
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // ─── Rendus de colonnes ──────────────────────────────────────────────────
-
-    const employeeTemplate = (rowData: any) => {
-        const ids: any[] = rowData.empIds || [];
-        if (!ids.length) return <span className="text-[12.5px] text-slate-400">—</span>;
-        return (
-            <div className="flex flex-col gap-0.5">
-                {ids.map((id: any) => (
-                    <span key={id} className="text-[13px] text-slate-800">
-                        {empMap[id]?.name || t('requests.employeeFallback', { id })}
-                    </span>
-                ))}
-            </div>
-        );
-    };
-
-    const requestedPpeTemplate = (rowData: any) => {
-        // Incrément 2 : si la demande porte des LIGNES (bénéficiaire × EPI × quantité),
-        // on agrège la quantité totale demandée par EPI (« Gants ×5 »). Repli sur la
-        // liste d'ID pour les demandes legacy sans lignes.
-        const lines: any[] = rowData.lines || [];
-        if (lines.length) {
-            const totals = new Map<string, number>();
-            lines.forEach((l) => {
-                const key = String(l.ppeId);
-                totals.set(key, (totals.get(key) || 0) + (Number(l.quantityRequested) || 0));
-            });
-            return (
-                <div className="flex flex-col gap-0.5">
-                    {Array.from(totals.entries()).map(([ppeId, qty]) => (
-                        <span key={ppeId} className="text-[13px] text-slate-800">
-                            {ppeMap[ppeId]?.name || t('requests.ppeFallback', { id: ppeId })}
-                            <span className="text-slate-400"> ×{qty}</span>
-                        </span>
-                    ))}
-                </div>
-            );
-        }
-        const ids: any[] = rowData.ppeIds || [];
-        if (!ids.length) return <span className="text-[12.5px] text-slate-400">—</span>;
-        return (
-            <div className="flex flex-col gap-0.5">
-                {ids.map((ppeId: any) => (
-                    <span key={ppeId} className="text-[13px] text-slate-800">
-                        {ppeMap[ppeId]?.name || t('requests.ppeFallback', { id: ppeId })}
-                    </span>
-                ))}
-            </div>
-        );
-    };
-
-    const reasonTemplate = (rowData: any) => (
-        <span
-            className="block max-w-[240px] text-[12.5px] text-slate-600"
-            style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-            title={rowData.reason}
-        >
-            {rowData.reason || '—'}
-        </span>
-    );
-
-    const priorityTemplate = (rowData: any) => {
-        const cfg = priorityConfig(rowData.priority);
-        return <span className={`${CHIP_BASE} ${cfg.chip}`}>{tPriority(rowData.priority)}</span>;
-    };
-
-    const statusTemplate = (rowData: any) => {
-        const cfg = requestStatusConfig(rowData.status);
-        return <span className={`${CHIP_BASE} ${cfg.chip}`}>{tRequestStatus(rowData.status)}</span>;
-    };
-
-    const dateTemplate = (rowData: any) => (
-        <span className="text-[12.5px] text-slate-600 tabular-nums">{formatDateFr(rowData.desiredDate)}</span>
-    );
-
-    const actionTemplate = (rowData: any) => (
-        <div className="flex gap-1.5 justify-center">
-            {String(rowData.status).toUpperCase() === 'PENDING' && (
-                <>
-                    <Tooltip label={t('requests.tooltipApprove')} withArrow>
-                        <ActionIcon
-                            variant="light"
-                            color="teal"
-                            size="sm"
-                            onClick={() => openApproveModal(rowData)}
-                            aria-label={t('requests.ariaApprove')}
-                        >
-                            <IconCheck size={14} stroke={1.5} />
-                        </ActionIcon>
-                    </Tooltip>
-                    <Tooltip label={t('requests.tooltipReject')} withArrow>
-                        <ActionIcon
-                            variant="light"
-                            color="red"
-                            size="sm"
-                            onClick={() => openRejectModal(rowData)}
-                            aria-label={t('requests.ariaReject')}
-                        >
-                            <IconX size={14} stroke={1.5} />
-                        </ActionIcon>
-                    </Tooltip>
-                </>
-            )}
-            {String(rowData.status).toUpperCase() === 'APPROVED' && (
-                <Tooltip label={t('requests.tooltipDeliver', 'Distribuer (sortie de stock)')} withArrow>
-                    <ActionIcon
-                        variant="light"
-                        color="grape"
-                        size="sm"
-                        onClick={() => handleDeliver(rowData)}
-                        aria-label={t('requests.ariaDeliver', 'Distribuer la dotation')}
-                    >
-                        <IconTruckDelivery size={14} stroke={1.5} />
-                    </ActionIcon>
-                </Tooltip>
-            )}
-            {String(rowData.status).toUpperCase() === 'DELIVERED' && (
-                <Tooltip label={t('requests.tooltipReturn', 'Retour de dotation')} withArrow>
-                    <ActionIcon
-                        variant="light"
-                        color="orange"
-                        size="sm"
-                        onClick={() => openReturnModal(rowData)}
-                        aria-label={t('requests.ariaReturn', 'Retourner la dotation')}
-                    >
-                        <IconArrowBackUp size={14} stroke={1.5} />
-                    </ActionIcon>
-                </Tooltip>
-            )}
-            <Tooltip label={t('requests.tooltipView')} withArrow>
-                <ActionIcon
-                    variant="light"
-                    color="blue"
-                    size="sm"
-                    onClick={() => openViewModal(rowData)}
-                    aria-label={t('requests.ariaView')}
-                >
-                    <IconEye size={14} stroke={1.5} />
-                </ActionIcon>
-            </Tooltip>
-        </div>
-    );
 
     return (
         <div className="p-5 space-y-4 w-full">
             <PageHeader
-                breadcrumbs={[
-                    { label: t('common.breadcrumbHome'), to: '/' },
-                    { label: t('common.breadcrumbModule') },
-                    { label: t('requests.breadcrumb') },
-                ]}
-                icon={<IconClipboardList size={22} stroke={2} />}
-                iconColor="amber"
-                title={t('requests.title')}
-                subtitle={t('requests.subtitle')}
+                breadcrumbs={[{ label: 'Accueil', to: '/' }, { label: 'Gestion des EPI', to: '/ppe-management' }, { label: 'Gestion des demandes' }]}
+                icon={<IconClipboardList size={22} stroke={2} />} iconColor="teal"
+                title="Gestion des demandes EPI" subtitle="Suivez, validez et traitez les demandes de dotation"
                 actions={
-                    <Button
-                        leftSection={<IconPlus size={14} />}
-                        color="teal"
-                        size="sm"
-                        onClick={() => navigate('/ppe-management/request-matrix')}
-                    >
-                        {t('requests.newRequest')}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <span className="text-[11.5px] text-slate-400 hidden md:flex items-center gap-1">Dernière actualisation : {refreshedAt || '—'}
+                            <button onClick={fetchAll} className="w-6 h-6 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50"><IconRefresh size={13} className={loading ? 'animate-spin text-teal-500' : 'text-slate-500'} /></button>
+                        </span>
+                        <Button variant="default" size="sm" leftSection={<IconDownload size={14} />} onClick={() => navigate('/ppe-management/analytics')}>Exporter</Button>
+                        <Button color="teal" size="sm" leftSection={<IconPlus size={14} />} onClick={() => navigate('/ppe-management/request-matrix')}>Nouvelle demande</Button>
+                    </div>
                 }
             />
 
-            {/* Filtres */}
-            <div className="bg-white rounded-xl border border-slate-200 p-3">
-                <SegmentedFilter
-                    value={statusFilter}
-                    onChange={setStatusFilter}
-                    options={[
-                        { value: ALL, label: t('requests.filterAll'), count: requests.length, color: 'slate' },
-                        { value: 'PENDING', label: t('requests.filterPending'), count: statusCounts.PENDING, color: 'violet' },
-                        { value: 'APPROVED', label: t('requests.filterApproved'), count: statusCounts.APPROVED, color: 'green' },
-                        { value: 'DELIVERED', label: t('requests.filterDelivered', 'Distribuées'), count: statusCounts.DELIVERED, color: 'blue' },
-                        { value: 'RETURNED', label: t('requests.filterReturned', 'Retournées'), count: statusCounts.RETURNED, color: 'slate' },
-                        { value: 'REJECTED', label: t('requests.filterRejected'), count: statusCounts.REJECTED, color: 'rose' },
-                    ]}
-                    rightElement={
-                        <TextInput
-                            placeholder={t('requests.searchPlaceholder')}
-                            leftSection={<IconSearch size={14} />}
-                            value={search}
-                            onChange={(e) => setSearch(e.currentTarget.value)}
-                            size="xs"
-                            w={280}
-                            aria-label={t('requests.searchAria')}
-                        />
-                    }
-                />
+            {/* KPI */}
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+                <Kpi icon={<IconClipboardList size={17} />} color="#0ea5e9" label="Total des demandes" value={kpi.total} />
+                <Kpi icon={<IconClock size={17} />} color="#f59e0b" label="En attente" value={kpi.PENDING} sub={kpi.priorityPending ? `${kpi.priorityPending} prioritaires` : undefined} />
+                <Kpi icon={<IconCircleCheck size={17} />} color="#10b981" label="Approuvées" value={kpi.APPROVED} />
+                <Kpi icon={<IconBox size={17} />} color="#8b5cf6" label="En préparation" value={kpi.PREPARATION} />
+                <Kpi icon={<IconTruck size={17} />} color="#0ea5e9" label="Distribuées" value={kpi.DELIVERED} />
+                <Kpi icon={<IconCircleX size={17} />} color="#f43f5e" label="Rejetées" value={kpi.REJECTED} />
             </div>
 
-            {/* Registre des demandes */}
-            <div className="bg-white rounded-xl border border-slate-200 p-2">
-                {loadingList ? (
-                    <div className="flex flex-col gap-2 p-2" aria-busy="true">
-                        {[0, 1, 2, 3].map((i) => (
-                            <div key={i} className="h-11 rounded-lg bg-slate-100 animate-pulse" />
-                        ))}
-                    </div>
-                ) : !filteredRequests.length ? (
-                    <EmptyState
-                        icon={<IconClipboardList size={24} />}
-                        title={statusFilter === ALL ? t('requests.emptyAllTitle') : t('requests.emptyFilteredTitle')}
-                        description={
-                            statusFilter === ALL
-                                ? t('requests.emptyAllDescription')
-                                : t('requests.emptyFilteredDescription')
-                        }
-                        compact
-                        action={
-                            statusFilter === ALL ? (
-                                <Button size="xs" color="teal" leftSection={<IconPlus size={14} />} onClick={() => navigate('/ppe-management/request-matrix')}>
-                                    {t('requests.newRequest')}
-                                </Button>
-                            ) : undefined
-                        }
-                    />
+            {/* Onglets */}
+            <div className="flex flex-wrap items-center gap-2">
+                {TABS.map((t) => {
+                    const n = t.id === '' ? kpi.total : (kpi as any)[t.id] || 0; const on = tab === t.id;
+                    return (
+                        <button key={t.id} onClick={() => { setTab(t.id); setPage(1); }}
+                            className={`px-3.5 py-1.5 rounded-lg text-[13px] font-semibold border inline-flex items-center gap-1.5 ${on ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
+                            {t.label}<span className={`px-1.5 rounded text-[11px] ${on ? 'bg-white/20' : 'bg-slate-100 text-slate-500'}`}>{n}</span>
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* Recherche + filtres */}
+            <div className="bg-white rounded-xl border border-slate-200 p-3 flex flex-wrap items-center gap-2">
+                <TextInput className="flex-1 min-w-[240px]" leftSection={<IconSearch size={15} />} placeholder="Rechercher un N° de demande, un employé ou un motif…" value={searchInput} onChange={(e) => setSearchInput(e.currentTarget.value)} size="sm" />
+                <Select placeholder="Tous les sites" data={['Mine active']} size="sm" w={150} disabled />
+                <Select placeholder="Tous les départements" data={departments} value={department} onChange={(v) => { setDepartment(v); setPage(1); }} clearable searchable size="sm" w={200} />
+                <Select placeholder="Toutes les priorités" data={['Critique', 'Élevée', 'Moyenne', 'Faible']} value={priority} onChange={(v) => { setPriority(v); setPage(1); }} clearable size="sm" w={180} />
+                <Button variant="default" size="sm" leftSection={<IconAdjustmentsHorizontal size={15} />}>Filtres avancés</Button>
+                <button onClick={fetchAll} className="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center hover:bg-slate-50"><IconRefresh size={15} className="text-slate-500" /></button>
+                <span className="text-[12.5px] text-slate-500 tabular-nums ml-auto">{total} demandes</span>
+            </div>
+
+            {/* Tableau */}
+            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                {loading ? (
+                    <div className="p-3 space-y-2">{[0, 1, 2, 3, 4].map((i) => <div key={i} className="h-12 rounded-lg bg-slate-100 animate-pulse" />)}</div>
+                ) : pageRows.length === 0 ? (
+                    <EmptyState icon={<IconClipboardList size={26} />} title="Aucune demande" description="Aucun résultat pour ces filtres." compact />
                 ) : (
-                    <DataTable
-                        value={filteredRequests}
-                        stripedRows
-                        removableSort
-                        paginator
-                        rows={10}
-                        rowsPerPageOptions={[10, 25, 50]}
-                        size="small"
-                        dataKey="id"
-                        className="[&_.p-datatable-tbody]:!text-[13px] [&_.p-datatable-thead_th]:!text-[12px]"
-                        paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-                        currentPageReportTemplate={t('requests.currentPageReport')}
-                    >
-                        <Column header={t('requests.colEmployees')} body={employeeTemplate} />
-                        <Column header={t('requests.colRequestedPpe')} body={requestedPpeTemplate} />
-                        <Column header={t('requests.colReason')} body={reasonTemplate} />
-                        <Column header={t('requests.colPriority')} body={priorityTemplate} sortable sortField="priority" style={{ width: '7.5rem' }} />
-                        <Column header={t('requests.colDesiredDate')} body={dateTemplate} sortable sortField="desiredDate" style={{ width: '9.5rem' }} />
-                        <Column header={t('requests.colStatus')} body={statusTemplate} sortable sortField="status" style={{ width: '8rem' }} />
-                        <Column header={t('requests.colActions')} body={actionTemplate} headerStyle={{ width: '7rem', textAlign: 'center' }} bodyStyle={{ textAlign: 'center', overflow: 'visible' }} />
-                    </DataTable>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-[13px]">
+                            <thead className="bg-slate-50 text-slate-400 text-[11.5px] uppercase tracking-wider">
+                                <tr>
+                                    <th className="w-9 p-2.5"><Checkbox size="xs" disabled /></th>
+                                    <th className="text-left font-semibold p-2.5">N° demande</th>
+                                    <th className="text-left font-semibold p-2.5">Demandeur</th>
+                                    <th className="text-left font-semibold p-2.5">Bénéficiaires</th>
+                                    <th className="text-left font-semibold p-2.5">Motif</th>
+                                    <th className="text-left font-semibold p-2.5">Priorité</th>
+                                    <th className="text-left font-semibold p-2.5">Date souhaitée</th>
+                                    <th className="text-left font-semibold p-2.5">Créée le</th>
+                                    <th className="text-left font-semibold p-2.5">Statut</th>
+                                    <th className="text-left font-semibold p-2.5">Progression</th>
+                                    <th className="text-center font-semibold p-2.5">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {pageRows.map((r) => {
+                                    const st = STATUS_CFG[r.status] || STATUS_CFG.PENDING; const pr = priorityCfg(r.priority);
+                                    const demandeur = empMap[r._demandeurId]?.name || `#${r._demandeurId ?? '—'}`;
+                                    const on = selected?.id === r.id;
+                                    return (
+                                        <tr key={r.id} onClick={() => openRow(r)} className={`border-t border-slate-100 cursor-pointer ${on ? 'bg-teal-50/60' : 'hover:bg-slate-50'}`} style={on ? { boxShadow: 'inset 3px 0 0 #14b8a6' } : undefined}>
+                                            <td className="p-2.5" onClick={(e) => e.stopPropagation()}><Checkbox size="xs" /></td>
+                                            <td className="p-2.5 font-semibold text-teal-700 whitespace-nowrap">{r._no}</td>
+                                            <td className="p-2.5">
+                                                <div className="flex items-center gap-2">
+                                                    <Avatar radius="xl" size={26} styles={{ placeholder: { background: avColor(demandeur), color: '#fff', fontSize: 10, fontWeight: 700 } }}>{initials(demandeur)}</Avatar>
+                                                    <span className="text-slate-800 font-medium truncate max-w-[130px]">{demandeur}</span>
+                                                </div>
+                                            </td>
+                                            <td className="p-2.5">
+                                                <div className="flex items-center gap-1.5">
+                                                    <Avatar.Group spacing="xs">
+                                                        {r._benef.slice(0, 3).map((id: any) => { const nm = empMap[id]?.name || `#${id}`; return <Avatar key={id} radius="xl" size={24} styles={{ placeholder: { background: avColor(nm), color: '#fff', fontSize: 9, fontWeight: 700 } }}>{initials(nm)}</Avatar>; })}
+                                                    </Avatar.Group>
+                                                    <span className="text-[12px] text-slate-500 whitespace-nowrap">{r._benef.length} {r._benef.length > 1 ? 'employés' : 'employé'}</span>
+                                                </div>
+                                            </td>
+                                            <td className="p-2.5 text-slate-600 max-w-[160px] truncate" title={r.reason}>{r.reason || '—'}</td>
+                                            <td className="p-2.5"><span className={`inline-flex px-2 py-0.5 rounded-full border text-[11px] font-semibold ${pr.chip}`}>{pr.label}</span></td>
+                                            <td className="p-2.5 text-slate-600 whitespace-nowrap">{fmtDate(r.desiredDate)}</td>
+                                            <td className="p-2.5 text-slate-600 whitespace-nowrap">{fmtDate(r.createdAt)}</td>
+                                            <td className="p-2.5"><span className={`inline-flex px-2.5 py-0.5 rounded-full border text-[11.5px] font-semibold ${st.chip}`}>{st.label}</span></td>
+                                            <td className="p-2.5 min-w-[130px]"><Progression status={r.status} /></td>
+                                            <td className="p-2.5" onClick={(e) => e.stopPropagation()}>
+                                                <div className="flex items-center justify-center gap-1">
+                                                    <Tooltip label="Détail" withArrow><ActionIcon variant="subtle" color="gray" onClick={() => openRow(r)}><IconEye size={16} /></ActionIcon></Tooltip>
+                                                    <Menu position="bottom-end" withArrow>
+                                                        <Menu.Target><ActionIcon variant="subtle" color="gray"><IconDots size={16} /></ActionIcon></Menu.Target>
+                                                        <Menu.Dropdown>
+                                                            <Menu.Item leftSection={<IconEye size={14} />} onClick={() => openRow(r)}>Consulter le détail</Menu.Item>
+                                                            {r.status === 'PENDING' && <Menu.Item leftSection={<IconCheck size={14} />} onClick={() => act(() => approvePpeRequest(r.id), 'Demande approuvée')}>Approuver</Menu.Item>}
+                                                            {r.status === 'APPROVED' && <Menu.Item leftSection={<IconBox size={14} />} onClick={() => act(() => preparePpeRequest(r.id), 'Passée en préparation')}>Mettre en préparation</Menu.Item>}
+                                                            {(r.status === 'APPROVED' || r.status === 'PREPARATION') && <Menu.Item leftSection={<IconTruck size={14} />} onClick={() => act(() => deliverPpeRequest(r.id), 'Demande distribuée')}>Distribuer</Menu.Item>}
+                                                        </Menu.Dropdown>
+                                                    </Menu>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </div>
 
-            {/* Création : page matrice plein écran (/ppe-management/request-matrix) — plus de modale de saisie. */}
-
-            {/* Modale : approbation */}
-            <Drawer
-                position="right"
-                opened={showApproveModal}
-                onClose={() => setShowApproveModal(false)}
-                title={<span className="text-base font-semibold text-slate-900">{t('requests.modalApproveTitle')}</span>}
-                size="md"
-            >
-                <LoadingOverlay visible={loading} />
-                <form onSubmit={approveForm.onSubmit(handleApprove)}>
-                    <Textarea
-                        label={t('requests.fieldApproveComment')}
-                        placeholder={t('requests.fieldApproveCommentPlaceholder')}
-                        size="sm"
-                        {...approveForm.getInputProps('comment')}
-                    />
-                    <div className="flex justify-end gap-2 mt-4 pt-2 border-t border-slate-200">
-                        <Button variant="default" size="sm" onClick={() => setShowApproveModal(false)}>
-                            {t('common.cancel')}
-                        </Button>
-                        <Button type="submit" size="sm" color="teal" leftSection={<IconCheck size={14} />}>
-                            {t('requests.approve')}
-                        </Button>
+            {/* Répartition + pagination */}
+            <div className="bg-white rounded-xl border border-slate-200 p-3 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex-1 min-w-[300px]">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] mb-1.5">
+                        {distribution.map((d) => { const c = STATUS_CFG[d.status]; return <span key={d.status} className="inline-flex items-center gap-1.5 text-slate-600"><span className="w-2.5 h-2.5 rounded-full" style={{ background: c.dot }} />{c.label} {d.count} ({d.pct}%)</span>; })}
                     </div>
-                </form>
-            </Drawer>
-
-            {/* Modale : rejet */}
-            <Drawer
-                position="right"
-                opened={showRejectModal}
-                onClose={() => setShowRejectModal(false)}
-                title={<span className="text-base font-semibold text-slate-900">{t('requests.modalRejectTitle')}</span>}
-                size="md"
-            >
-                <LoadingOverlay visible={loading} />
-                <form onSubmit={rejectForm.onSubmit(handleReject)}>
-                    <Textarea
-                        label={t('requests.fieldRejectComment')}
-                        placeholder={t('requests.fieldRejectCommentPlaceholder')}
-                        withAsterisk
-                        size="sm"
-                        {...rejectForm.getInputProps('comment')}
-                    />
-                    <div className="flex justify-end gap-2 mt-4 pt-2 border-t border-slate-200">
-                        <Button variant="default" size="sm" onClick={() => setShowRejectModal(false)}>
-                            {t('common.cancel')}
-                        </Button>
-                        <Button type="submit" size="sm" color="red" leftSection={<IconX size={14} />}>
-                            {t('requests.reject')}
-                        </Button>
+                    <div className="h-2.5 rounded-full bg-slate-100 overflow-hidden flex">
+                        {distribution.map((d) => <div key={d.status} style={{ width: `${d.pct}%`, background: STATUS_CFG[d.status].dot }} title={`${STATUS_CFG[d.status].label}: ${d.count}`} />)}
                     </div>
-                </form>
-            </Drawer>
-
-            {/* Volet : retour de dotation */}
-            <Drawer
-                position="right"
-                opened={showReturnModal}
-                onClose={() => setShowReturnModal(false)}
-                title={<span className="text-base font-semibold text-slate-900">{t('requests.modalReturnTitle', 'Retour de dotation')}</span>}
-                size="md"
-            >
-                <LoadingOverlay visible={loading} />
-                <form onSubmit={returnForm.onSubmit(handleReturn)}>
-                    <p className="text-[12.5px] text-slate-600 mb-3">
-                        {t('requests.returnHint', "Enregistre le retour du matériel distribué. Remettre en stock rend les EPI de nouveau disponibles ; sinon ils sont réformés (stock inchangé).")}
-                    </p>
-                    <Switch
-                        label={t('requests.fieldRestock', 'Remettre en stock')}
-                        description={t('requests.fieldRestockDesc', 'Décocher pour réformer (matériel hors d\'usage)')}
-                        checked={returnForm.values.restock}
-                        onChange={(e) => returnForm.setFieldValue('restock', e.currentTarget.checked)}
-                        size="sm"
-                        mb="sm"
-                    />
-                    <Textarea
-                        label={t('requests.fieldReturnComment', 'Motif / observation')}
-                        placeholder={t('requests.fieldReturnCommentPlaceholder', 'ex. Fin de mission, EPI endommagé…')}
-                        size="sm"
-                        {...returnForm.getInputProps('comment')}
-                    />
-                    <div className="flex justify-end gap-2 mt-4 pt-2 border-t border-slate-200">
-                        <Button variant="default" size="sm" onClick={() => setShowReturnModal(false)}>
-                            {t('common.cancel')}
-                        </Button>
-                        <Button type="submit" size="sm" color="orange" leftSection={<IconArrowBackUp size={14} />}>
-                            {t('requests.confirmReturn', 'Confirmer le retour')}
-                        </Button>
-                    </div>
-                </form>
-            </Drawer>
-
-            {/* Modale : détail */}
-            <Drawer
-                position="right"
-                opened={showViewModal}
-                onClose={() => setShowViewModal(false)}
-                title={<span className="text-base font-semibold text-slate-900">{t('requests.modalViewTitle')}</span>}
-                size="lg"
-            >
-                {viewData && (
-                    <div className="flex flex-col gap-2 text-[12.5px]">
-                        <div className="grid grid-cols-[140px_1fr] gap-2">
-                            <span className="text-slate-500">{t('requests.detailEmployees')}</span>
-                            <span className="text-slate-800">
-                                {(viewData.empIds || []).map((id: any) => empMap[id]?.name || `#${id}`).join(', ') || '—'}
-                            </span>
-                        </div>
-                        <div className="grid grid-cols-[140px_1fr] gap-2">
-                            <span className="text-slate-500">{t('requests.detailRequestedPpe')}</span>
-                            <span className="text-slate-800">
-                                {(viewData.ppeIds || []).map((id: any) => ppeMap[id]?.name || `#${id}`).join(', ') || '—'}
-                            </span>
-                        </div>
-                        {/* Détail par bénéficiaire × EPI (quantités demandée / approuvée). */}
-                        {Array.isArray(viewData.lines) && viewData.lines.length > 0 && (
-                            <div className="mt-1 rounded-lg border border-slate-200 overflow-hidden">
-                                <table className="w-full text-[12px]">
-                                    <thead className="bg-slate-50 text-slate-500">
-                                        <tr>
-                                            <th className="text-left p-2 font-medium">Bénéficiaire</th>
-                                            <th className="text-left p-2 font-medium">EPI</th>
-                                            <th className="text-right p-2 font-medium">Demandé</th>
-                                            <th className="text-right p-2 font-medium">Approuvé</th>
-                                            <th className="text-right p-2 font-medium">Distribué</th>
-                                            <th className="text-right p-2 font-medium">Retourné</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {viewData.lines.map((l: any) => (
-                                            <tr key={l.id} className="border-t border-slate-100">
-                                                <td className="p-2 text-slate-800">{empMap[l.empId]?.name || `#${l.empId}`}</td>
-                                                <td className="p-2 text-slate-800">{ppeMap[l.ppeId]?.name || `#${l.ppeId}`}</td>
-                                                <td className="p-2 text-right tabular-nums">{l.quantityRequested ?? '—'}</td>
-                                                <td className="p-2 text-right tabular-nums">{l.quantityApproved ?? '—'}</td>
-                                                <td className="p-2 text-right tabular-nums">{l.quantityIssued ?? '—'}</td>
-                                                <td className="p-2 text-right tabular-nums">{l.quantityReturned ?? '—'}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                        <div className="grid grid-cols-[140px_1fr] gap-2">
-                            <span className="text-slate-500">{t('requests.detailReason')}</span>
-                            <span className="text-slate-800">{viewData.reason || '—'}</span>
-                        </div>
-                        <div className="grid grid-cols-[140px_1fr] gap-2 items-center">
-                            <span className="text-slate-500">{t('requests.detailPriority')}</span>
-                            <span>
-                                <span className={`${CHIP_BASE} ${priorityConfig(viewData.priority).chip}`}>
-                                    {tPriority(viewData.priority)}
-                                </span>
-                            </span>
-                        </div>
-                        <div className="grid grid-cols-[140px_1fr] gap-2">
-                            <span className="text-slate-500">{t('requests.detailDesiredDate')}</span>
-                            <span className="text-slate-800">{formatDateFr(viewData.desiredDate)}</span>
-                        </div>
-                        <div className="grid grid-cols-[140px_1fr] gap-2 items-center">
-                            <span className="text-slate-500">{t('requests.detailStatus')}</span>
-                            <span>
-                                <span className={`${CHIP_BASE} ${requestStatusConfig(viewData.status).chip}`}>
-                                    {tRequestStatus(viewData.status)}
-                                </span>
-                            </span>
-                        </div>
-                        {viewData.comment && (
-                            <div className="grid grid-cols-[140px_1fr] gap-2">
-                                <span className="text-slate-500">{t('requests.detailComment')}</span>
-                                <span className="text-slate-800">{viewData.comment}</span>
-                            </div>
-                        )}
-                    </div>
-                )}
-                <div className="flex justify-end gap-2 mt-4 pt-2 border-t border-slate-200">
-                    <Button variant="default" size="sm" onClick={() => setShowViewModal(false)}>
-                        {t('requests.close')}
-                    </Button>
                 </div>
+                <div className="flex items-center gap-3">
+                    <span className="text-[12px] text-slate-500 tabular-nums">{total === 0 ? '0' : `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)}`} sur {total}</span>
+                    <Pagination total={totalPages} value={page} onChange={setPage} size="sm" color="teal" />
+                    <Select data={['10', '25', '50']} value={size} onChange={(v) => { setSize(v || '10'); setPage(1); }} size="xs" w={90} rightSection={<IconChevronDown size={14} />} allowDeselect={false} />
+                </div>
+            </div>
+
+            {/* Volet détail */}
+            <Drawer opened={!!selected} onClose={() => setSelected(null)} position="right" size={470} withCloseButton
+                title={<span className="text-[15px] font-bold text-slate-900">Détail de la demande</span>}>
+                {selected && (
+                    <RequestDetail r={selected} empMap={empMap} ppeMap={ppeMap} mineName={mineName} comment={comment} setComment={setComment} acting={acting}
+                        onApprove={() => act(() => approvePpeRequest(selected.id, comment), 'Demande approuvée')}
+                        onReject={() => { if (!comment.trim()) { errorNotification('Motif de rejet requis'); return; } act(() => rejectPpeRequest(selected.id, comment), 'Demande rejetée'); }}
+                        onPrepare={() => act(() => preparePpeRequest(selected.id, comment), 'Passée en préparation')}
+                        onDeliver={() => act(() => deliverPpeRequest(selected.id, comment), 'Demande distribuée')} />
+                )}
             </Drawer>
         </div>
     );
 };
+
+const Kpi = ({ icon, color, label, value, sub }: { icon: React.ReactNode; color: string; label: string; value: any; sub?: string }) => (
+    <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm" style={{ borderTop: `2px solid ${color}` }}>
+        <div className="flex items-center gap-2">
+            <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${color}18`, color }}>{icon}</span>
+            <span className="text-[10.5px] uppercase tracking-[0.06em] font-bold text-slate-500 leading-tight">{label}</span>
+        </div>
+        <div className="text-[24px] font-black text-slate-800 tabular-nums mt-2 leading-none">{value}</div>
+        {sub && <div className="text-[11px] text-amber-600 mt-1">{sub}</div>}
+    </div>
+);
+
+const Progression = ({ status }: { status: string }) => {
+    if (status === 'DELIVERED') return (<div><div className="h-1.5 rounded-full bg-emerald-500" /><div className="text-[11px] text-emerald-600 mt-0.5">100 % distribuée</div></div>);
+    if (status === 'PREPARATION') return (<div><div className="h-1.5 rounded-full bg-slate-100 overflow-hidden"><div className="h-full bg-violet-500" style={{ width: '55%' }} /></div><div className="text-[11px] text-violet-600 mt-0.5">Préparation magasin</div></div>);
+    if (status === 'APPROVED') return <div className="text-[11.5px] text-sky-600">Stock réservé</div>;
+    if (status === 'PENDING') return <div className="text-[11.5px] text-slate-500 inline-flex items-center gap-1"><IconClock size={12} /> Validation</div>;
+    if (status === 'REJECTED') return <div className="text-[11.5px] text-slate-400">—</div>;
+    return <div className="text-[11.5px] text-slate-400">—</div>;
+};
+
+const CIRCUIT = [
+    { key: 'submitted', label: 'Demande soumise' },
+    { key: 'validation', label: 'Validation' },
+    { key: 'preparation', label: 'Préparation magasin' },
+    { key: 'distribution', label: 'Distribution' },
+];
+const stepState = (status: string, key: string) => {
+    const order = ['PENDING', 'APPROVED', 'PREPARATION', 'DELIVERED'];
+    const idx = order.indexOf(status);
+    if (status === 'REJECTED') return key === 'submitted' ? 'done' : key === 'validation' ? 'rejected' : 'todo';
+    if (key === 'submitted') return 'done';
+    if (key === 'validation') return idx >= 1 ? 'done' : 'current';
+    if (key === 'preparation') return idx >= 2 ? 'done' : idx === 1 ? 'current' : 'todo';
+    if (key === 'distribution') return idx >= 3 ? 'done' : idx === 2 ? 'current' : 'todo';
+    return 'todo';
+};
+
+const RequestDetail = ({ r, empMap, ppeMap, mineName, comment, setComment, acting, onApprove, onReject, onPrepare, onDeliver }: any) => {
+    const st = STATUS_CFG[r.status] || STATUS_CFG.PENDING; const pr = priorityCfg(r.priority);
+    const demandeur = empMap[r._demandeurId]?.name || `#${r._demandeurId ?? '—'}`;
+    const dept = empMap[r._demandeurId]?.department || '—';
+    const byEmp: Record<string, any[]> = {}; (r.lines || []).forEach((l: any) => { (byEmp[l.empId] = byEmp[l.empId] || []).push(l); });
+    return (
+        <div className="flex flex-col h-full">
+            <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[16px] font-black text-slate-900">{r._no}</span>
+                <span className={`inline-flex px-2 py-0.5 rounded-full border text-[11.5px] font-semibold ${st.chip}`}>{st.label}</span>
+                <span className={`inline-flex px-2 py-0.5 rounded-full border text-[11.5px] font-semibold ${pr.chip}`}>Priorité {pr.label.toLowerCase()}</span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-y-2.5 gap-x-2 mt-3 text-[12px]">
+                <Meta label="Demandeur" value={demandeur} />
+                <Meta label="Site" value={mineName || 'Mine active'} />
+                <Meta label="Département" value={dept} />
+                <Meta label="Date souhaitée" value={fmtDate(r.desiredDate)} />
+                <Meta label="Motif" value={r.reason || '—'} />
+                <Meta label="Créée le" value={fmtDate(r.createdAt)} />
+            </div>
+
+            <ScrollArea className="flex-1 -mr-4 pr-4 mt-4" type="auto">
+                <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-[13px] font-bold text-slate-800">Bénéficiaires &amp; EPI demandés</h3>
+                    <span className="text-[11.5px] text-slate-500">{r._benef.length} bénéf. · {r._refs} réf. · {r._units} u.</span>
+                </div>
+                <div className="space-y-3">
+                    {Object.entries(byEmp).map(([empId, lines]) => {
+                        const nm = empMap[empId]?.name || `#${empId}`; const totUnits = lines.reduce((a: number, l: any) => a + (Number(l.quantityRequested) || 0), 0);
+                        return (
+                            <div key={empId} className="rounded-lg border border-slate-200 overflow-hidden">
+                                <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-slate-100">
+                                    <Avatar radius="xl" size={28} styles={{ placeholder: { background: avColor(nm), color: '#fff', fontSize: 11, fontWeight: 700 } }}>{initials(nm)}</Avatar>
+                                    <div className="min-w-0 flex-1"><div className="text-[13px] font-semibold text-slate-800 truncate">{nm}</div><div className="text-[11px] text-slate-500">{empMap[empId]?.position || '—'}</div></div>
+                                    <span className="text-[11px] text-slate-500 shrink-0">{lines.length} réf. · {totUnits} u.</span>
+                                </div>
+                                <div className="divide-y divide-slate-100">
+                                    {lines.map((l: any, i: number) => {
+                                        const p = ppeMap[l.ppeId]; const sb = stockBadge(p);
+                                        return (
+                                            <div key={i} className="flex items-center gap-2 px-3 py-2">
+                                                <span className="w-7 h-7 rounded-md bg-slate-50 border border-slate-200 flex items-center justify-center shrink-0"><IconPackage size={14} className="text-slate-500" /></span>
+                                                <div className="min-w-0 flex-1"><div className="text-[12.5px] font-medium text-slate-800 truncate">{p?.name || `EPI #${l.ppeId}`}</div><div className="text-[11px] text-slate-400">Qté {l.quantityRequested ?? 1}{p?.size ? ` · Taille ${p.size}` : ''}</div></div>
+                                                <span className={`shrink-0 inline-flex px-2 py-0.5 rounded-full border text-[10.5px] font-semibold ${sb.chip}`}>{sb.label}</span>
+                                                <span className="text-[11px] text-slate-400 tabular-nums w-16 text-right shrink-0">Stock : {p?.stock ?? 0}</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        );
+                    })}
+                    {Object.keys(byEmp).length === 0 && <p className="text-[12.5px] text-slate-400 py-3 text-center">Aucune ligne.</p>}
+                </div>
+
+                {/* Circuit de validation */}
+                <h3 className="text-[13px] font-bold text-slate-800 mt-5 mb-2">Circuit de validation</h3>
+                <div className="space-y-0">
+                    {CIRCUIT.map((s, i) => {
+                        const state = stepState(r.status, s.key);
+                        const color = state === 'done' ? '#10b981' : state === 'current' ? '#0ea5e9' : state === 'rejected' ? '#f43f5e' : '#cbd5e1';
+                        return (
+                            <div key={s.key} className="flex items-start gap-3">
+                                <div className="flex flex-col items-center">
+                                    <span className="w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ background: state === 'done' ? color : '#fff', border: `2px solid ${color}` }}>
+                                        {state === 'done' && <IconCheck size={11} className="text-white" />}
+                                        {state === 'rejected' && <IconX size={11} style={{ color }} />}
+                                    </span>
+                                    {i < CIRCUIT.length - 1 && <span className="w-0.5 h-6" style={{ background: state === 'done' ? '#10b981' : '#e2e8f0' }} />}
+                                </div>
+                                <div className="pb-4 -mt-0.5">
+                                    <div className="text-[12.5px] font-semibold text-slate-800">{s.label}{state === 'current' ? ' (en cours)' : state === 'rejected' ? ' (rejetée)' : ''}</div>
+                                    <div className="text-[11px] text-slate-400">{state === 'done' ? 'Validé' : state === 'current' ? 'En attente' : state === 'rejected' ? 'Demande rejetée' : 'À venir'}</div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* Commentaires */}
+                <h3 className="text-[13px] font-bold text-slate-800 mt-3 mb-2">Commentaires &amp; historique</h3>
+                {r.comment && <div className="text-[12px] text-slate-600 bg-slate-50 border border-slate-100 rounded-lg p-2.5 mb-2">{r.comment}</div>}
+                {(r.status === 'PENDING' || r.status === 'APPROVED') && (
+                    <Textarea placeholder="Ajouter un commentaire (motif de rejet, note de validation…)" size="xs" autosize minRows={2} value={comment} onChange={(e) => setComment(e.currentTarget.value)} />
+                )}
+            </ScrollArea>
+
+            {/* Actions */}
+            <div className="pt-3 mt-2 border-t border-slate-200">
+                {r.status === 'PENDING' && (
+                    <div className="flex items-center gap-2">
+                        <Button variant="light" color="red" size="sm" leftSection={<IconX size={15} />} onClick={onReject} loading={acting}>Rejeter</Button>
+                        <Button color="teal" size="sm" leftSection={<IconCheck size={15} />} className="flex-1" onClick={onApprove} loading={acting}>Approuver</Button>
+                    </div>
+                )}
+                {r.status === 'APPROVED' && (
+                    <div className="flex items-center gap-2">
+                        <Button variant="light" color="violet" size="sm" leftSection={<IconBox size={15} />} onClick={onPrepare} loading={acting}>Préparer</Button>
+                        <Button color="teal" size="sm" leftSection={<IconTruck size={15} />} className="flex-1" onClick={onDeliver} loading={acting}>Distribuer</Button>
+                    </div>
+                )}
+                {r.status === 'PREPARATION' && (
+                    <Button color="teal" size="sm" leftSection={<IconTruck size={15} />} fullWidth onClick={onDeliver} loading={acting}>Distribuer</Button>
+                )}
+                {(r.status === 'DELIVERED' || r.status === 'REJECTED' || r.status === 'RETURNED') && (
+                    <p className="text-[12px] text-slate-400 text-center">Demande {STATUS_CFG[r.status].label.toLowerCase()} — aucune action.</p>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const Meta = ({ label, value }: { label: string; value: string }) => (
+    <div><div className="text-[10.5px] uppercase tracking-wide text-slate-400 font-semibold">{label}</div><div className="text-[12.5px] text-slate-800 truncate" title={value}>{value}</div></div>
+);
 
 export default PPERequestsTable;

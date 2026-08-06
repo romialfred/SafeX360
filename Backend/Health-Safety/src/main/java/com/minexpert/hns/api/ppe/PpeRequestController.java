@@ -49,8 +49,17 @@ public class PpeRequestController {
         return ResponseEntity.ok(requestService.rejectRequest(id, comment, companyId));
     }
 
-    // Distribution effective d'une demande EPI APPROVED : SORT le stock (approuvé -
-    // déjà distribué, idempotent) puis passe -> DELIVERED, horodaté.
+    // Préparation magasin : passe une demande APPROVED -> PREPARATION.
+    @PutMapping("/prepare/{id}")
+    public ResponseEntity<PpeRequestDTO> prepare(
+            @PathVariable Long id,
+            @RequestParam(required = false) String comment,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(requestService.prepareRequest(id, comment, companyId));
+    }
+
+    // Distribution effective d'une demande EPI APPROVED/PREPARATION : SORT le stock
+    // (approuvé - déjà distribué, idempotent) puis passe -> DELIVERED, horodaté.
     @PutMapping("/deliver/{id}")
     public ResponseEntity<PpeRequestDTO> deliver(
             @PathVariable Long id,

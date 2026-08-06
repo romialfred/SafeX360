@@ -229,8 +229,9 @@ public class PpeRequestServiceImpl implements PpeRequestService {
                 if (companyId != null && !companyId.equals(req.getCompanyId())) {
                         throw new HSException("REQUEST_NOT_FOUND");
                 }
-                // Garde de machine à états : seule une demande APPROVED peut être livrée.
-                if (req.getStatus() != PpeRequestStatus.APPROVED) {
+                // Garde de machine à états : distribuable depuis APPROVED ou PREPARATION.
+                if (req.getStatus() != PpeRequestStatus.APPROVED
+                                && req.getStatus() != PpeRequestStatus.PREPARATION) {
                         throw new HSException("REQUEST_NOT_APPROVED");
                 }
 
@@ -268,6 +269,28 @@ public class PpeRequestServiceImpl implements PpeRequestService {
                 }
                 PpeRequest delivered = requestRepository.save(req);
                 return withLines(delivered.toDTO());
+        }
+
+        @Override
+        @Caching(evict = {
+                        @CacheEvict(cacheNames = "ppeRequestById", allEntries = true),
+                        @CacheEvict(cacheNames = "ppeRequestsAll", allEntries = true)
+        })
+        public PpeRequestDTO prepareRequest(Long id, String comment, Long companyId) throws HSException {
+                PpeRequest req = requestRepository.findById(id)
+                                .orElseThrow(() -> new HSException("REQUEST_NOT_FOUND"));
+                if (companyId != null && !companyId.equals(req.getCompanyId())) {
+                        throw new HSException("REQUEST_NOT_FOUND");
+                }
+                // Passage en préparation magasin : seule une demande APPROVED y entre.
+                if (req.getStatus() != PpeRequestStatus.APPROVED) {
+                        throw new HSException("REQUEST_NOT_APPROVED");
+                }
+                req.setStatus(PpeRequestStatus.PREPARATION);
+                if (comment != null && !comment.isBlank()) {
+                        req.setComment(comment);
+                }
+                return withLines(requestRepository.save(req).toDTO());
         }
 
         @Override

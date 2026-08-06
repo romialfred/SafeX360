@@ -9,5 +9,8 @@ public enum PpeRequestStatus {
     DELIVERED,
     // Incrément 4 — retour total des dotations d'une demande déjà distribuée
     // (remise en stock ou réforme). Append en fin d'enum = sûr pour STRING.
-    RETURNED
+    RETURNED,
+    // Refonte « Gestion des demandes » — étape magasin entre l'approbation et la
+    // distribution (préparation des articles). Append = sûr (colonne VARCHAR).
+    PREPARATION
 }
