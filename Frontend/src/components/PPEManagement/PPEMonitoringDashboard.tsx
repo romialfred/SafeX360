@@ -102,14 +102,14 @@ function Kpi({ icon, iconColor, label, value, sub, trend, spark, sparkColor }: {
     );
 }
 
-function Card({ title, action, children, className = '' }: { title: string; action?: React.ReactNode; children: React.ReactNode; className?: string }) {
+function Card({ title, action, children, className = '', bodyClassName }: { title: string; action?: React.ReactNode; children: React.ReactNode; className?: string; bodyClassName?: string }) {
     return (
         <section className={`bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col ${className}`}>
-            <header className="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between gap-2">
+            <header className="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between gap-2 shrink-0">
                 <h2 className="text-slate-800" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '14px', fontWeight: 600 }}>{title}</h2>
                 {action}
             </header>
-            <div className="p-4 flex-1 min-h-0">{children}</div>
+            <div className={`p-4 flex-1 min-h-0 ${bodyClassName || ''}`}>{children}</div>
         </section>
     );
 }
@@ -336,13 +336,13 @@ const PPEMonitoringDashboard = () => {
         </Card>
     );
 
-    const renderAlertes = () => (
-        <Card title="Alertes & actions prioritaires" className="h-full"
+    const renderAlertes = (scroll = false) => (
+        <Card title="Alertes & actions prioritaires" className="h-full" bodyClassName={scroll ? 'flex flex-col min-h-0' : undefined}
             action={<button className="text-[11.5px] text-teal-600 font-semibold whitespace-nowrap" onClick={() => navigate('/ppe-management/overview-legacy')}>Voir tout →</button>}>
             {(data?.alerts || []).length === 0 ? (
                 <p className="text-[12px] text-slate-400 py-6 text-center flex flex-col items-center gap-1"><IconShieldCheck size={18} className="text-emerald-500" /> Aucune alerte active.</p>
             ) : (
-                <div className="space-y-2">
+                <div className={`space-y-2 ${scroll ? 'flex-1 min-h-0 overflow-y-auto pr-1 -mr-1' : ''}`}>
                     {data.alerts.map((a: any, i: number) => {
                         const sev = SEV_CFG[a.severity] || SEV_CFG.LOW;
                         return (
@@ -502,11 +502,12 @@ const PPEMonitoringDashboard = () => {
                     {/* Vue exécutive : tableau de bord complet */}
                     {tab === 'exec' && (
                         <>
-                            <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-stretch">
-                                <div className="xl:col-span-5">{renderEvolution(300)}</div>
-                                <div className="xl:col-span-3 flex flex-col gap-4">{renderSante(180)}{renderDistribDept()}</div>
-                                <div className="xl:col-span-2">{renderValorisationCat()}</div>
-                                <div className="xl:col-span-2">{renderAlertes()}</div>
+                            {/* 4 sections alignées sur le même niveau supérieur (hauteur égale). */}
+                            <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 xl:h-[400px]">
+                                <div className="xl:col-span-5 h-full">{renderEvolution(300)}</div>
+                                <div className="xl:col-span-3 h-full">{renderSante(180)}</div>
+                                <div className="xl:col-span-2 h-full">{renderValorisationCat()}</div>
+                                <div className="xl:col-span-2 h-full">{renderAlertes(true)}</div>
                             </div>
                             <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-stretch">
                                 <div className="xl:col-span-7">{renderReferences()}</div>
