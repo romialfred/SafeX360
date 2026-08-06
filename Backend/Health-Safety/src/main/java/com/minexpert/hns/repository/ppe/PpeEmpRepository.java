@@ -49,4 +49,15 @@ public interface PpeEmpRepository extends JpaRepository<PpeEmp, Long> {
             + "GROUP BY e.empId")
     java.util.List<com.minexpert.hns.dto.ppe.EmpPpeCountDTO> countActiveAssignmentsByEmpAndCompany(
             @Param("status") PpeEmpStatus status, @Param("companyId") Long companyId);
+
+    // ── Réservé = approuvé non encore distribué (incrément 6/monitoring) ──
+    @Query("SELECT COALESCE(SUM(e.quantityApproved - COALESCE(e.quantityIssued,0)),0) FROM PpeEmp e "
+            + "WHERE (:companyId IS NULL OR e.companyId = :companyId) "
+            + "AND e.quantityApproved > COALESCE(e.quantityIssued,0)")
+    Long sumReservedByCompany(@Param("companyId") Long companyId);
+
+    @Query("SELECT e.ppe.id, SUM(e.quantityApproved - COALESCE(e.quantityIssued,0)) FROM PpeEmp e "
+            + "WHERE (:companyId IS NULL OR e.companyId = :companyId) "
+            + "AND e.quantityApproved > COALESCE(e.quantityIssued,0) GROUP BY e.ppe.id")
+    List<Object[]> reservedByPpe(@Param("companyId") Long companyId);
 }

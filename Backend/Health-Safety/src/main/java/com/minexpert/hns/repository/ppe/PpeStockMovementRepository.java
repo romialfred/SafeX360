@@ -53,4 +53,34 @@ public interface PpeStockMovementRepository extends JpaRepository<PpeStockMoveme
     List<Object[]> sumByPpeForType(@Param("type") PpeMovementType type,
             @Param("companyId") Long companyId,
             @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    /**
+     * Flux mensuels par type sur toute l'historique d'une mine (pour la courbe
+     * « évolution des stocks et distributions »). Ligne = [year, month, type, SUM(quantity)].
+     */
+    @Query("SELECT YEAR(m.createdAt), MONTH(m.createdAt), m.movementType, SUM(m.quantity) "
+            + "FROM PpeStockMovement m WHERE (:companyId IS NULL OR m.companyId = :companyId) "
+            + "GROUP BY YEAR(m.createdAt), MONTH(m.createdAt), m.movementType "
+            + "ORDER BY YEAR(m.createdAt), MONTH(m.createdAt)")
+    List<Object[]> monthlyByType(@Param("companyId") Long companyId);
+
+    /**
+     * Distributions (ISSUE) attribuées à un département via le motif « DEPT:<nom> »,
+     * sur une période et une mine. Ligne = [reason, SUM(-quantity)].
+     */
+    @Query("SELECT m.reason, SUM(m.quantity) FROM PpeStockMovement m "
+            + "WHERE m.movementType = com.minexpert.hns.entity.ppe.PpeMovementType.ISSUE "
+            + "AND m.reason LIKE 'DEPT:%' "
+            + "AND (:companyId IS NULL OR m.companyId = :companyId) "
+            + "AND (:from IS NULL OR m.createdAt >= :from) "
+            + "AND (:to IS NULL OR m.createdAt <= :to) "
+            + "GROUP BY m.reason")
+    List<Object[]> distributionByDepartment(@Param("companyId") Long companyId,
+            @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    /** Dernier mouvement (date) par EPI d'une mine — pour détecter le stock dormant. */
+    @Query("SELECT m.ppeId, MAX(m.createdAt) FROM PpeStockMovement m "
+            + "WHERE m.movementType = com.minexpert.hns.entity.ppe.PpeMovementType.ISSUE "
+            + "AND (:companyId IS NULL OR m.companyId = :companyId) GROUP BY m.ppeId")
+    List<Object[]> lastIssueByPpe(@Param("companyId") Long companyId);
 }

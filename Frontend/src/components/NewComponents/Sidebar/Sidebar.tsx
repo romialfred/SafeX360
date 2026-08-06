@@ -8,6 +8,7 @@ import {
     IconAlertTriangle, // HardHat
     IconHelmet, // ClipboardCheck
     IconClipboardCheck, // CheckSquare
+    IconClipboardList,
     IconSquareCheck, // Calendar
     IconCalendar, // BookOpen
     IconBook, // MessageSquare
@@ -285,7 +286,7 @@ const menuItems: MenuItem[] = [
         subItems: [
             { id: 'ppe-overview', label: 'Vue d\'Ensemble EPI', icon: IconChartBar },
             { id: 'ppe-monitoring', label: 'Suivi des EPI', icon: IconActivity },
-            { id: 'ppe-request', label: 'Demande d\'EPI', icon: IconPlus },
+            { id: 'ppe-request', label: 'Gestion des demandes', icon: IconClipboardList },
             { id: 'ppe-stocktake', label: 'Inventaire EPI', icon: IconClipboardCheck },
             { id: 'ppe-analytics', label: 'Analyse & valorisation', icon: IconChartLine }
         ]
@@ -509,6 +510,7 @@ export const menuIdToUrl: Record<string, string> = {
     "ppe-overview": "/ppe-management",
     "ppe-monitoring": "/ppe-monitoring",
     "ppe-request": "/ppe-request",
+    "ppe-mine": "/ppe-management/my-ppe",
     "ppe-stocktake": "/ppe-management/stocktake",
     "ppe-analytics": "/ppe-management/analytics",
 
