@@ -68,4 +68,24 @@ public interface PpeEmpRepository extends JpaRepository<PpeEmp, Long> {
             + "FROM PpeEmp e WHERE (:companyId IS NULL OR e.companyId = :companyId) "
             + "AND e.empId IS NOT NULL GROUP BY e.empId")
     List<Object[]> consumptionByEmp(@Param("companyId") Long companyId);
+
+    // ── Suivi des dotations : attributions détaillées (empId + EPI) d'une mine ──
+    // [empId, ppeId, name, category, brand, model, size, lifespanMonths, referencePrice,
+    //  quantityIssued, quantityReturned, date, status]
+    @Query("SELECT e.empId, e.ppe.id, e.ppe.name, e.ppe.category, e.ppe.brand, e.ppe.model, e.ppe.size, "
+            + "e.ppe.lifespanMonths, e.ppe.referencePrice, e.quantityIssued, e.quantityReturned, e.date, e.status "
+            + "FROM PpeEmp e WHERE (:companyId IS NULL OR e.companyId = :companyId) "
+            + "AND e.empId IS NOT NULL AND COALESCE(e.quantityIssued,0) > 0")
+    List<Object[]> attributionsByCompany(@Param("companyId") Long companyId);
+
+    // ── Roster des employés de la mine (schéma HRMS defaultdb, requête native) ──
+    // Le user applicatif lit defaultdb (même serveur). [id, matricule, nom, dept, poste]
+    @Query(value = "SELECT e.id, e.unique_number, "
+            + "TRIM(CONCAT(COALESCE(e.first_name,''),' ',COALESCE(e.family_name,''))), "
+            + "d.name, p.name "
+            + "FROM defaultdb.employee e "
+            + "LEFT JOIN defaultdb.department d ON d.id = e.department_id "
+            + "LEFT JOIN defaultdb.position p ON p.id = e.position_id "
+            + "WHERE e.company_id = :companyId", nativeQuery = true)
+    List<Object[]> rosterByCompany(@Param("companyId") Long companyId);
 }

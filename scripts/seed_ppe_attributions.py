@@ -131,21 +131,39 @@ def run():
         cur.execute("SELECT id FROM defaultdb.employee WHERE company_id=%s ORDER BY id", (company_id,))
         emp_ids = [r[0] for r in cur.fetchall()]
 
+        today = datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
+        DRIVER = "BOL-RUSH"          # EPI DURABLE pilote (lunettes, 24 mois) : varie le statut
+        DRIVER_LIFE_DAYS = 24 * 30
+
         for idx, emp_id in enumerate(emp_ids):
+            # Cible de statut réaliste (répartition proche de la maquette) :
+            # ~82 % conforme, ~9 % incomplet, ~6 % à renouveler, ~2 % critique.
+            r = (idx * 37) % 100
+            target = ("critique" if r >= 98 else "renew" if r >= 92 else "incomplete" if r >= 83 else "conforme")
+
             dot = list(BASE)
             for k in profile(emp_id):
                 dot += SPECIAL[k]
-            # Résolution des ppe_id disponibles pour cette mine.
             used_ppe = []
             lines = []  # (ppe_id, qty, date)
             for (ref, nlines, qty) in dot:
                 pid = ref2id.get(ref)
                 if not pid:
                     continue
+                # Incomplet : on omet le pilote (catégorie « yeux » non satisfaite).
+                if target == "incomplete" and ref == DRIVER:
+                    continue
                 used_ppe.append(pid)
                 for j in range(nlines):
-                    frac = (j + 0.5) / nlines
-                    d = start + timedelta(days=int(frac * 31 * MONTHS) + (emp_id % 20))
+                    newest = (j == nlines - 1)
+                    if newest and ref == DRIVER and target == "renew":
+                        d = today - timedelta(days=DRIVER_LIFE_DAYS - random.randint(5, 25))   # expire sous ~30 j
+                    elif newest and ref == DRIVER and target == "critique":
+                        d = today - timedelta(days=DRIVER_LIFE_DAYS + random.randint(20, 150))  # expiré
+                    elif newest:
+                        d = today - timedelta(days=random.randint(15, 260))   # dotation récente valide
+                    else:
+                        d = today - timedelta(days=random.randint(300, 700) + j * 40)  # historique ancien
                     q = max(1, int(round(qty * random.uniform(0.8, 1.2))))
                     lines.append((pid, q, d))
             if not lines:

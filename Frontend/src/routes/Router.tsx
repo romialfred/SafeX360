@@ -126,7 +126,7 @@ const NotificationTabsPage = lazy(() => import('../pages/dashboard/Communication
 const CreateDocumentPage = lazy(() => import('../pages/dashboard/DocumentsManagement/CreateDocumentPage'));
 const DocumentTabsPage = lazy(() => import('../pages/dashboard/DocumentsManagement/DocumentTabsPage'));
 const CommunicationDashboardPage = lazy(() => import('../pages/dashboard/Communication/CommunicationDashboardPage'));
-const PPEMonitoring = lazy(() => import('../components/PPEManagement/PPEMonitoring'));
+const PPEMonitoring = lazy(() => import('../components/PPEManagement/PPEDotationPage'));
 const PPEExecutiveDashboard = lazy(() => import('../components/PPEManagement/PPEMonitoringDashboard'));
 const SettingsPage = lazy(() => import('../components/NewComponents/Settings/Settings'));
 const ModulesManagementPage = lazy(() => import('../components/NewComponents/Settings/ModulesManagementPage'));
