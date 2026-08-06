@@ -20,6 +20,16 @@ public interface AccountService {
 
     public void updateAccount(AccountDTO accountDTO) throws Exception;
 
+    /**
+     * Met a jour l'identite d'un compte (nom, courriel, telephone).
+     *
+     * <p>Regle d'or : un compte issu de l'Active Directory tient son nom et son
+     * courriel de l'annuaire — ils ne sont PAS modifiables ici (seul le telephone,
+     * non cartographie depuis l'AD, reste editable). Un compte LOCAL est
+     * entierement editable.
+     */
+    public AccountDTO updateProfile(Long id, String name, String email, String phoneNumber) throws HRMSException;
+
     public void updatePassword(AccountDTO accountDTO) throws Exception;
 
     // public void sendOtp(String email)throws Exception;

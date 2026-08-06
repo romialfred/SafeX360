@@ -131,6 +131,8 @@ CONTRACT_NOT_FOUND: Contract does not exist.
 
 # Account
 ACCOUNT_NOT_FOUND: Account does not exist.
+NAME_REQUIRED: Le nom complet est obligatoire.
+EMAIL_INVALID: L adresse courriel saisie est invalide.
 
 # Salary Advance
 SALARY_ADVANCE_NOT_FOUND: Salary Advance does not exist.

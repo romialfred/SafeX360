@@ -92,6 +92,29 @@ const getUserActivity = (
         .get(`/hrms/admin/users/${id}/activity`, { params: { kind, page, size } })
         .then((r) => r.data);
 
+export interface UpdateProfilePayload {
+    name?: string;
+    email?: string;
+    phoneNumber?: string;
+}
+
+export interface UpdateProfileResult {
+    id: number;
+    name?: string | null;
+    email?: string | null;
+    phoneNumber?: string | null;
+    identitySource?: string | null;
+    message?: string;
+}
+
+/**
+ * Met à jour l'identité d'un compte. Le serveur refuse toute modification du nom
+ * et du courriel d'un compte Active Directory (ces champs viennent de l'annuaire) ;
+ * l'IHM verrouille déjà ces champs pour un compte AD, ceci n'est que le garde-fou.
+ */
+const updateUserProfile = (id: number, payload: UpdateProfilePayload): Promise<UpdateProfileResult> =>
+    axiosInstance.put(`/hrms/admin/users/${id}/profile`, payload).then((r) => r.data);
+
 /** Retire la dispense : le second facteur redevient obligatoire pour ce compte. */
 const enableUserMfa = (id: number) =>
     axiosInstance.post(`/hrms/admin/users/${id}/mfa/enable`).then((r) => r.data);
@@ -138,4 +161,5 @@ export {
     getModuleCatalog,
     getAccountModules,
     updateAccountModules,
+    updateUserProfile,
 };

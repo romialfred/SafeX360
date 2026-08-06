@@ -2,6 +2,7 @@ package com.hrms.service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -144,6 +145,52 @@ public class AccountServiceImpl implements AccountService {
         entity.setMfaLastAcceptedStep(existing.getMfaLastAcceptedStep());
         entity.setMfaEnrolledAt(existing.getMfaEnrolledAt());
         accountRepository.save(entity);
+    }
+
+    /** Validation minimale d'un courriel (present uniquement s'il est fourni). */
+    private static final Pattern EMAIL_PATTERN =
+            Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
+
+    @Override
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "accountById", key = "#id"),
+            @CacheEvict(cacheNames = "accountByLogin", allEntries = true),
+            @CacheEvict(cacheNames = "accountsAll", allEntries = true),
+            @CacheEvict(cacheNames = "accountByEmpId", allEntries = true),
+            @CacheEvict(cacheNames = "accountEmpIds", allEntries = true),
+            @CacheEvict(cacheNames = "leaveApproversByDept", allEntries = true),
+            @CacheEvict(cacheNames = "salaryAdvanceApproversByCompany", allEntries = true)
+    })
+    public AccountDTO updateProfile(Long id, String name, String email, String phoneNumber)
+            throws HRMSException {
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new HRMSException("ACCOUNT_NOT_FOUND"));
+
+        // Un compte AD tient nom/courriel/departement de l'annuaire. On les laisse
+        // STRICTEMENT intacts, quoi que porte la requete : c'est une garantie
+        // serveur, pas une simple desactivation d'un champ cote client.
+        boolean fromDirectory = "ACTIVE_DIRECTORY".equalsIgnoreCase(account.getIdentitySource());
+        if (!fromDirectory) {
+            if (name == null || name.isBlank()) {
+                throw new HRMSException("NAME_REQUIRED");
+            }
+            String trimmedEmail = email == null ? null : email.trim();
+            if (trimmedEmail != null && !trimmedEmail.isEmpty()
+                    && !EMAIL_PATTERN.matcher(trimmedEmail).matches()) {
+                throw new HRMSException("EMAIL_INVALID");
+            }
+            account.setName(name.trim());
+            account.setEmail(trimmedEmail == null || trimmedEmail.isEmpty() ? null : trimmedEmail);
+        }
+
+        // Le telephone n'est jamais cartographie depuis l'AD : editable dans les
+        // deux cas (LOCAL comme ACTIVE_DIRECTORY).
+        account.setPhoneNumber(phoneNumber == null || phoneNumber.isBlank() ? null : phoneNumber.trim());
+
+        AccountDTO dto = accountRepository.save(account).toDTO();
+        dto.setPassword(null);
+        dto.setOldPassword(null);
+        return dto;
     }
 
     @Override

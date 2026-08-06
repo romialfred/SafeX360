@@ -6,12 +6,13 @@ import {
 } from '@mantine/core';
 import {
     IconAlertTriangle, IconArrowLeft, IconCheck, IconClipboardList, IconDeviceDesktop,
-    IconHistory, IconLock, IconRefresh, IconSearch, IconShieldCheck, IconUserCircle,
+    IconDeviceFloppy, IconEdit, IconHistory, IconId, IconLock, IconRefresh, IconSearch,
+    IconShieldCheck, IconUserCircle, IconX,
 } from '@tabler/icons-react';
 
 import {
     disableUserMfa, enableUserMfa, getAccountModules, getModuleCatalog, getUserActivity,
-    getUserOverview, getUserSessions, resetUserMfa, updateAccountModules,
+    getUserOverview, getUserSessions, resetUserMfa, updateAccountModules, updateUserProfile,
     type ModuleCatalogCategory, type UserActivityRow, type UserOverview, type UserSessionRow,
 } from '../../../services/UserTraceabilityService';
 import { getActiveModulesForCompany } from '../../../services/ModuleManagementService';
@@ -138,6 +139,11 @@ export default function UserProfilePage() {
 
     const [mfaBusy, setMfaBusy] = useState(false);
     const [confirmDisable, setConfirmDisable] = useState(false);
+
+    // Édition de l'identité (nom / courriel / téléphone).
+    const [editing, setEditing] = useState(false);
+    const [savingProfile, setSavingProfile] = useState(false);
+    const [form, setForm] = useState({ name: '', email: '', phoneNumber: '' });
 
     const tab = searchParams.get('tab') || 'profile';
     const setTab = (value: string | null) => {
@@ -275,6 +281,62 @@ export default function UserProfilePage() {
         }
     };
 
+    // Le formulaire suit la fiche tant qu'on n'édite pas : on ne l'écrase jamais
+    // pendant une saisie en cours (rechargement 2FA, etc.).
+    useEffect(() => {
+        if (overview && !editing) {
+            setForm({
+                name: overview.name || '',
+                email: overview.email || '',
+                phoneNumber: overview.phoneNumber || '',
+            });
+        }
+    }, [overview, editing]);
+
+    const isAd = (overview?.identitySource || 'LOCAL').toUpperCase() === 'ACTIVE_DIRECTORY';
+
+    const profileDirty = useMemo(() => {
+        if (!overview) return false;
+        const phoneChanged = form.phoneNumber.trim() !== (overview.phoneNumber || '').trim();
+        if (isAd) return phoneChanged; // compte AD : seul le téléphone est modifiable
+        return phoneChanged
+            || form.name.trim() !== (overview.name || '').trim()
+            || form.email.trim() !== (overview.email || '').trim();
+    }, [form, overview, isAd]);
+
+    const cancelEdit = () => {
+        if (overview) {
+            setForm({
+                name: overview.name || '',
+                email: overview.email || '',
+                phoneNumber: overview.phoneNumber || '',
+            });
+        }
+        setEditing(false);
+    };
+
+    const saveProfile = async () => {
+        if (!overview) return;
+        // Un compte AD ne transmet QUE son téléphone : nom et courriel restent ceux
+        // de l'annuaire (le serveur les refuserait de toute façon).
+        const payload = isAd
+            ? { phoneNumber: form.phoneNumber }
+            : { name: form.name, email: form.email, phoneNumber: form.phoneNumber };
+        setSavingProfile(true);
+        try {
+            await updateUserProfile(accountId, payload);
+            await loadOverview();
+            setEditing(false);
+            successNotification('Profil enregistré : les informations du compte ont été mises à jour.');
+        } catch (e: any) {
+            const data = e?.response?.data;
+            errorNotification(data?.errorMessage || data?.message
+                || "Enregistrement impossible : le profil n'a pas pu être mis à jour.");
+        } finally {
+            setSavingProfile(false);
+        }
+    };
+
     const filteredCatalog = useMemo(() => {
         const needle = moduleFilter.trim().toLowerCase();
         return catalog
@@ -349,10 +411,8 @@ export default function UserProfilePage() {
                         ['Mine principale', overview.company || '—'],
                         ['Département', overview.department || '—'],
                         ['Poste', overview.position || '—'],
-                        ['Courriel', overview.email || '—'],
-                        ['Téléphone', overview.phoneNumber || '—'],
                         ['Dernière connexion', formatDate(overview.stats.lastLoginAt)],
-                        ['Source d\'identité', overview.identitySource || 'LOCAL'],
+                        ['Source d\'identité', isAd ? 'Active Directory' : 'Compte local'],
                     ].map(([label, value]) => (
                         <div key={String(label)}>
                             <Text size="xs" c="dimmed" tt="uppercase">{label}</Text>
@@ -375,7 +435,81 @@ export default function UserProfilePage() {
                 {/* ───────────────────────── PROFIL + SÉCURITÉ ───────────────────────── */}
                 <Tabs.Panel value="profile" pt="md">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                        {/* ── Identité : éditable pour un compte local, verrouillée pour l'AD ── */}
                         <Card withBorder radius="md" padding="md" className="lg:col-span-2">
+                            <Group justify="space-between" mb="sm" wrap="nowrap">
+                                <Group gap="xs">
+                                    <IconId size={18} />
+                                    <Title order={5}>Identité</Title>
+                                </Group>
+                                {editing ? (
+                                    <Group gap="xs">
+                                        <Button variant="default" size="compact-sm"
+                                            leftSection={<IconX size={14} />}
+                                            onClick={cancelEdit} disabled={savingProfile}>
+                                            Annuler
+                                        </Button>
+                                        <Button size="compact-sm" color="teal"
+                                            leftSection={<IconDeviceFloppy size={14} />}
+                                            loading={savingProfile} disabled={!profileDirty}
+                                            onClick={saveProfile}>
+                                            Enregistrer
+                                        </Button>
+                                    </Group>
+                                ) : (
+                                    <Button variant="light" size="compact-sm"
+                                        leftSection={<IconEdit size={14} />}
+                                        onClick={() => setEditing(true)}>
+                                        Modifier
+                                    </Button>
+                                )}
+                            </Group>
+
+                            {isAd && (
+                                <Alert color="blue" variant="light" mb="sm"
+                                    icon={<IconLock size={16} />}>
+                                    Compte synchronisé depuis l'Active Directory. Le nom et le courriel
+                                    sont gérés par l'annuaire et ne sont pas modifiables ici ; seul le
+                                    téléphone peut être renseigné.
+                                </Alert>
+                            )}
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <TextInput
+                                    label="Identifiant de connexion"
+                                    value={overview.login}
+                                    disabled
+                                    description="L'identifiant ne se modifie pas."
+                                />
+                                <TextInput
+                                    label="Nom complet"
+                                    value={form.name}
+                                    onChange={(e) => setForm((f) => ({ ...f, name: e.currentTarget.value }))}
+                                    disabled={!editing || isAd}
+                                    required={!isAd}
+                                    rightSection={isAd ? <IconLock size={14} /> : undefined}
+                                    error={editing && !isAd && !form.name.trim() ? 'Nom obligatoire' : undefined}
+                                />
+                                <TextInput
+                                    label="Courriel"
+                                    type="email"
+                                    value={form.email}
+                                    onChange={(e) => setForm((f) => ({ ...f, email: e.currentTarget.value }))}
+                                    disabled={!editing || isAd}
+                                    rightSection={isAd ? <IconLock size={14} /> : undefined}
+                                    placeholder="nom@organisation.com"
+                                />
+                                <TextInput
+                                    label="Téléphone"
+                                    value={form.phoneNumber}
+                                    onChange={(e) => setForm((f) => ({ ...f, phoneNumber: e.currentTarget.value }))}
+                                    disabled={!editing}
+                                    placeholder="+226 …"
+                                />
+                            </div>
+                        </Card>
+
+                        <Card withBorder radius="md" padding="md" className="lg:col-span-3 order-3">
                             <Title order={5} mb="sm">Périmètre</Title>
                             <Text size="sm" mb="xs">
                                 {overview.allMinesAccess
@@ -400,7 +534,7 @@ export default function UserProfilePage() {
                             </Group>
                         </Card>
 
-                        <Card withBorder radius="md" padding="md">
+                        <Card withBorder radius="md" padding="md" className="order-2">
                             <Title order={5} mb="xs">Second facteur (2FA)</Title>
                             <Text size="sm" c="dimmed" mb="sm">{mfaStateLabel}</Text>
 

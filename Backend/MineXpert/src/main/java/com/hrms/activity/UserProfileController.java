@@ -16,15 +16,19 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.hrms.dto.AccountDTO;
 import com.hrms.dto.AuditLogDTO;
 import com.hrms.entity.Account;
 import com.hrms.repository.AccountRepository;
 import com.hrms.security.AdminGuard;
+import com.hrms.service.AccountService;
 import com.hrms.service.AuditLogService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -52,16 +56,19 @@ public class UserProfileController {
     private final UserActivityRepository activities;
     private final ActivityService activity;
     private final AuditLogService auditLogService;
+    private final AccountService accountService;
 
     public UserProfileController(AdminGuard adminGuard, AccountRepository accounts,
             UserSessionRepository sessions, UserActivityRepository activities,
-            ActivityService activity, AuditLogService auditLogService) {
+            ActivityService activity, AuditLogService auditLogService,
+            AccountService accountService) {
         this.adminGuard = adminGuard;
         this.accounts = accounts;
         this.sessions = sessions;
         this.activities = activities;
         this.activity = activity;
         this.auditLogService = auditLogService;
+        this.accountService = accountService;
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -116,6 +123,45 @@ public class UserProfileController {
                     stats.put("sessionOpen", last.getEndedAt() == null);
                 });
         body.put("stats", stats);
+        return ResponseEntity.ok(body);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // PUT /{id}/profile — edition de l'identite du compte
+    // ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * Met a jour le nom, le courriel et le telephone d'un compte.
+     *
+     * <p>Comptes LOCAL : tous ces champs sont editables. Comptes ACTIVE_DIRECTORY :
+     * le nom et le courriel proviennent de l'annuaire et sont refuses ici — la
+     * garantie est portee cote service ({@code AccountServiceImpl.updateProfile}),
+     * l'IHM ne fait que refleter cette regle en verrouillant les champs.
+     */
+    @PutMapping("/{id}/profile")
+    public ResponseEntity<?> updateProfile(@PathVariable Long id,
+            @RequestBody Map<String, Object> payload,
+            @CookieValue(name = "jwt", required = false) String token, HttpServletRequest request)
+            throws Exception {
+        String performedBy = adminGuard.requireAdmin(token, request);
+        Account before = account(id);
+        boolean fromDirectory = "ACTIVE_DIRECTORY".equalsIgnoreCase(before.getIdentitySource());
+
+        AccountDTO updated = accountService.updateProfile(id,
+                str(payload.get("name")), str(payload.get("email")), str(payload.get("phoneNumber")));
+
+        audit(performedBy, "Profil mis a jour pour " + before.getLogin()
+                + (fromDirectory ? " (compte AD : telephone uniquement)" : ""));
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("id", updated.getId());
+        body.put("name", updated.getName());
+        body.put("email", updated.getEmail());
+        body.put("phoneNumber", updated.getPhoneNumber());
+        body.put("identitySource", before.getIdentitySource());
+        body.put("message", fromDirectory
+                ? "Telephone enregistre. Le nom et le courriel proviennent de l'annuaire."
+                : "Profil enregistre.");
         return ResponseEntity.ok(body);
     }
 
@@ -271,6 +317,11 @@ public class UserProfileController {
 
     private static String nameOf(String value) {
         return value == null || value.isBlank() ? null : value;
+    }
+
+    /** Extrait une chaine d'un corps JSON tolerant (null si absente ou non textuelle). */
+    private static String str(Object value) {
+        return value == null ? null : value.toString();
     }
 
     private void audit(String performedBy, String message) {
