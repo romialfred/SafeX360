@@ -126,7 +126,8 @@ const NotificationTabsPage = lazy(() => import('../pages/dashboard/Communication
 const CreateDocumentPage = lazy(() => import('../pages/dashboard/DocumentsManagement/CreateDocumentPage'));
 const DocumentTabsPage = lazy(() => import('../pages/dashboard/DocumentsManagement/DocumentTabsPage'));
 const CommunicationDashboardPage = lazy(() => import('../pages/dashboard/Communication/CommunicationDashboardPage'));
-const PPEMonitoring = lazy(() => import('../components/PPEManagement/PPEMonitoringDashboard'));
+const PPEMonitoring = lazy(() => import('../components/PPEManagement/PPEMonitoring'));
+const PPEExecutiveDashboard = lazy(() => import('../components/PPEManagement/PPEMonitoringDashboard'));
 const SettingsPage = lazy(() => import('../components/NewComponents/Settings/Settings'));
 const ModulesManagementPage = lazy(() => import('../components/NewComponents/Settings/ModulesManagementPage'));
 const OperationalReferencesPage = lazy(() => import('../components/NewComponents/OperationalReferences/OperationalReferencesPage'));
@@ -465,7 +466,8 @@ const router = createBrowserRouter([
             { path: 'audit-recommendations/details/:id', element: <RecommendationDetailsPage />, },
             { path: 'audit-recommendations/update/:id', element: <UpdateRecommendationPage />, },
 
-            { path: 'ppe-management', element: <ModuleGuard moduleId='ppe-overview'><PpeManagementPage /></ModuleGuard>, },
+            { path: 'ppe-management', element: <ModuleGuard moduleId='ppe-overview'><PPEExecutiveDashboard /></ModuleGuard>, },
+            { path: 'ppe-management/overview-legacy', element: <ModuleGuard moduleId='ppe-overview'><PpeManagementPage /></ModuleGuard>, },
             { path: 'ppe-management/create-ppe', element: <ModuleGuard moduleId='ppe-overview'><PPECreateFormPage /></ModuleGuard>, },
             { path: 'ppe-management/stock-form', element: <ModuleGuard moduleId='ppe-overview'><PPEStockEntryFormPage /></ModuleGuard>, },
             { path: 'ppe-management/request-table', element: <ModuleGuard moduleId='ppe-request'><PPERequestTablePage /></ModuleGuard>, },

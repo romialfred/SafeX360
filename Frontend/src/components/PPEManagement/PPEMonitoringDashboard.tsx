@@ -143,6 +143,7 @@ const PPEMonitoringDashboard = () => {
     const stockSpark = useMemo(() => (data?.monthly || []).map((m: any) => m.stock), [data]);
     const issueSpark = useMemo(() => (data?.monthly || []).map((m: any) => m.issues), [data]);
     const entrySpark = useMemo(() => (data?.monthly || []).map((m: any) => m.entries), [data]);
+    const trendOf = (v?: number | null) => (v == null ? undefined : { up: v >= 0, text: `${v >= 0 ? '+' : ''}${v} %` });
 
     const monthChart = useMemo(() => (data?.monthly || []).map((m: any) => {
         const [y, mo] = m.label.split('-');
@@ -224,100 +225,156 @@ const PPEMonitoringDashboard = () => {
                 <>
                     {/* KPI */}
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-                        <Kpi icon={<IconCoin size={17} />} iconColor={GREEN} label="Valeur du stock" value={fmtFcfa(data.stockValue)} spark={stockSpark} sparkColor={GREEN} />
+                        <Kpi icon={<IconCoin size={17} />} iconColor={GREEN} label="Valeur du stock" value={fmtFcfa(data.stockValue)} trend={trendOf(data.stockTrend)} spark={stockSpark} sparkColor={GREEN} />
                         <Kpi icon={<IconBox size={17} />} iconColor={BLUE} label="Stock disponible" value={`${fmtInt(data.availableUnits)}`} sub={`${fmtInt(data.reservedUnits)} réservées`} spark={stockSpark} sparkColor={BLUE} />
                         <Kpi icon={<IconAlertTriangle size={17} />} iconColor={ROSE} label="Références critiques" value={String(data.criticalCount)} sub={`${data.rupturesCount} ruptures · ${data.belowThresholdCount} sous seuil`} spark={issueSpark} sparkColor={ROSE} />
-                        <Kpi icon={<IconUsers size={17} />} iconColor={PURPLE} label="Distribué ce mois" value={`${fmtInt(data.distributedThisMonth)}`} sub="unités" spark={issueSpark} sparkColor={PURPLE} />
+                        <Kpi icon={<IconUsers size={17} />} iconColor={PURPLE} label="Distribué ce mois" value={`${fmtInt(data.distributedThisMonth)}`} sub="unités" trend={trendOf(data.distributedTrend)} spark={issueSpark} sparkColor={PURPLE} />
                         <Kpi icon={<IconPackage size={17} />} iconColor={AMBER} label="Demandes en attente" value={String(data.pendingRequests)} sub={`${data.priorityPending} prioritaires`} spark={entrySpark} sparkColor={AMBER} />
                         <Kpi icon={<IconShieldCheck size={17} />} iconColor="#0ea5e9" label="Taux de couverture" value={`${data.coverageRate}%`} spark={stockSpark} sparkColor="#0ea5e9" />
                     </div>
 
-                    {/* Rangée charts */}
-                    {(showStocks || showDistrib) && (
-                        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
-                            {showStocks && (
-                                <Card title="Évolution des stocks et distributions" className="xl:col-span-5">
-                                    <div style={{ width: '100%', height: 300 }}>
-                                        <ResponsiveContainer>
-                                            <ComposedChart data={monthChart} margin={{ top: 5, right: 8, left: -10, bottom: 0 }}>
-                                                <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" vertical={false} />
-                                                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} />
-                                                <YAxis tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={false} width={44} />
-                                                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0' }} />
-                                                <Bar dataKey="Entrées" fill={GREEN} radius={[3, 3, 0, 0]} barSize={10} />
-                                                <Bar dataKey="Sorties" fill={PURPLE} radius={[3, 3, 0, 0]} barSize={10} />
-                                                <Line type="monotone" dataKey="Stock" stroke={BLUE} strokeWidth={2.4} dot={{ r: 2.5 }} />
-                                            </ComposedChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                    <div className="flex items-center gap-4 text-[12px] mt-1">
-                                        <Legend color={GREEN} label="Entrées (u.)" />
-                                        <Legend color={PURPLE} label="Sorties / distributions (u.)" />
-                                        <Legend color={BLUE} label="Stock disponible (u.)" line />
-                                    </div>
-                                </Card>
-                            )}
-
-                            {showStocks && (
-                                <Card title="Santé du stock" className="xl:col-span-3">
-                                    <div className="relative" style={{ width: '100%', height: 150 }}>
-                                        <ResponsiveContainer>
-                                            <RadialBarChart innerRadius="70%" outerRadius="100%" data={[{ value: health?.score ?? 0 }]} startAngle={210} endAngle={-30}>
-                                                <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
-                                                <RadialBar background={{ fill: '#eef2f7' }} dataKey="value" cornerRadius={20}
-                                                    fill={(health?.score ?? 0) >= 80 ? GREEN : (health?.score ?? 0) >= 60 ? AMBER : ROSE} />
-                                            </RadialBarChart>
-                                        </ResponsiveContainer>
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                            <span className="text-[26px] font-black text-slate-800 tabular-nums leading-none">{health?.score ?? 0}<span className="text-[14px] text-slate-400">/100</span></span>
-                                            <span className="text-[11px] text-slate-500 mt-0.5">Score de santé</span>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-1 mt-1">
-                                        {healthLegend.map((h) => (
-                                            <div key={h.key} className="flex items-center gap-2 text-[12.5px]">
-                                                <span className="w-2.5 h-2.5 rounded-sm" style={{ background: h.color }} />
-                                                <span className="text-slate-600 flex-1">{h.label}</span>
-                                                <span className="font-semibold text-slate-800 tabular-nums">{Math.round((h.value / healthTotal) * 100)} %</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <p className="text-[11px] text-slate-400 mt-2">Objectif : ≥ 80</p>
-                                </Card>
-                            )}
-
-                            {showDistrib && (
-                                <Card title="Distributions par département" className="xl:col-span-4">
-                                    {(data.byDepartment || []).length === 0 ? (
-                                        <p className="text-[12.5px] text-slate-400 py-8 text-center">Aucune distribution sur la période.</p>
-                                    ) : (
-                                        <div className="space-y-2.5 pt-1">
-                                            {data.byDepartment.slice(0, 6).map((d: any) => {
-                                                const max = data.byDepartment[0].units || 1;
-                                                return (
-                                                    <div key={d.department}>
-                                                        <div className="flex items-center justify-between text-[12.5px] mb-0.5">
-                                                            <span className="text-slate-700 truncate max-w-[60%]">{d.department}</span>
-                                                            <span className="tabular-nums font-semibold text-slate-800">{fmtInt(d.units)}</span>
-                                                        </div>
-                                                        <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                                                            <div className="h-full rounded-full" style={{ width: `${(d.units / max) * 100}%`, background: PURPLE }} />
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-                                </Card>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Alertes + Références */}
+                    {/* Rangée 2 : Évolution | Santé + Distributions | Valorisation catégorie | Alertes */}
                     <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
                         {showStocks && (
-                            <Card title="Références à surveiller" className="xl:col-span-8"
-                                action={<button className="text-[12px] text-teal-600 font-semibold" onClick={() => navigate('/ppe-management')}>Voir toutes les références ({data.totalReferences}) →</button>}>
+                            <Card title="Évolution des stocks et distributions" className="xl:col-span-5"
+                                action={<Select value="Mensuel" data={['Mensuel']} size="xs" w={110} allowDeselect={false} readOnly />}>
+                                <div style={{ width: '100%', height: 300 }}>
+                                    <ResponsiveContainer>
+                                        <ComposedChart data={monthChart} margin={{ top: 5, right: 4, left: -10, bottom: 0 }}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" vertical={false} />
+                                            <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} />
+                                            <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={false} width={44} />
+                                            <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={false} width={44} />
+                                            <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0' }} formatter={(v: any) => fmtInt(Number(v))} />
+                                            <Bar yAxisId="left" dataKey="Entrées" fill={GREEN} radius={[3, 3, 0, 0]} barSize={10} />
+                                            <Bar yAxisId="left" dataKey="Sorties" fill={PURPLE} radius={[3, 3, 0, 0]} barSize={10} />
+                                            <Line yAxisId="right" type="monotone" dataKey="Stock" stroke={BLUE} strokeWidth={2.4} dot={{ r: 2.5 }} />
+                                        </ComposedChart>
+                                    </ResponsiveContainer>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] mt-1">
+                                    <Legend color={GREEN} label="Entrées (u.)" />
+                                    <Legend color={PURPLE} label="Sorties / distributions (u.)" />
+                                    <Legend color={BLUE} label="Stock disponible (u.)" line />
+                                </div>
+                            </Card>
+                        )}
+
+                        {/* Colonne santé + distributions (empilées) */}
+                        {(showStocks || showDistrib) && (
+                            <div className="xl:col-span-3 flex flex-col gap-4">
+                                {showStocks && (
+                                    <Card title="Santé du stock">
+                                        <div className="relative" style={{ width: '100%', height: 140 }}>
+                                            <ResponsiveContainer>
+                                                <RadialBarChart innerRadius="70%" outerRadius="100%" data={[{ value: health?.score ?? 0 }]} startAngle={210} endAngle={-30}>
+                                                    <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
+                                                    <RadialBar background={{ fill: '#eef2f7' }} dataKey="value" cornerRadius={20}
+                                                        fill={(health?.score ?? 0) >= 80 ? GREEN : (health?.score ?? 0) >= 60 ? AMBER : ROSE} />
+                                                </RadialBarChart>
+                                            </ResponsiveContainer>
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                                <span className="text-[24px] font-black text-slate-800 tabular-nums leading-none">{health?.score ?? 0}<span className="text-[13px] text-slate-400">/100</span></span>
+                                                <span className="text-[11px] text-slate-500 mt-0.5">Score de santé</span>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-1">
+                                            {healthLegend.map((h) => (
+                                                <div key={h.key} className="flex items-center gap-1.5 text-[12px]">
+                                                    <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: h.color }} />
+                                                    <span className="text-slate-600 flex-1 truncate">{h.label}</span>
+                                                    <span className="font-semibold text-slate-800 tabular-nums">{Math.round((h.value / healthTotal) * 100)} %</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <p className="text-[11px] text-slate-400 mt-2">Objectif : ≥ 80</p>
+                                    </Card>
+                                )}
+                                {showDistrib && (
+                                    <Card title="Distributions par département">
+                                        {(data.byDepartment || []).length === 0 ? (
+                                            <p className="text-[12px] text-slate-400 py-4 text-center">Aucune distribution.</p>
+                                        ) : (
+                                            <div className="space-y-2">
+                                                {data.byDepartment.slice(0, 6).map((d: any) => {
+                                                    const max = data.byDepartment[0].units || 1;
+                                                    return (
+                                                        <div key={d.department}>
+                                                            <div className="flex items-center justify-between text-[12px] mb-0.5">
+                                                                <span className="text-slate-600 truncate max-w-[62%]">{d.department}</span>
+                                                                <span className="tabular-nums font-semibold text-slate-800">{fmtInt(d.units)}</span>
+                                                            </div>
+                                                            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                                                <div className="h-full rounded-full" style={{ width: `${(d.units / max) * 100}%`, background: PURPLE }} />
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </Card>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Valorisation par catégorie */}
+                        {showValue && (
+                            <Card title="Valorisation par catégorie" className="xl:col-span-2">
+                                {(data.valueByCategory || []).length === 0 ? (
+                                    <p className="text-[12px] text-slate-400 py-4 text-center">Aucune valorisation.</p>
+                                ) : (
+                                    <div className="space-y-2.5">
+                                        {data.valueByCategory.slice(0, 6).map((c: any) => {
+                                            const max = data.valueByCategory[0].value || 1;
+                                            return (
+                                                <div key={c.category}>
+                                                    <div className="flex items-center justify-between text-[11.5px] mb-0.5 gap-1">
+                                                        <span className="text-slate-600 truncate">{ppeCategoryLabel(c.category)}</span>
+                                                        <span className="tabular-nums font-semibold text-slate-800 shrink-0">{fmtFcfa(c.value)}</span>
+                                                    </div>
+                                                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                                        <div className="h-full rounded-full" style={{ width: `${(c.value / max) * 100}%`, background: GREEN }} />
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </Card>
+                        )}
+
+                        {/* Alertes & actions prioritaires */}
+                        {showExec && (
+                            <Card title="Alertes & actions prioritaires" className="xl:col-span-2"
+                                action={<button className="text-[11.5px] text-teal-600 font-semibold whitespace-nowrap" onClick={() => navigate('/ppe-management/overview-legacy')}>Voir tout →</button>}>
+                                {(data.alerts || []).length === 0 ? (
+                                    <p className="text-[12px] text-slate-400 py-6 text-center flex flex-col items-center gap-1"><IconShieldCheck size={18} className="text-emerald-500" /> Aucune alerte active.</p>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {data.alerts.map((a: any, i: number) => {
+                                            const sev = SEV_CFG[a.severity] || SEV_CFG.LOW;
+                                            return (
+                                                <div key={i} className="p-2 rounded-lg border border-slate-100">
+                                                    <div className="flex items-start gap-1.5">
+                                                        <IconAlertTriangle size={14} style={{ color: sev.color }} className="mt-0.5 shrink-0" />
+                                                        <div className="text-[12px] font-semibold text-slate-800 leading-tight">{a.title}</div>
+                                                    </div>
+                                                    <div className="text-[10.5px] text-slate-500 mt-0.5 truncate pl-5">{a.detail}</div>
+                                                    <div className="pl-5 mt-1"><span className={`inline-flex px-1.5 py-0.5 rounded-full border text-[10px] font-semibold ${sev.chip}`}>{sev.label}</span></div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </Card>
+                        )}
+                    </div>
+
+                    {/* Rangée 3 : Références à surveiller | Rotation | Répartition de la valeur */}
+                    <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+                        {showStocks && (
+                            <Card title="Références à surveiller" className="xl:col-span-7"
+                                action={<button className="text-[12px] text-teal-600 font-semibold" onClick={() => navigate('/ppe-management/overview-legacy')}>Voir toutes les références ({data.totalReferences}) →</button>}>
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-[13px]">
                                         <thead className="text-slate-400 text-[11.5px] uppercase tracking-wider">
@@ -354,35 +411,9 @@ const PPEMonitoringDashboard = () => {
                             </Card>
                         )}
 
-                        {showExec && (
-                            <Card title="Alertes & actions prioritaires" className="xl:col-span-4">
-                                {(data.alerts || []).length === 0 ? (
-                                    <p className="text-[12.5px] text-slate-400 py-8 text-center flex items-center justify-center gap-2"><IconShieldCheck size={16} className="text-emerald-500" /> Aucune alerte active.</p>
-                                ) : (
-                                    <div className="space-y-2">
-                                        {data.alerts.map((a: any, i: number) => {
-                                            const sev = SEV_CFG[a.severity] || SEV_CFG.LOW;
-                                            return (
-                                                <div key={i} className="flex items-start gap-2.5 p-2.5 rounded-lg border border-slate-100">
-                                                    <IconAlertTriangle size={16} style={{ color: sev.color }} className="mt-0.5 shrink-0" />
-                                                    <div className="min-w-0 flex-1">
-                                                        <div className="text-[13px] font-semibold text-slate-800 truncate">{a.title}</div>
-                                                        <div className="text-[11.5px] text-slate-500 truncate">{a.detail}</div>
-                                                    </div>
-                                                    <span className={`shrink-0 inline-flex px-2 py-0.5 rounded-full border text-[10.5px] font-semibold ${sev.chip}`}>{sev.label}</span>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </Card>
-                        )}
-                    </div>
-
-                    {/* Rotation + Valeur */}
-                    {showValue && (
-                        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
-                            <Card title="Rotation &amp; couverture" className="xl:col-span-4">
+                        {showValue && (
+                            <>
+                            <Card title="Rotation &amp; couverture" className="xl:col-span-2">
                                 <div className="space-y-3">
                                     <Metric icon={<IconRefresh size={16} />} label="Rotation moyenne" value={`${data.rotation?.avgRotation ?? 0} ×`} sub={`Sur ${period} jours`} color={BLUE} />
                                     <Metric icon={<IconBox size={16} />} label="Stock dormant" value={fmtFcfa(data.rotation?.dormantValue)} sub={`${data.rotation?.dormantPct ?? 0} % de la valeur totale`} color={SLATE} />
@@ -390,13 +421,13 @@ const PPEMonitoringDashboard = () => {
                                 </div>
                             </Card>
 
-                            <Card title="Répartition de la valeur" className="xl:col-span-8">
+                            <Card title="Répartition de la valeur" className="xl:col-span-3">
                                 {valueDonut.length === 0 ? <p className="text-[12.5px] text-slate-400 py-8 text-center">Aucune valorisation.</p> : (
-                                    <div className="flex flex-col sm:flex-row items-center gap-6">
-                                        <div className="relative" style={{ width: 200, height: 200 }}>
+                                    <div className="flex flex-col items-center gap-3">
+                                        <div className="relative" style={{ width: 170, height: 170 }}>
                                             <ResponsiveContainer>
                                                 <PieChart>
-                                                    <Pie data={valueDonut} dataKey="value" nameKey="label" cx="50%" cy="50%" innerRadius={62} outerRadius={92} paddingAngle={2} stroke="none">
+                                                    <Pie data={valueDonut} dataKey="value" nameKey="label" cx="50%" cy="50%" innerRadius={54} outerRadius={80} paddingAngle={2} stroke="none">
                                                         {valueDonut.map((d) => <Cell key={d.key} fill={d.color} />)}
                                                     </Pie>
                                                     <Tooltip formatter={(v: any) => fmtFcfa(Number(v))} contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0' }} />
@@ -420,8 +451,9 @@ const PPEMonitoringDashboard = () => {
                                     </div>
                                 )}
                             </Card>
-                        </div>
-                    )}
+                            </>
+                        )}
+                    </div>
                 </>
             )}
         </div>

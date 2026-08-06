@@ -33,10 +33,15 @@ public class PpeMonitoringDTO {
     private int priorityPending;
     private double coverageRate;     // % de références au-dessus du seuil
 
+    // Tendances mois-sur-mois (%), null si non calculable.
+    private Double stockTrend;       // évolution du stock (unités) M-1
+    private Double distributedTrend; // évolution des distributions M-1
+
     // ── Séries & répartitions ──
     private List<MonthPoint> monthly;       // évolution entrées/sorties/stock
     private HealthBreakdown health;         // santé du stock
     private List<DeptDistribution> byDepartment;
+    private List<CategoryValue> valueByCategory; // valorisation du stock par catégorie
     private List<Alert> alerts;
     private List<WatchItem> watchlist;      // références à surveiller
     private Rotation rotation;
@@ -63,6 +68,13 @@ public class PpeMonitoringDTO {
     public static class DeptDistribution {
         private String department;
         private long units;
+    }
+
+    @Data @Builder @AllArgsConstructor @NoArgsConstructor
+    public static class CategoryValue {
+        private String category;
+        private long units;
+        private double value;
     }
 
     @Data @Builder @AllArgsConstructor @NoArgsConstructor

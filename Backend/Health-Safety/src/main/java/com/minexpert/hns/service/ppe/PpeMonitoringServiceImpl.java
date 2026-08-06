@@ -27,6 +27,7 @@ import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -84,6 +85,8 @@ public class PpeMonitoringServiceImpl implements PpeMonitoringService {
         int healthy = 0, below = 0, out = 0, dormant = 0;
         List<WatchItem> watch = new ArrayList<>();
         List<Alert> alerts = new ArrayList<>();
+        Map<String, long[]> catUnits = new LinkedHashMap<>();
+        Map<String, double[]> catValue = new LinkedHashMap<>();
 
         for (Ppe p : ppes) {
             int stock = p.getStock() != null ? p.getStock() : 0;
@@ -107,6 +110,10 @@ public class PpeMonitoringServiceImpl implements PpeMonitoringService {
             if (isDormant) dormantValue += value;
             else availableValue += Math.max(0, value - reserved * price);
             if (isOut) scrapValue += 0; // pas de valeur à réformer connue par unité (âge non tracé)
+
+            String cat = p.getCategory() != null ? p.getCategory() : "—";
+            catUnits.computeIfAbsent(cat, k -> new long[1])[0] += stock;
+            catValue.computeIfAbsent(cat, k -> new double[1])[0] += value;
 
             // Couverture (jours) = stock / conso quotidienne moyenne sur la fenêtre.
             double dailyUse = issuedWindow.getOrDefault(p.getId(), 0L) / (double) window;
@@ -167,6 +174,23 @@ public class PpeMonitoringServiceImpl implements PpeMonitoringService {
         }
         if (monthly.size() > 12) monthly = new ArrayList<>(monthly.subList(monthly.size() - 12, monthly.size()));
 
+        // Tendances mois-sur-mois (à partir des deux derniers mois de la série).
+        Double stockTrend = null, distributedTrend = null;
+        if (monthly.size() >= 2) {
+            MonthPoint last = monthly.get(monthly.size() - 1);
+            MonthPoint prev = monthly.get(monthly.size() - 2);
+            if (prev.getStock() > 0) stockTrend = round1(100.0 * (last.getStock() - prev.getStock()) / prev.getStock());
+            if (prev.getIssues() > 0) distributedTrend = round1(100.0 * (last.getIssues() - prev.getIssues()) / prev.getIssues());
+        }
+
+        // Valorisation par catégorie (triée par valeur décroissante).
+        List<PpeMonitoringDTO.CategoryValue> valueByCategory = new ArrayList<>();
+        for (String cat : catUnits.keySet()) {
+            valueByCategory.add(PpeMonitoringDTO.CategoryValue.builder()
+                    .category(cat).units(catUnits.get(cat)[0]).value(round2(catValue.get(cat)[0])).build());
+        }
+        valueByCategory.sort(Comparator.comparingDouble(PpeMonitoringDTO.CategoryValue::getValue).reversed());
+
         // ── Distributions par département (sur la fenêtre) ──
         List<DeptDistribution> byDept = new ArrayList<>();
         for (Object[] r : movementRepository.distributionByDepartment(companyId, from, now)) {
@@ -218,8 +242,8 @@ public class PpeMonitoringServiceImpl implements PpeMonitoringService {
                 .stockValue(round2(stockValue)).availableUnits(availableUnits).reservedUnits(reservedUnits)
                 .criticalCount(out + below).rupturesCount(out).belowThresholdCount(below)
                 .distributedThisMonth(distributedThisMonth).pendingRequests(pending).priorityPending(priorityPending)
-                .coverageRate(coverageRate)
-                .monthly(monthly).health(health).byDepartment(byDept)
+                .coverageRate(coverageRate).stockTrend(stockTrend).distributedTrend(distributedTrend)
+                .monthly(monthly).health(health).byDepartment(byDept).valueByCategory(valueByCategory)
                 .alerts(alerts).watchlist(topWatch).rotation(rotation).valueSplit(valueSplit)
                 .build();
     }
