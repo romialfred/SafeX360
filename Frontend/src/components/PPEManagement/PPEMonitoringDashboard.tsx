@@ -169,50 +169,315 @@ const PPEMonitoringDashboard = () => {
     ].filter((s) => s.value > 0) : [];
     const valueTotal = valueDonut.reduce((a, b) => a + b.value, 0) || 1;
 
-    const showExec = tab === 'exec';
-    const showStocks = tab === 'exec' || tab === 'stocks';
-    const showDistrib = tab === 'exec' || tab === 'distrib';
-    const showValue = tab === 'exec' || tab === 'value';
+    // ── Cartes réutilisables (composées différemment selon l'onglet) ──────────
+    const renderEvolution = (h = 300) => (
+        <Card title="Évolution des stocks et distributions" className="h-full"
+            action={<Select value="Mensuel" data={['Mensuel']} size="xs" w={110} allowDeselect={false} readOnly />}>
+            <div style={{ width: '100%', height: h }}>
+                <ResponsiveContainer>
+                    <ComposedChart data={monthChart} margin={{ top: 5, right: 4, left: -10, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" vertical={false} />
+                        <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} />
+                        <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={false} width={44} />
+                        <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={false} width={44} />
+                        <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0' }} formatter={(v: any) => fmtInt(Number(v))} />
+                        <Bar yAxisId="left" dataKey="Entrées" fill={GREEN} radius={[3, 3, 0, 0]} barSize={10} />
+                        <Bar yAxisId="left" dataKey="Sorties" fill={PURPLE} radius={[3, 3, 0, 0]} barSize={10} />
+                        <Line yAxisId="right" type="monotone" dataKey="Stock" stroke={BLUE} strokeWidth={2.4} dot={{ r: 2.5 }} />
+                    </ComposedChart>
+                </ResponsiveContainer>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] mt-1">
+                <Legend color={GREEN} label="Entrées (u.)" />
+                <Legend color={PURPLE} label="Sorties / distributions (u.)" />
+                <Legend color={BLUE} label="Stock disponible (u.)" line />
+            </div>
+        </Card>
+    );
+
+    const renderSante = (gaugeH = 180) => (
+        <Card title="Santé du stock" className="h-full">
+            <div className="relative" style={{ width: '100%', height: gaugeH }}>
+                <ResponsiveContainer>
+                    <RadialBarChart innerRadius="66%" outerRadius="100%" data={[{ value: health?.score ?? 0 }]} startAngle={220} endAngle={-40}>
+                        <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
+                        <RadialBar background={{ fill: '#eef2f7' }} dataKey="value" cornerRadius={20}
+                            fill={(health?.score ?? 0) >= 80 ? GREEN : (health?.score ?? 0) >= 60 ? AMBER : ROSE} />
+                    </RadialBarChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span className="font-black text-slate-800 tabular-nums leading-none" style={{ fontSize: gaugeH >= 220 ? 40 : 30 }}>{health?.score ?? 0}<span className="text-slate-400" style={{ fontSize: gaugeH >= 220 ? 18 : 14 }}>/100</span></span>
+                    <span className="text-[11.5px] text-slate-500 mt-1">Score de santé</span>
+                </div>
+            </div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-1">
+                {healthLegend.map((h) => (
+                    <div key={h.key} className="flex items-center gap-1.5 text-[12px]">
+                        <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: h.color }} />
+                        <span className="text-slate-600 flex-1 truncate">{h.label}</span>
+                        <span className="font-semibold text-slate-800 tabular-nums">{Math.round((h.value / healthTotal) * 100)} %</span>
+                    </div>
+                ))}
+            </div>
+            <p className="text-[11px] text-slate-400 mt-2">Objectif : ≥ 80</p>
+        </Card>
+    );
+
+    const renderDistribDept = () => (
+        <Card title="Distributions par département" className="h-full">
+            {(data?.byDepartment || []).length === 0 ? (
+                <p className="text-[12px] text-slate-400 py-4 text-center">Aucune distribution.</p>
+            ) : (
+                <div className="space-y-2.5">
+                    {data.byDepartment.slice(0, 8).map((d: any) => {
+                        const max = data.byDepartment[0].units || 1;
+                        return (
+                            <div key={d.department}>
+                                <div className="flex items-center justify-between text-[12.5px] mb-0.5">
+                                    <span className="text-slate-600 truncate max-w-[62%]">{d.department}</span>
+                                    <span className="tabular-nums font-semibold text-slate-800">{fmtInt(d.units)}</span>
+                                </div>
+                                <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                                    <div className="h-full rounded-full" style={{ width: `${(d.units / max) * 100}%`, background: PURPLE }} />
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </Card>
+    );
+
+    const renderDistribTrend = () => (
+        <Card title="Évolution des distributions" className="h-full">
+            <div style={{ width: '100%', height: 260 }}>
+                <ResponsiveContainer>
+                    <AreaChart data={monthChart} margin={{ top: 5, right: 8, left: -12, bottom: 0 }}>
+                        <defs>
+                            <linearGradient id="distTrend" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor={PURPLE} stopOpacity={0.35} />
+                                <stop offset="100%" stopColor={PURPLE} stopOpacity={0.03} />
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" vertical={false} />
+                        <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} />
+                        <YAxis tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={false} width={40} />
+                        <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0' }} formatter={(v: any) => [fmtInt(Number(v)), 'Distribué']} />
+                        <Area type="monotone" dataKey="Sorties" stroke={PURPLE} strokeWidth={2.4} fill="url(#distTrend)" />
+                    </AreaChart>
+                </ResponsiveContainer>
+            </div>
+        </Card>
+    );
+
+    const renderValorisationCat = () => (
+        <Card title="Valorisation par catégorie" className="h-full">
+            {(data?.valueByCategory || []).length === 0 ? (
+                <p className="text-[12px] text-slate-400 py-4 text-center">Aucune valorisation.</p>
+            ) : (
+                <div className="space-y-2.5">
+                    {data.valueByCategory.slice(0, 8).map((c: any) => {
+                        const max = data.valueByCategory[0].value || 1;
+                        return (
+                            <div key={c.category}>
+                                <div className="flex items-center justify-between text-[12px] mb-0.5 gap-1">
+                                    <span className="text-slate-600 truncate">{ppeCategoryLabel(c.category)}</span>
+                                    <span className="tabular-nums font-semibold text-slate-800 shrink-0">{fmtFcfa(c.value)}</span>
+                                </div>
+                                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                    <div className="h-full rounded-full" style={{ width: `${(c.value / max) * 100}%`, background: GREEN }} />
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </Card>
+    );
+
+    const renderTopConsumed = () => (
+        <Card title="EPI les plus distribués sur la période" className="h-full">
+            {(data?.topConsumed || []).length === 0 ? (
+                <p className="text-[12px] text-slate-400 py-6 text-center">Aucune distribution sur la période.</p>
+            ) : (
+                <div className="overflow-x-auto">
+                    <table className="w-full text-[13px]">
+                        <thead className="text-slate-400 text-[11.5px] uppercase tracking-wider">
+                            <tr>
+                                <th className="text-left font-semibold py-1.5 pr-2">EPI</th>
+                                <th className="text-left font-semibold py-1.5 px-2">Catégorie</th>
+                                <th className="text-left font-semibold py-1.5 px-2 w-[38%]">Volume distribué</th>
+                                <th className="text-right font-semibold py-1.5 pl-2">Valeur</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {data.topConsumed.map((c: any) => {
+                                const max = data.topConsumed[0].quantity || 1;
+                                return (
+                                    <tr key={c.ppeId} className="border-t border-slate-100">
+                                        <td className="py-2 pr-2 text-slate-800 font-medium truncate max-w-[220px]">{c.name}</td>
+                                        <td className="py-2 px-2 text-slate-500">{ppeCategoryLabel(c.category)}</td>
+                                        <td className="py-2 px-2">
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                                    <div className="h-full rounded-full" style={{ width: `${(c.quantity / max) * 100}%`, background: PURPLE }} />
+                                                </div>
+                                                <span className="tabular-nums text-slate-700 font-semibold w-14 text-right">{fmtInt(c.quantity)}</span>
+                                            </div>
+                                        </td>
+                                        <td className="py-2 pl-2 text-right tabular-nums text-slate-700">{fmtFcfa(c.value)}</td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </Card>
+    );
+
+    const renderAlertes = () => (
+        <Card title="Alertes & actions prioritaires" className="h-full"
+            action={<button className="text-[11.5px] text-teal-600 font-semibold whitespace-nowrap" onClick={() => navigate('/ppe-management/overview-legacy')}>Voir tout →</button>}>
+            {(data?.alerts || []).length === 0 ? (
+                <p className="text-[12px] text-slate-400 py-6 text-center flex flex-col items-center gap-1"><IconShieldCheck size={18} className="text-emerald-500" /> Aucune alerte active.</p>
+            ) : (
+                <div className="space-y-2">
+                    {data.alerts.map((a: any, i: number) => {
+                        const sev = SEV_CFG[a.severity] || SEV_CFG.LOW;
+                        return (
+                            <div key={i} className="p-2 rounded-lg border border-slate-100">
+                                <div className="flex items-start gap-1.5">
+                                    <IconAlertTriangle size={14} style={{ color: sev.color }} className="mt-0.5 shrink-0" />
+                                    <div className="text-[12px] font-semibold text-slate-800 leading-tight">{a.title}</div>
+                                </div>
+                                <div className="text-[10.5px] text-slate-500 mt-0.5 truncate pl-5">{a.detail}</div>
+                                <div className="pl-5 mt-1"><span className={`inline-flex px-1.5 py-0.5 rounded-full border text-[10px] font-semibold ${sev.chip}`}>{sev.label}</span></div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </Card>
+    );
+
+    const renderReferences = () => (
+        <Card title="Références à surveiller" className="h-full"
+            action={<button className="text-[12px] text-teal-600 font-semibold" onClick={() => navigate('/ppe-management/overview-legacy')}>Voir toutes les références ({data?.totalReferences}) →</button>}>
+            <div className="overflow-x-auto">
+                <table className="w-full text-[13px]">
+                    <thead className="text-slate-400 text-[11.5px] uppercase tracking-wider">
+                        <tr>
+                            <th className="text-left font-semibold py-1.5 pr-2">EPI</th>
+                            <th className="text-left font-semibold py-1.5 px-2">Catégorie</th>
+                            <th className="text-right font-semibold py-1.5 px-2">Disponible</th>
+                            <th className="text-right font-semibold py-1.5 px-2">Réservé</th>
+                            <th className="text-right font-semibold py-1.5 px-2">Seuil</th>
+                            <th className="text-right font-semibold py-1.5 px-2">Couverture</th>
+                            <th className="text-right font-semibold py-1.5 px-2">Valeur</th>
+                            <th className="text-left font-semibold py-1.5 pl-2">Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {(data?.watchlist || []).map((w: any) => {
+                            const cfg = STATUS_CFG[w.status] || STATUS_CFG.HEALTHY;
+                            return (
+                                <tr key={w.ppeId} className="border-t border-slate-100">
+                                    <td className="py-2 pr-2 text-slate-800 font-medium truncate max-w-[220px]">{w.name}</td>
+                                    <td className="py-2 px-2 text-slate-500">{ppeCategoryLabel(w.category)}</td>
+                                    <td className={`py-2 px-2 text-right tabular-nums font-semibold ${w.status === 'OUT' ? 'text-rose-600' : w.status === 'LOW' ? 'text-amber-600' : 'text-slate-700'}`}>{fmtInt(w.available)}</td>
+                                    <td className="py-2 px-2 text-right tabular-nums text-slate-500">{fmtInt(w.reserved)}</td>
+                                    <td className="py-2 px-2 text-right tabular-nums text-slate-500">{w.threshold ?? '—'}</td>
+                                    <td className="py-2 px-2 text-right tabular-nums text-slate-600">{w.coverageDays != null ? `${w.coverageDays} j` : '—'}</td>
+                                    <td className="py-2 px-2 text-right tabular-nums text-slate-700">{fmtFcfa(w.value)}</td>
+                                    <td className="py-2 pl-2"><span className={`inline-flex px-2 py-0.5 rounded-full border text-[11px] font-semibold ${cfg.chip}`}>{cfg.label}</span></td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+        </Card>
+    );
+
+    const renderRotation = () => (
+        <Card title="Rotation &amp; couverture" className="h-full">
+            <div className="space-y-3">
+                <Metric icon={<IconRefresh size={16} />} label="Rotation moyenne" value={`${data?.rotation?.avgRotation ?? 0} ×`} sub={`Sur ${period} jours`} color={BLUE} />
+                <Metric icon={<IconBox size={16} />} label="Stock dormant" value={fmtFcfa(data?.rotation?.dormantValue)} sub={`${data?.rotation?.dormantPct ?? 0} % de la valeur totale`} color={SLATE} />
+                <Metric icon={<IconShieldCheck size={16} />} label="Couverture moyenne" value={`${data?.rotation?.avgCoverageDays ?? 0} jours`} sub="Objectif : ≥ 60 jours" color={GREEN} />
+            </div>
+        </Card>
+    );
+
+    const renderValeur = () => (
+        <Card title="Répartition de la valeur" className="h-full">
+            {valueDonut.length === 0 ? <p className="text-[12.5px] text-slate-400 py-8 text-center">Aucune valorisation.</p> : (
+                <div className="flex flex-col items-center gap-3">
+                    <div className="relative" style={{ width: 180, height: 180 }}>
+                        <ResponsiveContainer>
+                            <PieChart>
+                                <Pie data={valueDonut} dataKey="value" nameKey="label" cx="50%" cy="50%" innerRadius={58} outerRadius={86} paddingAngle={2} stroke="none">
+                                    {valueDonut.map((d) => <Cell key={d.key} fill={d.color} />)}
+                                </Pie>
+                                <Tooltip formatter={(v: any) => fmtFcfa(Number(v))} contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0' }} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                            <span className="text-[17px] font-black text-slate-800 tabular-nums leading-none">{fmtFcfa(data?.stockValue).replace(' FCFA', '')}</span>
+                            <span className="text-[10.5px] text-slate-400">FCFA</span>
+                        </div>
+                    </div>
+                    <div className="flex-1 space-y-2 w-full">
+                        {valueDonut.map((d) => (
+                            <div key={d.key} className="flex items-center gap-2 text-[13px]">
+                                <span className="w-3 h-3 rounded-sm" style={{ background: d.color }} />
+                                <span className="text-slate-600 flex-1">{d.label}</span>
+                                <span className="font-semibold text-slate-800 tabular-nums">{fmtFcfa(d.value)}</span>
+                                <span className="text-slate-400 tabular-nums w-14 text-right">({Math.round((d.value / valueTotal) * 100)} %)</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </Card>
+    );
 
     return (
         <div className="p-4 lg:p-5 space-y-4 w-full bg-slate-50 min-h-full">
-            {/* En-tête */}
-            <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                    <div className="text-[11px] text-slate-400">Accueil › Gestion des EPI › Tableau de bord</div>
-                    <h1 className="text-slate-900 mt-0.5" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '22px', fontWeight: 700 }}>
+            {/* En-tête compact : titre + sous-titre (sans la mine) */}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="min-w-0">
+                    <div className="text-[11px] text-slate-400 leading-tight">Accueil › Gestion des EPI › Tableau de bord</div>
+                    <h1 className="text-slate-900 leading-tight" style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '20px', fontWeight: 700 }}>
                         Pilotage des stocks &amp; distributions EPI
                     </h1>
-                    <p className="text-[13px] text-slate-500">Suivi opérationnel, dotations, inventaire et valorisation{mineName ? ` — ${mineName}` : ''}</p>
+                    <p className="text-[12.5px] text-slate-500 leading-tight">Suivi opérationnel, dotations, inventaire et valorisation</p>
                 </div>
-                <div className="flex items-center gap-2 text-[12px] text-slate-500">
+                <div className="flex items-center gap-1.5 text-[11.5px] text-slate-400 shrink-0">
                     Dernière actualisation : {refreshedAt || '—'}
-                    <button onClick={load} className="w-7 h-7 rounded-lg border border-slate-200 bg-white flex items-center justify-center hover:bg-slate-50">
-                        <IconRefresh size={14} className={loading ? 'animate-spin text-blue-500' : 'text-slate-500'} />
+                    <button onClick={load} className="w-6 h-6 rounded-lg border border-slate-200 bg-white flex items-center justify-center hover:bg-slate-50">
+                        <IconRefresh size={13} className={loading ? 'animate-spin text-blue-500' : 'text-slate-500'} />
                     </button>
                 </div>
             </div>
 
-            {/* Filtres + actions */}
-            <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex flex-wrap items-center gap-2">
-                    <Select value={period} onChange={(v) => setPeriod(v || '30')} data={PERIODS} size="xs" w={170} allowDeselect={false} />
+            {/* Barre unique : onglets + filtre période + actions, sur une seule ligne */}
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200">
+                <div className="flex items-end gap-1 flex-wrap">
+                    {TABS.map((tb) => (
+                        <button key={tb.id} onClick={() => setTab(tb.id)}
+                            className={`px-3.5 py-2 text-[13px] font-semibold border-b-2 -mb-px whitespace-nowrap ${tab === tb.id ? 'border-teal-500 text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
+                            {tb.label}
+                        </button>
+                    ))}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 pb-1.5">
+                    <Select value={period} onChange={(v) => setPeriod(v || '30')} data={PERIODS} size="xs" w={150} allowDeselect={false} />
                     <Button variant="default" size="xs" leftSection={<IconDownload size={14} />}>Exporter</Button>
                     <Button variant="default" size="xs" leftSection={<IconPlus size={14} />} onClick={() => navigate('/ppe-management/create-ppe')}>Nouvel EPI</Button>
                     <Button color="teal" size="xs" leftSection={<IconPackage size={14} />} onClick={() => navigate('/ppe-management/stock-form')}>Entrée de stock</Button>
                 </div>
-            </div>
-
-            {/* Onglets */}
-            <div className="flex items-end gap-1 border-b border-slate-200">
-                {TABS.map((tb) => (
-                    <button key={tb.id} onClick={() => setTab(tb.id)}
-                        className={`px-4 py-2 text-[13px] font-semibold border-b-2 -mb-px ${tab === tb.id ? 'border-teal-500 text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-                        {tb.label}
-                    </button>
-                ))}
             </div>
 
             {loading && !data ? (
@@ -233,227 +498,60 @@ const PPEMonitoringDashboard = () => {
                         <Kpi icon={<IconShieldCheck size={17} />} iconColor="#0ea5e9" label="Taux de couverture" value={`${data.coverageRate}%`} spark={stockSpark} sparkColor="#0ea5e9" />
                     </div>
 
-                    {/* Rangée 2 : Évolution | Santé + Distributions | Valorisation catégorie | Alertes */}
-                    <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
-                        {showStocks && (
-                            <Card title="Évolution des stocks et distributions" className="xl:col-span-5"
-                                action={<Select value="Mensuel" data={['Mensuel']} size="xs" w={110} allowDeselect={false} readOnly />}>
-                                <div style={{ width: '100%', height: 300 }}>
-                                    <ResponsiveContainer>
-                                        <ComposedChart data={monthChart} margin={{ top: 5, right: 4, left: -10, bottom: 0 }}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" vertical={false} />
-                                            <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} />
-                                            <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={false} width={44} />
-                                            <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={false} width={44} />
-                                            <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0' }} formatter={(v: any) => fmtInt(Number(v))} />
-                                            <Bar yAxisId="left" dataKey="Entrées" fill={GREEN} radius={[3, 3, 0, 0]} barSize={10} />
-                                            <Bar yAxisId="left" dataKey="Sorties" fill={PURPLE} radius={[3, 3, 0, 0]} barSize={10} />
-                                            <Line yAxisId="right" type="monotone" dataKey="Stock" stroke={BLUE} strokeWidth={2.4} dot={{ r: 2.5 }} />
-                                        </ComposedChart>
-                                    </ResponsiveContainer>
-                                </div>
-                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] mt-1">
-                                    <Legend color={GREEN} label="Entrées (u.)" />
-                                    <Legend color={PURPLE} label="Sorties / distributions (u.)" />
-                                    <Legend color={BLUE} label="Stock disponible (u.)" line />
-                                </div>
-                            </Card>
-                        )}
 
-                        {/* Colonne santé + distributions (empilées) */}
-                        {(showStocks || showDistrib) && (
-                            <div className="xl:col-span-3 flex flex-col gap-4">
-                                {showStocks && (
-                                    <Card title="Santé du stock">
-                                        <div className="relative" style={{ width: '100%', height: 140 }}>
-                                            <ResponsiveContainer>
-                                                <RadialBarChart innerRadius="70%" outerRadius="100%" data={[{ value: health?.score ?? 0 }]} startAngle={210} endAngle={-30}>
-                                                    <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
-                                                    <RadialBar background={{ fill: '#eef2f7' }} dataKey="value" cornerRadius={20}
-                                                        fill={(health?.score ?? 0) >= 80 ? GREEN : (health?.score ?? 0) >= 60 ? AMBER : ROSE} />
-                                                </RadialBarChart>
-                                            </ResponsiveContainer>
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                                <span className="text-[24px] font-black text-slate-800 tabular-nums leading-none">{health?.score ?? 0}<span className="text-[13px] text-slate-400">/100</span></span>
-                                                <span className="text-[11px] text-slate-500 mt-0.5">Score de santé</span>
-                                            </div>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-1">
-                                            {healthLegend.map((h) => (
-                                                <div key={h.key} className="flex items-center gap-1.5 text-[12px]">
-                                                    <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: h.color }} />
-                                                    <span className="text-slate-600 flex-1 truncate">{h.label}</span>
-                                                    <span className="font-semibold text-slate-800 tabular-nums">{Math.round((h.value / healthTotal) * 100)} %</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <p className="text-[11px] text-slate-400 mt-2">Objectif : ≥ 80</p>
-                                    </Card>
-                                )}
-                                {showDistrib && (
-                                    <Card title="Distributions par département">
-                                        {(data.byDepartment || []).length === 0 ? (
-                                            <p className="text-[12px] text-slate-400 py-4 text-center">Aucune distribution.</p>
-                                        ) : (
-                                            <div className="space-y-2">
-                                                {data.byDepartment.slice(0, 6).map((d: any) => {
-                                                    const max = data.byDepartment[0].units || 1;
-                                                    return (
-                                                        <div key={d.department}>
-                                                            <div className="flex items-center justify-between text-[12px] mb-0.5">
-                                                                <span className="text-slate-600 truncate max-w-[62%]">{d.department}</span>
-                                                                <span className="tabular-nums font-semibold text-slate-800">{fmtInt(d.units)}</span>
-                                                            </div>
-                                                            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                                                                <div className="h-full rounded-full" style={{ width: `${(d.units / max) * 100}%`, background: PURPLE }} />
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
-                                    </Card>
-                                )}
+                    {/* Vue exécutive : tableau de bord complet */}
+                    {tab === 'exec' && (
+                        <>
+                            <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-stretch">
+                                <div className="xl:col-span-5">{renderEvolution(300)}</div>
+                                <div className="xl:col-span-3 flex flex-col gap-4">{renderSante(180)}{renderDistribDept()}</div>
+                                <div className="xl:col-span-2">{renderValorisationCat()}</div>
+                                <div className="xl:col-span-2">{renderAlertes()}</div>
                             </div>
-                        )}
+                            <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-stretch">
+                                <div className="xl:col-span-7">{renderReferences()}</div>
+                                <div className="xl:col-span-2">{renderRotation()}</div>
+                                <div className="xl:col-span-3">{renderValeur()}</div>
+                            </div>
+                        </>
+                    )}
 
-                        {/* Valorisation par catégorie */}
-                        {showValue && (
-                            <Card title="Valorisation par catégorie" className="xl:col-span-2">
-                                {(data.valueByCategory || []).length === 0 ? (
-                                    <p className="text-[12px] text-slate-400 py-4 text-center">Aucune valorisation.</p>
-                                ) : (
-                                    <div className="space-y-2.5">
-                                        {data.valueByCategory.slice(0, 6).map((c: any) => {
-                                            const max = data.valueByCategory[0].value || 1;
-                                            return (
-                                                <div key={c.category}>
-                                                    <div className="flex items-center justify-between text-[11.5px] mb-0.5 gap-1">
-                                                        <span className="text-slate-600 truncate">{ppeCategoryLabel(c.category)}</span>
-                                                        <span className="tabular-nums font-semibold text-slate-800 shrink-0">{fmtFcfa(c.value)}</span>
-                                                    </div>
-                                                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                                                        <div className="h-full rounded-full" style={{ width: `${(c.value / max) * 100}%`, background: GREEN }} />
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </Card>
-                        )}
+                    {/* Stocks & mouvements */}
+                    {tab === 'stocks' && (
+                        <>
+                            <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-stretch">
+                                <div className="xl:col-span-8">{renderEvolution(360)}</div>
+                                <div className="xl:col-span-4">{renderSante(240)}</div>
+                            </div>
+                            <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-stretch">
+                                <div className="xl:col-span-8">{renderReferences()}</div>
+                                <div className="xl:col-span-4">{renderValorisationCat()}</div>
+                            </div>
+                        </>
+                    )}
 
-                        {/* Alertes & actions prioritaires */}
-                        {showExec && (
-                            <Card title="Alertes & actions prioritaires" className="xl:col-span-2"
-                                action={<button className="text-[11.5px] text-teal-600 font-semibold whitespace-nowrap" onClick={() => navigate('/ppe-management/overview-legacy')}>Voir tout →</button>}>
-                                {(data.alerts || []).length === 0 ? (
-                                    <p className="text-[12px] text-slate-400 py-6 text-center flex flex-col items-center gap-1"><IconShieldCheck size={18} className="text-emerald-500" /> Aucune alerte active.</p>
-                                ) : (
-                                    <div className="space-y-2">
-                                        {data.alerts.map((a: any, i: number) => {
-                                            const sev = SEV_CFG[a.severity] || SEV_CFG.LOW;
-                                            return (
-                                                <div key={i} className="p-2 rounded-lg border border-slate-100">
-                                                    <div className="flex items-start gap-1.5">
-                                                        <IconAlertTriangle size={14} style={{ color: sev.color }} className="mt-0.5 shrink-0" />
-                                                        <div className="text-[12px] font-semibold text-slate-800 leading-tight">{a.title}</div>
-                                                    </div>
-                                                    <div className="text-[10.5px] text-slate-500 mt-0.5 truncate pl-5">{a.detail}</div>
-                                                    <div className="pl-5 mt-1"><span className={`inline-flex px-1.5 py-0.5 rounded-full border text-[10px] font-semibold ${sev.chip}`}>{sev.label}</span></div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </Card>
-                        )}
-                    </div>
+                    {/* Distributions */}
+                    {tab === 'distrib' && (
+                        <>
+                            <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-stretch">
+                                <div className="xl:col-span-5">{renderDistribDept()}</div>
+                                <div className="xl:col-span-7">{renderDistribTrend()}</div>
+                            </div>
+                            {renderTopConsumed()}
+                        </>
+                    )}
 
-                    {/* Rangée 3 : Références à surveiller | Rotation | Répartition de la valeur */}
-                    <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
-                        {showStocks && (
-                            <Card title="Références à surveiller" className="xl:col-span-7"
-                                action={<button className="text-[12px] text-teal-600 font-semibold" onClick={() => navigate('/ppe-management/overview-legacy')}>Voir toutes les références ({data.totalReferences}) →</button>}>
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-[13px]">
-                                        <thead className="text-slate-400 text-[11.5px] uppercase tracking-wider">
-                                            <tr>
-                                                <th className="text-left font-semibold py-1.5 pr-2">EPI</th>
-                                                <th className="text-left font-semibold py-1.5 px-2">Catégorie</th>
-                                                <th className="text-right font-semibold py-1.5 px-2">Disponible</th>
-                                                <th className="text-right font-semibold py-1.5 px-2">Réservé</th>
-                                                <th className="text-right font-semibold py-1.5 px-2">Seuil</th>
-                                                <th className="text-right font-semibold py-1.5 px-2">Couverture</th>
-                                                <th className="text-right font-semibold py-1.5 px-2">Valeur</th>
-                                                <th className="text-left font-semibold py-1.5 pl-2">Statut</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {(data.watchlist || []).map((w: any) => {
-                                                const cfg = STATUS_CFG[w.status] || STATUS_CFG.HEALTHY;
-                                                return (
-                                                    <tr key={w.ppeId} className="border-t border-slate-100">
-                                                        <td className="py-2 pr-2 text-slate-800 font-medium truncate max-w-[190px]">{w.name}</td>
-                                                        <td className="py-2 px-2 text-slate-500">{ppeCategoryLabel(w.category)}</td>
-                                                        <td className={`py-2 px-2 text-right tabular-nums font-semibold ${w.status === 'OUT' ? 'text-rose-600' : w.status === 'LOW' ? 'text-amber-600' : 'text-slate-700'}`}>{fmtInt(w.available)}</td>
-                                                        <td className="py-2 px-2 text-right tabular-nums text-slate-500">{fmtInt(w.reserved)}</td>
-                                                        <td className="py-2 px-2 text-right tabular-nums text-slate-500">{w.threshold ?? '—'}</td>
-                                                        <td className="py-2 px-2 text-right tabular-nums text-slate-600">{w.coverageDays != null ? `${w.coverageDays} j` : '—'}</td>
-                                                        <td className="py-2 px-2 text-right tabular-nums text-slate-700">{fmtFcfa(w.value)}</td>
-                                                        <td className="py-2 pl-2"><span className={`inline-flex px-2 py-0.5 rounded-full border text-[11px] font-semibold ${cfg.chip}`}>{cfg.label}</span></td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </Card>
-                        )}
-
-                        {showValue && (
-                            <>
-                            <Card title="Rotation &amp; couverture" className="xl:col-span-2">
-                                <div className="space-y-3">
-                                    <Metric icon={<IconRefresh size={16} />} label="Rotation moyenne" value={`${data.rotation?.avgRotation ?? 0} ×`} sub={`Sur ${period} jours`} color={BLUE} />
-                                    <Metric icon={<IconBox size={16} />} label="Stock dormant" value={fmtFcfa(data.rotation?.dormantValue)} sub={`${data.rotation?.dormantPct ?? 0} % de la valeur totale`} color={SLATE} />
-                                    <Metric icon={<IconShieldCheck size={16} />} label="Couverture moyenne" value={`${data.rotation?.avgCoverageDays ?? 0} jours`} sub="Objectif : ≥ 60 jours" color={GREEN} />
-                                </div>
-                            </Card>
-
-                            <Card title="Répartition de la valeur" className="xl:col-span-3">
-                                {valueDonut.length === 0 ? <p className="text-[12.5px] text-slate-400 py-8 text-center">Aucune valorisation.</p> : (
-                                    <div className="flex flex-col items-center gap-3">
-                                        <div className="relative" style={{ width: 170, height: 170 }}>
-                                            <ResponsiveContainer>
-                                                <PieChart>
-                                                    <Pie data={valueDonut} dataKey="value" nameKey="label" cx="50%" cy="50%" innerRadius={54} outerRadius={80} paddingAngle={2} stroke="none">
-                                                        {valueDonut.map((d) => <Cell key={d.key} fill={d.color} />)}
-                                                    </Pie>
-                                                    <Tooltip formatter={(v: any) => fmtFcfa(Number(v))} contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0' }} />
-                                                </PieChart>
-                                            </ResponsiveContainer>
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                                <span className="text-[17px] font-black text-slate-800 tabular-nums leading-none">{fmtFcfa(data.stockValue).replace(' FCFA', '')}</span>
-                                                <span className="text-[10.5px] text-slate-400">FCFA</span>
-                                            </div>
-                                        </div>
-                                        <div className="flex-1 space-y-2 w-full">
-                                            {valueDonut.map((d) => (
-                                                <div key={d.key} className="flex items-center gap-2 text-[13px]">
-                                                    <span className="w-3 h-3 rounded-sm" style={{ background: d.color }} />
-                                                    <span className="text-slate-600 flex-1">{d.label}</span>
-                                                    <span className="font-semibold text-slate-800 tabular-nums">{fmtFcfa(d.value)}</span>
-                                                    <span className="text-slate-400 tabular-nums w-14 text-right">({Math.round((d.value / valueTotal) * 100)} %)</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </Card>
-                            </>
-                        )}
-                    </div>
+                    {/* Analyse & valorisation */}
+                    {tab === 'value' && (
+                        <>
+                            <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-stretch">
+                                <div className="xl:col-span-4">{renderValorisationCat()}</div>
+                                <div className="xl:col-span-4">{renderValeur()}</div>
+                                <div className="xl:col-span-4">{renderRotation()}</div>
+                            </div>
+                            {renderReferences()}
+                        </>
+                    )}
                 </>
             )}
         </div>

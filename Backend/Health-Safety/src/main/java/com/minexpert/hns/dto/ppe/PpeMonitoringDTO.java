@@ -42,6 +42,7 @@ public class PpeMonitoringDTO {
     private HealthBreakdown health;         // santé du stock
     private List<DeptDistribution> byDepartment;
     private List<CategoryValue> valueByCategory; // valorisation du stock par catégorie
+    private List<ConsumedItem> topConsumed;      // EPI les plus distribués sur la période
     private List<Alert> alerts;
     private List<WatchItem> watchlist;      // références à surveiller
     private Rotation rotation;
@@ -74,6 +75,15 @@ public class PpeMonitoringDTO {
     public static class CategoryValue {
         private String category;
         private long units;
+        private double value;
+    }
+
+    @Data @Builder @AllArgsConstructor @NoArgsConstructor
+    public static class ConsumedItem {
+        private Long ppeId;
+        private String name;
+        private String category;
+        private long quantity;
         private double value;
     }
 

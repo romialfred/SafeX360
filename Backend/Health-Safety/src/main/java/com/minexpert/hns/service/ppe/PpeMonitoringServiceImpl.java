@@ -191,6 +191,24 @@ public class PpeMonitoringServiceImpl implements PpeMonitoringService {
         }
         valueByCategory.sort(Comparator.comparingDouble(PpeMonitoringDTO.CategoryValue::getValue).reversed());
 
+        // Top EPI distribués sur la période (à partir des sorties déjà agrégées).
+        Map<Long, Ppe> byId = new HashMap<>();
+        for (Ppe p : ppes) byId.put(p.getId(), p);
+        List<PpeMonitoringDTO.ConsumedItem> topConsumed = new ArrayList<>();
+        for (Map.Entry<Long, Long> e : issuedWindow.entrySet()) {
+            if (e.getValue() == null || e.getValue() == 0) continue;
+            Ppe p = byId.get(e.getKey());
+            double price = p != null && p.getReferencePrice() != null ? p.getReferencePrice() : 0d;
+            topConsumed.add(PpeMonitoringDTO.ConsumedItem.builder()
+                    .ppeId(e.getKey())
+                    .name(p != null ? p.getName() : ("#" + e.getKey()))
+                    .category(p != null ? p.getCategory() : null)
+                    .quantity(e.getValue())
+                    .value(round2(e.getValue() * price)).build());
+        }
+        topConsumed.sort(Comparator.comparingLong(PpeMonitoringDTO.ConsumedItem::getQuantity).reversed());
+        if (topConsumed.size() > 8) topConsumed = new ArrayList<>(topConsumed.subList(0, 8));
+
         // ── Distributions par département (sur la fenêtre) ──
         List<DeptDistribution> byDept = new ArrayList<>();
         for (Object[] r : movementRepository.distributionByDepartment(companyId, from, now)) {
@@ -244,6 +262,7 @@ public class PpeMonitoringServiceImpl implements PpeMonitoringService {
                 .distributedThisMonth(distributedThisMonth).pendingRequests(pending).priorityPending(priorityPending)
                 .coverageRate(coverageRate).stockTrend(stockTrend).distributedTrend(distributedTrend)
                 .monthly(monthly).health(health).byDepartment(byDept).valueByCategory(valueByCategory)
+                .topConsumed(topConsumed)
                 .alerts(alerts).watchlist(topWatch).rotation(rotation).valueSplit(valueSplit)
                 .build();
     }
