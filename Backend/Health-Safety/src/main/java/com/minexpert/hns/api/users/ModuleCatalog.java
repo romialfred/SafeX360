@@ -80,6 +80,9 @@ public final class ModuleCatalog {
             m("ppeOverview", "ppe"),
             m("ppeMonitoring", "ppe"),
             m("ppeRequest", "ppe"),
+            m("ppeStocktake", "ppe"),
+            m("ppeAnalytics", "ppe"),
+            m("ppeMine", "ppe"),
 
             m("auditProgram", "audits"),
             m("auditPlan", "audits"),
@@ -127,6 +130,9 @@ public final class ModuleCatalog {
     public static final Set<String> WITHOUT_LEGACY_COLUMN = Set.of(
             "errorManagement", "equipmentRegistry", "riskOpportunities", "auditProgram",
             "isoDocuments", "processDocs", "targetForecast", "modulesManagement",
+            // Sous-modules EPI alignes sur la sidebar (Inventaire, Analyse & valorisation,
+            // Mes EPI) : livres apres les colonnes historiques, portes par le seul CSV.
+            "ppeStocktake", "ppeAnalytics", "ppeMine",
             "emergency", "dosimetry", "blast", "planning", "reports");
 
     /** Ne conserve que les cles connues — une cle inventee par un client est ignoree. */

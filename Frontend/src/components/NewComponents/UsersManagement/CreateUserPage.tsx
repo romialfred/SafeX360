@@ -81,7 +81,7 @@ const PREDEFINED_ROLES = [
         color: 'red',
         defaultModules: [
             'home', 'errorManagement', 'nonConformity', 'inspections', 'meetings', 'managementTour',
-            'ppeOverview', 'ppeMonitoring', 'ppeRequest',
+            'ppeOverview', 'ppeMonitoring', 'ppeRequest', 'ppeStocktake', 'ppeAnalytics', 'ppeMine',
             'incidentManagement', 'investigations', 'actionPlansInc',
             'pendingActions', 'actionPlan', 'recommendations', 'adhocActions',
             'auditPlan', 'audits', 'auditRecommendations',
@@ -97,7 +97,7 @@ const PREDEFINED_ROLES = [
         color: 'teal',
         defaultModules: [
             'home', 'errorManagement', 'nonConformity', 'inspections', 'meetings',
-            'ppeOverview', 'ppeMonitoring', 'ppeRequest',
+            'ppeOverview', 'ppeMonitoring', 'ppeRequest', 'ppeStocktake', 'ppeAnalytics', 'ppeMine',
             'incidentManagement', 'investigations', 'actionPlansInc',
             'pendingActions', 'actionPlan', 'recommendations',
             'auditPlan', 'audits',
@@ -111,7 +111,7 @@ const PREDEFINED_ROLES = [
         defaultModules: [
             'home', 'errorManagement', 'incidentManagement', 'investigations', 'actionPlansInc',
             'pendingActions', 'recommendations',
-            'complianceDashboard', 'documents',
+            'complianceDashboard', 'documents', 'ppeMine',
         ],
     },
     {
@@ -121,7 +121,7 @@ const PREDEFINED_ROLES = [
             'home', 'auditPlan', 'audits', 'auditRecommendations',
             'complianceDashboard', 'requirements',
             'riskOverview', 'riskRegister',
-            'documents', 'documentValidation',
+            'documents', 'documentValidation', 'ppeMine',
         ],
     },
     {
@@ -129,7 +129,7 @@ const PREDEFINED_ROLES = [
         color: 'gray',
         defaultModules: [
             'home', 'errorManagement', 'incidentManagement', 'nonConformity',
-            'ppeRequest', 'documents',
+            'ppeRequest', 'ppeMine', 'documents',
         ],
     },
 ];
@@ -155,7 +155,7 @@ const MODULE_CATEGORIES: ModuleCategory[] = [
     { key: 'preventive', color: 'teal', modules: ['inspections', 'meetings', 'managementTour', 'equipmentRegistry'] },
     { key: 'corrective', color: 'cyan', modules: ['pendingActions', 'actionPlan', 'recommendations', 'adhocActions'] },
     { key: 'risks', color: 'red', modules: ['riskOverview', 'riskRegister', 'riskAssessment', 'chemicalRegister', 'riskOpportunities'] },
-    { key: 'ppe', color: 'yellow', modules: ['ppeOverview', 'ppeMonitoring', 'ppeRequest'] },
+    { key: 'ppe', color: 'yellow', modules: ['ppeOverview', 'ppeMonitoring', 'ppeRequest', 'ppeStocktake', 'ppeAnalytics', 'ppeMine'] },
     { key: 'audits', color: 'indigo', modules: ['auditProgram', 'auditPlan', 'audits', 'auditRecommendations'] },
     { key: 'compliance', color: 'green', modules: ['complianceDashboard', 'requirements', 'positionAssignments', 'employeeAssignments'] },
     { key: 'documentation', color: 'violet', modules: ['documents', 'documentValidation', 'lessonsLearned', 'documentManager', 'isoDocuments', 'processDocs'] },

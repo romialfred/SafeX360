@@ -637,7 +637,7 @@ export const menuIdToUrl: Record<string, string> = {
  */
 const PERMISSION_VOCABULARY = new Set([
     'home', 'nonConformity', 'inspections', 'meetings', 'managementTour',
-    'ppeOverview', 'ppeMonitoring', 'ppeRequest',
+    'ppeOverview', 'ppeMonitoring', 'ppeRequest', 'ppeStocktake', 'ppeAnalytics', 'ppeMine',
     'incidentManagement', 'investigations', 'actionPlansInc',
     'pendingActions', 'actionPlan', 'recommendations', 'adhocActions',
     'auditPlan', 'audits', 'auditRecommendations',
@@ -672,10 +672,10 @@ const MENU_PERMISSION_OVERRIDES: Record<string, string> = {
     'param-incidents': 'settings',
     'param-tools-templates': 'settings',
     'annual-audit-plan': 'auditPlan',
-    // Inventaire & Analyse EPI : mêmes droits que la vue d'ensemble EPI (les routes
-    // sont gardées par ModuleGuard moduleId='ppe-overview').
-    'ppe-stocktake': 'ppeOverview',
-    'ppe-analytics': 'ppeOverview',
+    // Inventaire EPI, Analyse & valorisation, Mes EPI : désormais des droits à part
+    // entière (alignés sur la sidebar), résolus par kebabToCamel → ppeStocktake /
+    // ppeAnalytics / ppeMine (présents dans PERMISSION_VOCABULARY). L'activation du
+    // module EPI sur la mine reste gérée séparément (ModuleGuard moduleId='ppe-overview').
     // Ces trois-là avaient été rabattus sur un module voisin faute d'exister
     // dans la matrice de droits ; ils sont désormais attribuables pour eux-mêmes.
     'audit-program': 'auditProgram',
