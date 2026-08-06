@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    PieChart, Pie, Cell, RadialBarChart, RadialBar, PolarAngleAxis, BarChart, Bar,
 } from 'recharts';
 import {
     IconShieldCheck, IconStethoscope, IconShieldX, IconUsers,
     IconAlertTriangle, IconMaximize, IconWifi, IconRefresh, IconMapPin, IconBuildingCommunity, IconActivity,
-    IconLayoutDashboard, IconStar, IconMessage, IconSend, IconX,
+    IconLayoutDashboard, IconStar, IconMessage, IconSend, IconX, IconLogout, IconMapPins,
 } from '@tabler/icons-react';
 import {
     getAlert, getAlertCheckIns,
@@ -42,27 +41,36 @@ import {
 const POLL_MS = 5000;
 
 const WALL_TABS = [
-    { id: 'general' as const, label: 'Vue Générale', icon: <IconLayoutDashboard size={16} stroke={1.9} /> },
-    { id: 'vip' as const, label: 'Évacuation VIP', icon: <IconStar size={16} stroke={1.9} /> },
-    { id: 'liaison' as const, label: 'Liaison Équipe Secours', icon: <IconMessage size={16} stroke={1.9} /> },
+    { id: 'general' as const, label: 'Vue générale', icon: <IconLayoutDashboard size={16} stroke={1.9} /> },
+    { id: 'vip' as const, label: 'Personnel prioritaire', icon: <IconStar size={16} stroke={1.9} /> },
+    { id: 'liaison' as const, label: 'Suivi des équipes de secours', icon: <IconMessage size={16} stroke={1.9} /> },
 ];
 type WallTab = (typeof WALL_TABS)[number]['id'];
 
-function BigTile({ icon, label, value, color, pulse, roster }: {
-    icon: React.ReactNode; label: string; value: number | string; color: string; pulse?: boolean;
-    roster?: RosterPerson[];
+/**
+ * Carte KPI de la salle de crise (rangée d'indicateurs). Icône encadrée, grand
+ * chiffre, sous-titre (% de l'effectif). Survol = liste nominative (roster).
+ * `alarm` = bordure rouge pulsante quand la valeur est critique (> 0).
+ */
+function StatCard({ icon, label, value, color, sub, roster, alarm, children }: {
+    icon: React.ReactNode; label: string; value: number | string; color: string;
+    sub?: React.ReactNode; roster?: RosterPerson[]; alarm?: boolean; children?: React.ReactNode;
 }) {
     const hasRoster = Array.isArray(roster);
     return (
-        <div className={`group relative rounded-2xl p-4 flex flex-col justify-between ${hasRoster ? 'cursor-help' : ''}`}
-            style={{ background: `${color}22`, border: `1.5px solid ${color}66` }}>
-            <div className="flex items-center gap-2" style={{ color }}>
-                {icon}
-                <span className="text-[14px] uppercase tracking-[0.14em] font-extrabold">{label}</span>
+        <div className={`group relative rounded-2xl p-4 flex flex-col bg-slate-800/70 ${hasRoster ? 'cursor-help' : ''}`}
+            style={{ border: alarm ? `1.5px solid ${color}` : '1px solid rgba(255,255,255,0.12)' }}>
+            <div className="flex items-center gap-2">
+                <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                    style={{ background: `${color}22`, color }}>{icon}</span>
+                <span className="text-[12px] uppercase tracking-[0.12em] font-bold text-slate-300 leading-tight">{label}</span>
             </div>
-            <span className={`mt-1 text-[clamp(2rem,5.5vh,3.6rem)] leading-none font-black tabular-nums ${pulse ? 'animate-pulse' : ''}`} style={{ color }}>
+            <span className={`mt-2 text-[clamp(1.9rem,5vh,3.1rem)] leading-none font-black tabular-nums ${alarm ? 'animate-pulse' : ''}`}
+                style={{ color }}>
                 {value}
             </span>
+            {sub && <div className="mt-1 text-[12.5px] text-slate-400">{sub}</div>}
+            {children}
             {hasRoster && (
                 <div className="absolute left-0 top-full mt-2 z-40 w-80 max-w-[90vw] opacity-0 invisible translate-y-1
                                 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-150">
@@ -138,7 +146,7 @@ function ActivityFeed({ events, active }: { events: FeedEvent[]; active: boolean
             <style>{`@keyframes feedIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}`}</style>
             <div className="shrink-0 px-4 py-3 border-b border-white/10 flex items-center gap-2">
                 <IconActivity size={17} className="text-sky-300" stroke={2} />
-                <div className="text-[13px] font-extrabold uppercase tracking-[0.1em] text-white">Journal du centre de commande</div>
+                <div className="text-[13px] font-extrabold uppercase tracking-[0.1em] text-white">Activité temps réel</div>
                 {active && <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-1" />}
                 <span className="ml-auto text-[12px] text-slate-400 tabular-nums">{events.length}</span>
             </div>
@@ -498,10 +506,14 @@ function LiaisonView({ alertId, companyId, currentUserId, controllerName }: {
 
 export default function EvacuationWallboard() {
     const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
     const [alert, setAlert] = useState<GeneralAlertDTO | null>(null);
     const [checkIns, setCheckIns] = useState<EvacuationCheckInDTO[]>([]);
     const [employees, setEmployees] = useState<EvacEmployee[]>([]);
     const [assemblyPoints, setAssemblyPoints] = useState<AssemblyPointDTO[]>([]);
+    // Profils d'évacuation (SIRH) — servent à l'effectif ATTENDU par point de
+    // rassemblement (assemblyPointId = point où la personne DOIT se présenter).
+    const [profiles, setProfiles] = useState<EmployeeEvacuationDTO[]>([]);
     const [nowMs, setNowMs] = useState<number>(() => 0); // hydraté au 1er tick
     const [lastSync, setLastSync] = useState<number>(0);
     const [syncing, setSyncing] = useState(false);
@@ -536,7 +548,17 @@ export default function EvacuationWallboard() {
     useEffect(() => {
         if (!alert?.companyId) return;
         listAssemblyPoints(alert.companyId).then(setAssemblyPoints).catch(() => setAssemblyPoints([]));
+        listEmployeeEvacuation(alert.companyId).then(setProfiles).catch(() => setProfiles([]));
     }, [alert?.companyId]);
+
+    // Effectif attendu par point de rassemblement (depuis les profils SIRH).
+    const expectedByPoint = useMemo(() => {
+        const m = new Map<number, number>();
+        profiles.forEach((p) => {
+            if (p.assemblyPointId != null) m.set(p.assemblyPointId, (m.get(p.assemblyPointId) || 0) + 1);
+        });
+        return m;
+    }, [profiles]);
 
     useEffect(() => {
         if (!id) return;
@@ -604,10 +626,40 @@ export default function EvacuationWallboard() {
         else el.requestFullscreen?.().catch(() => {});
     };
 
+    // « Quitter » : ferme l'onglet détaché s'il a été ouvert par la salle de
+    // commande (window.open), sinon revient à l'écran précédent.
+    const quit = () => {
+        if (window.opener && !window.opener.closed) { window.close(); return; }
+        if (window.history.length > 1) navigate(-1);
+        else navigate('/emergency-management');
+    };
+
     const progressData = s.progression.map((p) => ({ ...p }));
-    const gaugeColor = s.securedPct >= 100 ? '#10b981' : s.securedPct >= 60 ? '#38bdf8' : '#f59e0b';
-    const topPoints = s.byAssemblyPoint.slice(0, 6);
-    const worstDepts = s.byDepartment.slice(0, 6); // les moins avancés (déjà triés)
+    const worstDepts = s.byDepartment.slice(0, 8); // les moins avancés (déjà triés)
+
+    // Points de rassemblement : présents (pointés ici) vs attendus (assignés SIRH).
+    const pointRows = s.byAssemblyPoint.map((p) => {
+        const expected = p.id != null ? (expectedByPoint.get(p.id) || 0) : 0;
+        const gap = expected > 0 ? p.count - expected : null; // écart, null si aucun attendu connu
+        let status: 'ok' | 'watch' | 'critical' = 'ok';
+        if (expected > 0) {
+            if (p.count === 0) status = 'critical';
+            else if (p.count < expected) status = (expected - p.count) >= Math.max(3, Math.ceil(expected * 0.3)) ? 'critical' : 'watch';
+        }
+        return { ...p, expected, gap, status };
+    });
+
+    // Segments de la barre « progression globale » (part de l'effectif total).
+    const segTotal = s.total || 1;
+    const segments = [
+        { key: 'safe', label: 'En sécurité', value: s.safe, color: '#34d399' },
+        { key: 'injured', label: 'Blessés', value: s.injured, color: '#fbbf24' },
+        { key: 'missing', label: 'Absents', value: s.missing, color: '#f87171' },
+        { key: 'pending', label: 'Non localisées', value: s.pending, color: '#64748b' },
+    ].filter((seg) => seg.value > 0);
+    const zoneLabel = Array.isArray(alert?.zoneNames) && alert!.zoneNames!.length
+        ? alert!.zoneNames!.join(', ') : null;
+    const pctOfTotal = (n: number) => (s.total ? ((n / s.total) * 100).toFixed(1).replace('.', ',') : '0');
 
     return (
         <div ref={rootRef} className="h-screen w-full text-white flex flex-col overflow-hidden"
@@ -637,7 +689,8 @@ export default function EvacuationWallboard() {
                         <p className="text-[15px] mt-1 text-slate-200 truncate">
                             <span className="uppercase tracking-[0.16em] text-[11px] font-bold text-sky-300 mr-2">Évacuation</span>
                             {alert ? formatReasonCode(alert.reasonCode) : 'Chargement…'}
-                            {alert?.message ? <span className="text-slate-300"> — {alert.message}</span> : null}
+                            {zoneLabel ? <span className="text-slate-300"> — {zoneLabel}</span> : null}
+                            {alert?.message ? <span className="text-slate-400"> — {alert.message}</span> : null}
                         </p>
                     </div>
                 </div>
@@ -650,9 +703,20 @@ export default function EvacuationWallboard() {
                         <p className="text-[12px] uppercase tracking-widest text-slate-300 font-semibold">Heure</p>
                         <p className="text-[clamp(1rem,2.6vh,1.6rem)] leading-none font-mono tabular-nums text-slate-100 mt-1.5">{clock}</p>
                     </div>
+                    <div className="text-right max-lg:hidden">
+                        <p className="text-[12px] uppercase tracking-widest text-slate-300 font-semibold">Synchro</p>
+                        <p className="text-[13px] font-semibold mt-1.5 inline-flex items-center gap-1.5" style={{ color: syncing ? '#7dd3fc' : '#34d399' }}>
+                            <span className="w-2 h-2 rounded-full" style={{ background: syncing ? '#38bdf8' : '#34d399' }} />
+                            {syncing ? 'Synchro…' : 'En ligne'}
+                        </p>
+                    </div>
                     <button type="button" onClick={goFullscreen} title="Plein écran"
                         className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-white/15 hover:bg-white/25 flex items-center justify-center border border-white/20">
                         <IconMaximize size={22} stroke={1.8} />
+                    </button>
+                    <button type="button" onClick={quit} title="Quitter la salle de crise"
+                        className="h-10 lg:h-12 px-3 lg:px-4 rounded-xl bg-white/10 hover:bg-white/20 flex items-center gap-2 border border-white/20 text-[13.5px] font-semibold">
+                        <IconLogout size={18} stroke={1.8} /> <span className="max-lg:hidden">Quitter</span>
                     </button>
                 </div>
             </header>
@@ -674,155 +738,178 @@ export default function EvacuationWallboard() {
             {tab === 'general' && (
             <div className="flex-1 min-h-0 flex flex-col xl:flex-row overflow-y-auto xl:overflow-hidden">
                 <main className="flex-1 min-w-0 min-h-0 px-4 lg:px-8 py-4 lg:py-6 space-y-4 lg:space-y-6 xl:overflow-y-auto">
-                {/* ═══ Rangée 1 : Hero + Jauge + Progression ═══ */}
-                <div className="grid grid-cols-12 gap-4 lg:gap-6">
-                    {/* Non localisés — LE chiffre */}
-                    <div className={`col-span-12 lg:col-span-4 rounded-3xl p-4 lg:p-7 flex flex-col justify-center ${s.unaccounted > 0 ? 'bg-red-600/20 border-2 border-red-500/50' : 'bg-emerald-600/20 border-2 border-emerald-500/50'}`}>
-                        <p className="text-[clamp(0.8rem,1.7vh,1.05rem)] uppercase tracking-[0.18em] font-extrabold text-white">Personnes non localisées</p>
-                        <div className="flex items-end gap-4 mt-1">
-                            <span className={`text-[clamp(3.25rem,13vh,8rem)] leading-none font-black tabular-nums ${s.unaccounted > 0 ? 'text-red-300 animate-pulse' : 'text-emerald-300'}`}>
-                                {s.unaccounted}
-                            </span>
-                            <span className="mb-3 lg:mb-5 text-[clamp(0.85rem,1.6vh,1.2rem)] font-semibold text-slate-200">
-                                {s.unaccounted > 0 ? 'à retrouver' : 'effectif localisé'}
-                            </span>
-                        </div>
-                        <div className="mt-3 h-4 rounded-full bg-white/15 overflow-hidden">
+                {/* ═══ Rangée 1 : 5 indicateurs clés ═══ */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <StatCard
+                        icon={<IconAlertTriangle size={18} stroke={2} />}
+                        label="Personnes non localisées"
+                        value={s.unaccounted}
+                        color={s.unaccounted > 0 ? '#f87171' : '#34d399'}
+                        alarm={isActive && s.unaccounted > 0}
+                        roster={s.rosterByStatus.PENDING}
+                        sub={<span>{s.accounted}/{s.total} localisées · {s.accountedPct}%</span>}
+                    >
+                        <div className="mt-2 h-1.5 rounded-full bg-white/10 overflow-hidden">
                             <div className="h-full rounded-full transition-all duration-500"
                                 style={{ width: `${s.accountedPct}%`, background: s.unaccounted > 0 ? '#f59e0b' : '#10b981' }} />
                         </div>
-                        <p className="mt-2 text-[15px] font-semibold text-slate-100">
-                            {s.accounted}/{s.total} localisés · {s.securedPct}% mis en sécurité
-                        </p>
-                    </div>
+                    </StatCard>
+                    <StatCard icon={<IconShieldCheck size={18} stroke={2} />} label="En sécurité" value={s.safe} color="#34d399"
+                        roster={s.rosterByStatus.SAFE} sub={`${pctOfTotal(s.safe)}% du total`} />
+                    <StatCard icon={<IconStethoscope size={18} stroke={2} />} label="Blessés" value={s.injured} color="#fbbf24"
+                        alarm={isActive && s.injured > 0} roster={s.rosterByStatus.INJURED} sub={`${pctOfTotal(s.injured)}% du total`} />
+                    <StatCard icon={<IconShieldX size={18} stroke={2} />} label="Absents" value={s.missing} color="#f87171"
+                        alarm={isActive && s.missing > 0} roster={s.rosterByStatus.MISSING} sub={`${pctOfTotal(s.missing)}% du total`} />
+                    <StatCard icon={<IconUsers size={18} stroke={2} />} label="Reste à pointer" value={s.pending} color="#cbd5e1"
+                        roster={s.rosterByStatus.PENDING} sub={`${pctOfTotal(s.pending)}% du total`} />
+                </div>
 
-                    {/* Jauge radiale — taux de mise en sécurité */}
-                    <div className="col-span-12 lg:col-span-3 rounded-3xl bg-slate-800/70 border border-white/15 p-5 flex flex-col">
-                        <div className="text-[13px] font-extrabold text-white uppercase tracking-[0.1em] mb-1 pl-2.5 border-l-4 border-sky-400">Taux de mise en sécurité</div>
-                        <div className="relative flex-1 min-h-[clamp(120px,16vh,190px)]">
-                            <ResponsiveContainer>
-                                <RadialBarChart innerRadius="72%" outerRadius="100%" data={[{ value: s.securedPct }]} startAngle={90} endAngle={-270}>
-                                    <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
-                                    <RadialBar background={{ fill: '#334155' }} dataKey="value" cornerRadius={30} fill={gaugeColor} />
-                                </RadialBarChart>
-                            </ResponsiveContainer>
-                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                <span className="text-[clamp(1.9rem,5vh,3.25rem)] leading-none font-black tabular-nums" style={{ color: gaugeColor }}>{s.securedPct}%</span>
-                                <span className="text-[13px] text-slate-300 mt-1">{s.safe}/{s.concerned} concernés</span>
-                            </div>
+                {/* ═══ Progression globale (barre segmentée + légende) ═══ */}
+                <div className="rounded-2xl bg-slate-800/70 border border-white/15 p-5">
+                    <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                        <div className="text-[13px] font-extrabold text-white uppercase tracking-[0.1em] pl-2.5 border-l-4 border-sky-400">
+                            Progression globale — {s.accountedPct}%
                         </div>
+                        <span className="text-[13px] text-slate-300 tabular-nums">Total : {s.total} personnes</span>
                     </div>
+                    <div className="h-4 rounded-full bg-white/10 overflow-hidden flex">
+                        {segments.map((seg) => (
+                            <div key={seg.key} className="h-full transition-all duration-500"
+                                style={{ width: `${(seg.value / segTotal) * 100}%`, background: seg.color }} title={`${seg.label} : ${seg.value}`} />
+                        ))}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mt-3 text-[13px]">
+                        {segments.map((seg) => (
+                            <span key={seg.key} className="inline-flex items-center gap-1.5 text-slate-200">
+                                <span className="w-3 h-3 rounded-sm" style={{ background: seg.color }} />
+                                {seg.label} <span className="font-bold text-white tabular-nums">{seg.value}</span>
+                                <span className="text-slate-400">({((seg.value / segTotal) * 100).toFixed(1)}%)</span>
+                            </span>
+                        ))}
+                    </div>
+                </div>
 
-                    {/* Progression temporelle */}
-                    <div className="col-span-12 lg:col-span-5 rounded-3xl bg-slate-800/70 border border-white/15 p-5">
-                        <div className="flex items-center justify-between mb-2">
-                            <div className="text-[13px] font-extrabold text-white uppercase tracking-[0.1em] pl-2.5 border-l-4 border-sky-400">Progression de la mise en sécurité</div>
-                            <span className="text-[13px] text-slate-300">{s.ratePerMin > 0 ? `≈ ${s.ratePerMin}/min` : ''}</span>
+                {/* ═══ Évolution de la mise en sécurité ═══ */}
+                <div className="rounded-2xl bg-slate-800/70 border border-white/15 p-5">
+                    <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                        <div className="text-[13px] font-extrabold text-white uppercase tracking-[0.1em] pl-2.5 border-l-4 border-sky-400">
+                            Évolution de la mise en sécurité
                         </div>
-                        <div style={{ width: '100%', height: 200 }}>
-                            <ResponsiveContainer>
-                                <AreaChart data={progressData} margin={{ top: 5, right: 10, left: -14, bottom: 0 }}>
-                                    <defs>
-                                        <linearGradient id="wSafe" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#34d399" stopOpacity={0.6} />
-                                            <stop offset="95%" stopColor="#34d399" stopOpacity={0.05} />
-                                        </linearGradient>
-                                        <linearGradient id="wAcc" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.35} />
-                                            <stop offset="95%" stopColor="#38bdf8" stopOpacity={0.03} />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                                    <XAxis dataKey="label" tick={{ fontSize: 12, fill: '#cbd5e1' }} tickLine={false} axisLine={{ stroke: '#475569' }} minTickGap={34} />
-                                    <YAxis tick={{ fontSize: 12, fill: '#cbd5e1' }} tickLine={false} axisLine={false} allowDecimals={false} width={30} />
-                                    <Tooltip contentStyle={{ fontSize: 13, borderRadius: 8, background: '#0f172a', border: '1px solid #334155', color: '#e2e8f0' }}
-                                        formatter={(v: any, n: any) => [v, n === 'safe' ? 'En sécurité' : 'Localisés']} labelFormatter={(l) => `À ${l}`} />
-                                    <Area type="monotone" dataKey="accounted" stroke="#38bdf8" strokeWidth={2} fill="url(#wAcc)" name="accounted" />
-                                    <Area type="monotone" dataKey="safe" stroke="#34d399" strokeWidth={3} fill="url(#wSafe)" name="safe" />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        </div>
-                        <div className="flex items-center gap-5 mt-1 text-[13px]">
+                        <div className="flex items-center gap-5 text-[13px]">
                             <span className="inline-flex items-center gap-1.5 text-slate-200"><span className="w-3 h-1.5 rounded-full bg-emerald-400" /> En sécurité</span>
-                            <span className="inline-flex items-center gap-1.5 text-slate-200"><span className="w-3 h-1.5 rounded-full bg-sky-400" /> Localisés</span>
+                            <span className="inline-flex items-center gap-1.5 text-slate-200"><span className="w-3 h-1.5 rounded-full bg-sky-400" /> Localisées</span>
+                            {s.ratePerMin > 0 && <span className="text-slate-400">≈ {s.ratePerMin}/min</span>}
                         </div>
+                    </div>
+                    <div style={{ width: '100%', height: 230 }}>
+                        <ResponsiveContainer>
+                            <AreaChart data={progressData} margin={{ top: 5, right: 10, left: -14, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="wSafe" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#34d399" stopOpacity={0.6} />
+                                        <stop offset="95%" stopColor="#34d399" stopOpacity={0.05} />
+                                    </linearGradient>
+                                    <linearGradient id="wAcc" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.35} />
+                                        <stop offset="95%" stopColor="#38bdf8" stopOpacity={0.03} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                                <XAxis dataKey="label" tick={{ fontSize: 12, fill: '#cbd5e1' }} tickLine={false} axisLine={{ stroke: '#475569' }} minTickGap={34} />
+                                <YAxis tick={{ fontSize: 12, fill: '#cbd5e1' }} tickLine={false} axisLine={false} allowDecimals={false} width={30} />
+                                <Tooltip contentStyle={{ fontSize: 13, borderRadius: 8, background: '#0f172a', border: '1px solid #334155', color: '#e2e8f0' }}
+                                    formatter={(v: any, n: any) => [v, n === 'safe' ? 'En sécurité' : 'Localisées']} labelFormatter={(l) => `À ${l}`} />
+                                <Area type="monotone" dataKey="accounted" stroke="#38bdf8" strokeWidth={2} fill="url(#wAcc)" name="accounted" />
+                                <Area type="monotone" dataKey="safe" stroke="#34d399" strokeWidth={3} fill="url(#wSafe)" name="safe" />
+                            </AreaChart>
+                        </ResponsiveContainer>
                     </div>
                 </div>
 
-                {/* ═══ Rangée 2 : 4 tuiles ═══ */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-                    <BigTile icon={<IconShieldCheck size={22} stroke={2} />} label="En sécurité" color="#34d399" value={s.safe} roster={s.rosterByStatus.SAFE} />
-                    <BigTile icon={<IconStethoscope size={22} stroke={2} />} label="Blessés" color="#fbbf24" value={s.injured} pulse={isActive && s.injured > 0} roster={s.rosterByStatus.INJURED} />
-                    <BigTile icon={<IconShieldX size={22} stroke={2} />} label="Absents" color="#f87171" value={s.missing} pulse={isActive && s.missing > 0} roster={s.rosterByStatus.MISSING} />
-                    <BigTile icon={<IconUsers size={22} stroke={2} />} label="Reste à pointer" color="#cbd5e1" value={s.pending} roster={s.rosterByStatus.PENDING} />
-                </div>
-
-                {/* ═══ Rangée 3 : Donut + Points + Départements ═══ */}
-                <div className="grid grid-cols-12 gap-6">
-                    {/* Donut répartition */}
-                    <Panel title="Répartition de l'effectif" className="col-span-12 lg:col-span-3">
-                        {s.total === 0 ? <p className="text-slate-400 py-10 text-center">Aucun effectif</p> : (
-                            <>
-                                <div style={{ width: '100%', height: 150 }}>
-                                    <ResponsiveContainer>
-                                        <PieChart>
-                                            <Pie data={s.donut} dataKey="value" nameKey="label" cx="50%" cy="50%" innerRadius={42} outerRadius={66} paddingAngle={2} stroke="none">
-                                                {s.donut.map((d) => <Cell key={d.key} fill={d.color} />)}
-                                            </Pie>
-                                            <Tooltip contentStyle={{ fontSize: 13, borderRadius: 8, background: '#0f172a', border: '1px solid #334155', color: '#e2e8f0' }} />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                </div>
-                                <div className="space-y-1.5 mt-1">
-                                    {s.donut.map((d) => (
-                                        <div key={d.key} className="flex items-center gap-2 text-[14px]">
-                                            <span className="w-3 h-3 rounded-sm" style={{ background: d.color }} />
-                                            <span className="text-slate-200 flex-1">{d.label}</span>
-                                            <span className="font-bold text-white tabular-nums">{d.value}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </>
-                        )}
-                    </Panel>
-
-                    {/* Points de rassemblement */}
-                    <Panel title="Regroupement par point" icon={<IconMapPin size={16} className="text-sky-300" stroke={1.8} />} className="col-span-12 lg:col-span-4">
-                        {topPoints.length === 0 ? <p className="text-slate-400 py-8 text-center">Personne encore regroupé</p> : (
-                            <div style={{ width: '100%', height: Math.max(140, topPoints.length * 40) }}>
-                                <ResponsiveContainer>
-                                    <BarChart data={topPoints} layout="vertical" margin={{ top: 0, right: 22, left: 4, bottom: 0 }}>
-                                        <XAxis type="number" tick={{ fontSize: 12, fill: '#cbd5e1' }} tickLine={false} axisLine={false} allowDecimals={false} />
-                                        <YAxis type="category" dataKey="name" tick={{ fontSize: 12.5, fill: '#e2e8f0' }} tickLine={false} axisLine={false} width={130} />
-                                        <Tooltip contentStyle={{ fontSize: 13, borderRadius: 8, background: '#0f172a', border: '1px solid #334155', color: '#e2e8f0' }} formatter={(v: any) => [v, 'Personnes']} cursor={{ fill: '#ffffff10' }} />
-                                        <Bar dataKey="count" fill="#38bdf8" radius={[0, 5, 5, 0]} barSize={18} label={{ position: 'right', fill: '#e2e8f0', fontSize: 12 }} />
-                                    </BarChart>
-                                </ResponsiveContainer>
+                {/* ═══ Rangée 3 : Départements (table) + Points de rassemblement (table) ═══ */}
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    {/* Départements à surveiller */}
+                    <Panel title="Départements à surveiller" icon={<IconBuildingCommunity size={16} className="text-amber-300" stroke={1.8} />}>
+                        {worstDepts.length === 0 ? <p className="text-slate-400 py-6 text-center">Aucun département</p> : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-[13.5px]">
+                                    <thead>
+                                        <tr className="text-slate-400 text-[12px] uppercase tracking-wider">
+                                            <th className="text-left font-semibold py-1.5 pr-2 w-6">#</th>
+                                            <th className="text-left font-semibold py-1.5 pr-2">Département</th>
+                                            <th className="text-right font-semibold py-1.5 px-2 whitespace-nowrap">Sécurisés / À pointer</th>
+                                            <th className="text-left font-semibold py-1.5 pl-2 w-[42%]">Progression</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {worstDepts.map((d, i) => (
+                                            <tr key={d.department} className="border-t border-white/8">
+                                                <td className="py-2 pr-2 text-slate-500 tabular-nums">{i + 1}</td>
+                                                <td className="py-2 pr-2 text-white font-semibold truncate max-w-[220px]">{d.department}</td>
+                                                <td className="py-2 px-2 text-right tabular-nums text-slate-200 whitespace-nowrap">
+                                                    <span className="text-emerald-300 font-bold">{d.safe}</span>
+                                                    <span className="text-slate-500"> / </span>
+                                                    <span className={d.pending > 0 ? 'text-amber-300 font-bold' : 'text-slate-400'}>{d.pending}</span>
+                                                </td>
+                                                <td className="py-2 pl-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                                                            <div className="h-full rounded-full"
+                                                                style={{ width: `${d.pct}%`, background: d.pct >= 100 ? '#34d399' : d.pct >= 60 ? '#38bdf8' : '#fbbf24' }} />
+                                                        </div>
+                                                        <span className="tabular-nums text-slate-200 font-semibold w-10 text-right">{d.pct}%</span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         )}
                     </Panel>
 
-                    {/* Couverture par département */}
-                    <Panel title="Départements à surveiller" icon={<IconBuildingCommunity size={16} className="text-amber-300" stroke={1.8} />} className="col-span-12 lg:col-span-5">
-                        <div className="space-y-2.5">
-                            {worstDepts.map((d) => (
-                                <div key={d.department}>
-                                    <div className="flex items-center justify-between text-[13.5px] mb-1">
-                                        <span className="text-white font-semibold truncate">{d.department}</span>
-                                        <span className="text-slate-300 tabular-nums font-medium">
-                                            {d.safe}/{d.concerned} sécurisés{d.pending > 0 ? ` · ${d.pending} à pointer` : ''}
-                                        </span>
-                                    </div>
-                                    <div className="h-2.5 bg-white/10 rounded-full overflow-hidden flex">
-                                        <div className="h-full bg-emerald-400" style={{ width: `${d.total ? (d.safe / d.total) * 100 : 0}%` }} />
-                                        <div className="h-full bg-amber-400" style={{ width: `${d.total ? (d.injured / d.total) * 100 : 0}%` }} />
-                                        <div className="h-full bg-red-400" style={{ width: `${d.total ? (d.missing / d.total) * 100 : 0}%` }} />
-                                        <div className="h-full bg-slate-400" style={{ width: `${d.total ? (d.notApplicable / d.total) * 100 : 0}%` }} />
-                                    </div>
-                                </div>
-                            ))}
-                            {worstDepts.length === 0 && <p className="text-slate-400 py-6 text-center">Aucun département</p>}
-                        </div>
+                    {/* Points de rassemblement (présents vs attendus) */}
+                    <Panel title="Points de rassemblement" icon={<IconMapPins size={16} className="text-sky-300" stroke={1.8} />}>
+                        {pointRows.length === 0 ? <p className="text-slate-400 py-6 text-center">Personne encore regroupé</p> : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-[13.5px]">
+                                    <thead>
+                                        <tr className="text-slate-400 text-[12px] uppercase tracking-wider">
+                                            <th className="text-left font-semibold py-1.5 pr-2">Point de rassemblement</th>
+                                            <th className="text-right font-semibold py-1.5 px-2">Présents</th>
+                                            <th className="text-right font-semibold py-1.5 px-2">Attendus</th>
+                                            <th className="text-right font-semibold py-1.5 px-2">Écart</th>
+                                            <th className="text-left font-semibold py-1.5 pl-2">Statut</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {pointRows.map((p) => {
+                                            const st = p.status === 'critical'
+                                                ? { c: '#f87171', label: 'Critique' }
+                                                : p.status === 'watch'
+                                                    ? { c: '#fbbf24', label: 'À surveiller' }
+                                                    : { c: '#34d399', label: 'OK' };
+                                            return (
+                                                <tr key={p.id ?? 'none'} className="border-t border-white/8">
+                                                    <td className="py-2 pr-2 text-white font-medium truncate max-w-[200px]">{p.name}</td>
+                                                    <td className="py-2 px-2 text-right tabular-nums text-white font-bold">{p.count}</td>
+                                                    <td className="py-2 px-2 text-right tabular-nums text-slate-300">{p.expected > 0 ? p.expected : '—'}</td>
+                                                    <td className="py-2 px-2 text-right tabular-nums font-semibold"
+                                                        style={{ color: p.gap == null ? '#94a3b8' : p.gap < 0 ? '#f87171' : '#34d399' }}>
+                                                        {p.gap == null ? '—' : p.gap > 0 ? `+${p.gap}` : p.gap}
+                                                    </td>
+                                                    <td className="py-2 pl-2">
+                                                        <span className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold" style={{ color: st.c }}>
+                                                            <span className="w-2 h-2 rounded-full" style={{ background: st.c }} /> {st.label}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                     </Panel>
                 </div>
 
@@ -836,13 +923,14 @@ export default function EvacuationWallboard() {
                             <IconShieldCheck size={20} /> Tout l'effectif concerné est localisé.
                         </p>
                     ) : (
-                        <div className="flex flex-wrap gap-2 max-h-[180px] overflow-y-auto">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-[320px] overflow-y-auto pr-1">
                             {s.criticalList.map((p) => (
-                                <span key={p.id} className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[15px] font-semibold ${
-                                    p.kind === 'missing' ? 'bg-red-600 text-white' : 'bg-white/12 text-white ring-1 ring-white/20'
+                                <span key={p.id} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[14.5px] font-semibold ${
+                                    p.kind === 'missing' ? 'bg-red-600/90 text-white' : 'bg-white/8 text-white ring-1 ring-white/15'
                                 }`}>
-                                    {p.name}
-                                    <span className="opacity-70 text-[12.5px] font-normal">{p.department}</span>
+                                    {p.kind === 'missing' && <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />}
+                                    <span className="truncate">{p.name}</span>
+                                    <span className="ml-auto opacity-70 text-[12px] font-normal truncate max-w-[45%]">{p.department}</span>
                                 </span>
                             ))}
                         </div>
@@ -852,11 +940,12 @@ export default function EvacuationWallboard() {
                 {/* Blessés (si présents) */}
                 {s.injuredList.length > 0 && (
                     <Panel title={`Blessés — assistance requise (${s.injuredList.length})`} icon={<IconStethoscope size={18} className="text-amber-300" stroke={1.8} />}>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                             {s.injuredList.map((p) => (
-                                <span key={p.id} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[15px] font-semibold bg-amber-500 text-white">
-                                    {p.name}
-                                    {p.assemblyPointName && <span className="opacity-80 text-[12.5px] font-normal">· {p.assemblyPointName}</span>}
+                                <span key={p.id} className="flex items-center gap-2 px-3 py-2 rounded-lg text-[14.5px] font-semibold bg-amber-500 text-white">
+                                    <IconStethoscope size={15} stroke={2} className="shrink-0 opacity-90" />
+                                    <span className="truncate">{p.name}</span>
+                                    {p.assemblyPointName && <span className="ml-auto opacity-85 text-[12px] font-normal truncate max-w-[45%]">{p.assemblyPointName}</span>}
                                 </span>
                             ))}
                         </div>
@@ -881,11 +970,14 @@ export default function EvacuationWallboard() {
             )}
 
             {/* ── Pied ── */}
-            <footer className="shrink-0 px-8 py-3 flex items-center justify-between text-[12.5px] text-slate-400 border-t border-white/10">
+            <footer className="shrink-0 px-8 py-3 flex items-center justify-between gap-3 text-[12.5px] text-slate-400 border-t border-white/10 flex-wrap">
                 <span className="inline-flex items-center gap-1.5">
                     <IconWifi size={14} className={syncing ? 'text-sky-300' : 'text-slate-400'} />
                     Actualisation automatique toutes les {POLL_MS / 1000}s
                     {syncing && <IconRefresh size={13} className="animate-spin text-sky-300" />}
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                    <IconShieldCheck size={14} className="text-emerald-400" /> Connexion sécurisée
                 </span>
                 <span>
                     {lastSync ? `Dernière synchro : ${new Date(lastSync).toLocaleTimeString('fr-FR')}` : 'Connexion…'} · SafeX 360
