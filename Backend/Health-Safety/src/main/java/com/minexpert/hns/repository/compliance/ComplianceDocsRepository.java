@@ -23,6 +23,15 @@ public interface ComplianceDocsRepository extends CrudRepository<ComplianceDocs,
     @Query("SELECT d.companyId FROM ComplianceDocs d WHERE d.id = :id")
     Optional<Long> findCompanyIdById(@org.springframework.data.repository.query.Param("id") Long id);
 
+    /**
+     * Ids des employes rattaches a une mine — requete native cross-schema
+     * (le user applicatif lit defaultdb, meme serveur). Sert au cloisonnement par
+     * mine du tableau de bord personnel (sinon une mine voit la conformite des
+     * employes des autres mines).
+     */
+    @Query(value = "SELECT e.id FROM defaultdb.employee e WHERE e.company_id = :companyId", nativeQuery = true)
+    List<Long> employeeIdsByCompany(@org.springframework.data.repository.query.Param("companyId") Long companyId);
+
     // Le WHERE est vital : sans lui, chaque employé voyait les documents de
     // conformité de TOUS les autres (fuite de données inter-employés).
     @Query("SELECT new com.minexpert.hns.dto.compliance.DocResponse(d.id, d.media.name, d.media.id, d.requirement.title, null, d.employeeId, d.createdAt, d.expiryDate, d.status, d.comment) FROM ComplianceDocs d WHERE d.employeeId = ?1")

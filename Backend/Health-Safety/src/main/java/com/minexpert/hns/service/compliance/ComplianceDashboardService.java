@@ -9,15 +9,17 @@ import com.minexpert.hns.exception.HSException;
 
 public interface ComplianceDashboardService {
 
-    ComplianceDashboardActionItemsResponse getActionItems() throws HSException;
+    ComplianceDashboardActionItemsResponse getActionItems(Long companyId) throws HSException;
 
     void sendActionItemAlert(Long employeeId, Long requirementId) throws HSException;
 
-    ComplianceDashboardDepartmentSummaryResponse getDepartmentSummary(LocalDate asOf) throws HSException;
+    ComplianceDashboardDepartmentSummaryResponse getDepartmentSummary(LocalDate asOf, Long companyId)
+            throws HSException;
 
-    ComplianceDashboardOverallStatusResponse getOverallStatus(Long departmentId) throws HSException;
+    ComplianceDashboardOverallStatusResponse getOverallStatus(Long departmentId, Long companyId)
+            throws HSException;
 
     ComplianceDashboardCompliantEmployeesResponse getCompliantEmployees(Integer page, Integer pageSize,
             String departmentFilter,
-            String employeeFilter) throws HSException;
+            String employeeFilter, Long companyId) throws HSException;
 }

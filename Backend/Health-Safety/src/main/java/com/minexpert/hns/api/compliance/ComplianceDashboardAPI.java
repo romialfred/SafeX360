@@ -34,8 +34,9 @@ public class ComplianceDashboardAPI {
     private final ComplianceDashboardService complianceDashboardService;
 
     @GetMapping("/action-items")
-    public ResponseEntity<ComplianceDashboardActionItemsResponse> getActionItems() throws HSException {
-        return ResponseEntity.ok(complianceDashboardService.getActionItems());
+    public ResponseEntity<ComplianceDashboardActionItemsResponse> getActionItems(
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(complianceDashboardService.getActionItems(companyId));
     }
 
     @PostMapping("/action-items/notify")
@@ -48,15 +49,17 @@ public class ComplianceDashboardAPI {
 
     @GetMapping("/department-summary")
     public ResponseEntity<ComplianceDashboardDepartmentSummaryResponse> getDepartmentSummary(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate asOf)
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate asOf,
+            @RequestParam(required = false) Long companyId)
             throws HSException {
-        return ResponseEntity.ok(complianceDashboardService.getDepartmentSummary(asOf));
+        return ResponseEntity.ok(complianceDashboardService.getDepartmentSummary(asOf, companyId));
     }
 
     @GetMapping("/overall-status")
     public ResponseEntity<ComplianceDashboardOverallStatusResponse> getOverallStatus(
-            @RequestParam(required = false) Long departmentId) throws HSException {
-        return ResponseEntity.ok(complianceDashboardService.getOverallStatus(departmentId));
+            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) Long companyId) throws HSException {
+        return ResponseEntity.ok(complianceDashboardService.getOverallStatus(departmentId, companyId));
     }
 
     @GetMapping("/compliant-employees")
@@ -64,8 +67,9 @@ public class ComplianceDashboardAPI {
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer pageSize,
             @RequestParam(required = false) String department,
-            @RequestParam(required = false) String employee) throws HSException {
+            @RequestParam(required = false) String employee,
+            @RequestParam(required = false) Long companyId) throws HSException {
         return ResponseEntity
-                .ok(complianceDashboardService.getCompliantEmployees(page, pageSize, department, employee));
+                .ok(complianceDashboardService.getCompliantEmployees(page, pageSize, department, employee, companyId));
     }
 }

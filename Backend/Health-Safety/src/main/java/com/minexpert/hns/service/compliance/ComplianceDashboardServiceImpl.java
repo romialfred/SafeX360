@@ -67,9 +67,10 @@ public class ComplianceDashboardServiceImpl implements ComplianceDashboardServic
     private final EmailService emailService;
 
     @Override
-    @Cacheable(cacheNames = ComplianceCacheNames.DASHBOARD_ACTION_ITEMS)
-    public ComplianceDashboardActionItemsResponse getActionItems() throws HSException {
-        List<AssignmentContext> contexts = loadAssignmentContexts();
+    @Cacheable(cacheNames = ComplianceCacheNames.DASHBOARD_ACTION_ITEMS,
+            key = "#companyId != null ? #companyId : 'ALL'")
+    public ComplianceDashboardActionItemsResponse getActionItems(Long companyId) throws HSException {
+        List<AssignmentContext> contexts = loadAssignmentContexts(companyId);
         if (contexts.isEmpty()) {
             return emptyActionItemsResponse();
         }
@@ -139,9 +140,11 @@ public class ComplianceDashboardServiceImpl implements ComplianceDashboardServic
     }
 
     @Override
-    @Cacheable(cacheNames = ComplianceCacheNames.DASHBOARD_DEPARTMENT_SUMMARY, key = "#asOf != null ? #asOf : 'DEFAULT'")
-    public ComplianceDashboardDepartmentSummaryResponse getDepartmentSummary(LocalDate asOf) throws HSException {
-        List<AssignmentContext> contexts = loadAssignmentContexts();
+    @Cacheable(cacheNames = ComplianceCacheNames.DASHBOARD_DEPARTMENT_SUMMARY,
+            key = "(#companyId != null ? #companyId : 'ALL') + '|' + (#asOf != null ? #asOf : 'DEFAULT')")
+    public ComplianceDashboardDepartmentSummaryResponse getDepartmentSummary(LocalDate asOf, Long companyId)
+            throws HSException {
+        List<AssignmentContext> contexts = loadAssignmentContexts(companyId);
         if (contexts.isEmpty()) {
             return new ComplianceDashboardDepartmentSummaryResponse(asOf, List.of());
         }
@@ -165,9 +168,11 @@ public class ComplianceDashboardServiceImpl implements ComplianceDashboardServic
     }
 
     @Override
-    @Cacheable(cacheNames = ComplianceCacheNames.DASHBOARD_OVERALL_STATUS, key = "#departmentId != null ? #departmentId : 'ALL'")
-    public ComplianceDashboardOverallStatusResponse getOverallStatus(Long departmentId) throws HSException {
-        List<AssignmentContext> contexts = loadAssignmentContexts();
+    @Cacheable(cacheNames = ComplianceCacheNames.DASHBOARD_OVERALL_STATUS,
+            key = "(#companyId != null ? #companyId : 'ALL') + '|' + (#departmentId != null ? #departmentId : 'ALL')")
+    public ComplianceDashboardOverallStatusResponse getOverallStatus(Long departmentId, Long companyId)
+            throws HSException {
+        List<AssignmentContext> contexts = loadAssignmentContexts(companyId);
         if (contexts.isEmpty()) {
             return new ComplianceDashboardOverallStatusResponse(0, List.of());
         }
@@ -207,8 +212,8 @@ public class ComplianceDashboardServiceImpl implements ComplianceDashboardServic
 
     @Override
     public ComplianceDashboardCompliantEmployeesResponse getCompliantEmployees(Integer page, Integer pageSize,
-            String departmentFilter, String employeeFilter) throws HSException {
-        List<AssignmentContext> contexts = loadAssignmentContexts();
+            String departmentFilter, String employeeFilter, Long companyId) throws HSException {
+        List<AssignmentContext> contexts = loadAssignmentContexts(companyId);
         if (contexts.isEmpty()) {
             return new ComplianceDashboardCompliantEmployeesResponse(resolvePage(page), resolvePageSize(pageSize), 0,
                     List.of());
@@ -400,7 +405,7 @@ public class ComplianceDashboardServiceImpl implements ComplianceDashboardServic
         };
     }
 
-    private List<AssignmentContext> loadAssignmentContexts() throws HSException {
+    private List<AssignmentContext> loadAssignmentContexts(Long companyId) throws HSException {
         List<EmpEmailPosResponse> employees = Optional.ofNullable(hrmsClient.getAllEmployeesWithEmailAndPosition())
                 .orElse(List.of());
         if (employees.isEmpty()) {
@@ -410,6 +415,15 @@ public class ComplianceDashboardServiceImpl implements ComplianceDashboardServic
         Map<Long, EmpEmailPosResponse> employeesById = employees.stream()
                 .filter(emp -> emp.getId() != null && emp.getPositionId() != null)
                 .collect(Collectors.toMap(EmpEmailPosResponse::getId, emp -> emp, (left, right) -> left));
+
+        // Cloisonnement par mine : ne conserver que les employes de la mine active.
+        // companyId null (utilisateur toutes-mines / appel interne) = comportement
+        // historique inchange (aucune restriction).
+        if (companyId != null) {
+            java.util.Set<Long> mineEmployeeIds = new java.util.HashSet<>(
+                    Optional.ofNullable(complianceDocsRepository.employeeIdsByCompany(companyId)).orElse(List.of()));
+            employeesById.keySet().retainAll(mineEmployeeIds);
+        }
 
         if (employeesById.isEmpty()) {
             return List.of();
