@@ -150,7 +150,10 @@ public class GatewayRequestAuthorizationFilter extends OncePerRequestFilter {
                 || path.endsWith("/ws")
                 || path.endsWith("/error")
                 // Modules traites dans des lots paralleles disposant de gardes specialises.
-                || path.contains("/emergency/")
+                // EXCEPTION : /emergency/permissions (octroi/revocation) DOIT passer par la
+                // matrice (acte d'administration) — sinon n'importe quel compte pouvait
+                // s'octroyer le role de coordinateur d'evacuation (escalade de privileges).
+                || (path.contains("/emergency/") && !path.contains("/emergency/permissions"))
                 || path.endsWith("/emergency")
                 || path.contains("/blast/")
                 || path.endsWith("/blast")

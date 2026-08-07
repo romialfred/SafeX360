@@ -22,6 +22,11 @@ public class GatewayAuthorizationMatrix {
                     ? Operation.SELF_SERVICE
                     : Operation.ADMINISTRATION;
         }
+        // Octroi/revocation de permissions d'urgence = acte d'administration
+        // (reserve aux admins). La lecture des detenteurs reste ouverte.
+        if (path.contains("/emergency/permissions")) {
+            return isMutationVerb(verb) ? Operation.ADMINISTRATION : Operation.READ;
+        }
         if ("GET".equals(verb) || "HEAD".equals(verb)) {
             return isExportPath(path) ? Operation.EXPORT : Operation.READ;
         }

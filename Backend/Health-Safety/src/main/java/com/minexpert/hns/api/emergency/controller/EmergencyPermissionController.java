@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -18,6 +19,7 @@ import jakarta.validation.Valid;
 import com.minexpert.hns.api.emergency.dto.EmergencyPermissionDTO;
 import com.minexpert.hns.api.emergency.enums.EmergencyPermission;
 import com.minexpert.hns.api.emergency.service.EmergencyPermissionService;
+import com.minexpert.hns.config.CompanyScopeGuard;
 
 import lombok.RequiredArgsConstructor;
 
@@ -29,6 +31,7 @@ import lombok.RequiredArgsConstructor;
 public class EmergencyPermissionController {
 
     private final EmergencyPermissionService service;
+    private final CompanyScopeGuard companyScopeGuard;
 
     /** GET /hns/emergency/permissions/user/{userId} — toutes permissions actives d'un user. */
     @GetMapping("/user/{userId}")
@@ -47,17 +50,24 @@ public class EmergencyPermissionController {
         return ResponseEntity.ok(service.listHolders(permission, companyId));
     }
 
-    /** POST /hns/emergency/permissions/grant — accorde une permission. */
+    /**
+     * POST /hns/emergency/permissions/grant — accorde une permission.
+     *
+     * <p>L'acteur ({@code grantedBy}) est derive de l'identite Gateway (en-tete
+     * {@code X-User-Id}), jamais d'un parametre client (sinon piste d'audit
+     * falsifiable). La mine cible est validee contre le perimetre autorise.
+     */
     @PostMapping("/grant")
     public ResponseEntity<EmergencyPermissionDTO> grant(@Valid @RequestBody EmergencyPermissionDTO dto,
-                                                         @RequestParam Long grantedBy) {
+            @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long grantedBy) {
+        companyScopeGuard.assertInScope(dto.getCompanyId());
         return ResponseEntity.ok(service.grant(dto.getUserId(), dto.getPermission(), dto.getCompanyId(), grantedBy));
     }
 
     /** DELETE /hns/emergency/permissions/{id} — révoque (soft delete). */
     @DeleteMapping("/{id}")
     public ResponseEntity<EmergencyPermissionDTO> revoke(@PathVariable Long id,
-                                                          @RequestParam Long revokedBy) {
+            @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long revokedBy) {
         return service.revoke(id, revokedBy)
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
