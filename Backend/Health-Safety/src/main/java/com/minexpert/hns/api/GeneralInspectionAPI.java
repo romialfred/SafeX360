@@ -1,5 +1,6 @@
 package com.minexpert.hns.api;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,7 @@ public class GeneralInspectionAPI {
     @Autowired
     private GeneralInspectionService generalInspectionService;
 
+    @PreAuthorize("hasAuthority('INSPECTION_PLAN')")
     @PostMapping("/create")
     public ResponseEntity<ResponseDTO> createGeneralInspection(
             @RequestParam(required = false) Long companyId,
@@ -47,6 +49,7 @@ public class GeneralInspectionAPI {
         return new ResponseEntity<>(new ResponseDTO("General Inspection created successfully."), HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasAuthority('INSPECTION_PLAN')")
     @PutMapping("/update")
     public ResponseEntity<ResponseDTO> updateGeneralInspection(
             @RequestParam(required = false) Long companyId,
@@ -58,6 +61,7 @@ public class GeneralInspectionAPI {
         return new ResponseEntity<>(new ResponseDTO("General Inspection updated successfully."), HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('INSPECTION_VIEW')")
     @GetMapping("/getAll")
     public ResponseEntity<List<GeneralInspectionResponse>> getAllInspections(
             @RequestParam(required = false) Long companyId) throws HSException {
@@ -65,12 +69,14 @@ public class GeneralInspectionAPI {
         return new ResponseEntity<>(inspections, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('INSPECTION_VIEW')")
     @GetMapping("/get/{id}")
     public ResponseEntity<GeneralInspectionDetails> getInspectionDetailsById(@PathVariable Long id,
             @RequestParam(required = false) Long companyId) throws HSException {
         return new ResponseEntity<>(generalInspectionService.getInspectionDetailsById(id, companyId), HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('INSPECTION_VIEW')")
     @GetMapping("/getInfo/{id}")
     public ResponseEntity<InspectionInfo> getInspectionInfoById(@PathVariable Long id,
             @RequestParam(required = false) Long companyId) throws HSException {

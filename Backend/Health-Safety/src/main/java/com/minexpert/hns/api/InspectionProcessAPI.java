@@ -1,5 +1,6 @@
 package com.minexpert.hns.api;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -59,6 +60,7 @@ public class InspectionProcessAPI {
         }
     }
 
+    @PreAuthorize("hasAuthority('INSPECTION_EXECUTE')")
     @PostMapping("/addChecklist")
     public ResponseEntity<Long> addChecklist(
             @RequestParam(required = false) Long companyId,
@@ -73,6 +75,7 @@ public class InspectionProcessAPI {
                 HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasAuthority('INSPECTION_EXECUTE')")
     @PostMapping("/addMeasurement")
     public ResponseEntity<Long> addMeasurements(
             @RequestParam(required = false) Long companyId,
@@ -87,6 +90,7 @@ public class InspectionProcessAPI {
                 HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('INSPECTION_EXECUTE')")
     @PostMapping("/save-draft")
     public ResponseEntity<ProcessDTO> saveDraft(
             @RequestParam(required = false) Long companyId,
@@ -100,12 +104,14 @@ public class InspectionProcessAPI {
         return new ResponseEntity<>(processService.saveDraftProcess(processDTO), HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasAuthority('INSPECTION_VIEW')")
     @GetMapping("/get-draft/{id}")
     public ResponseEntity<ProcessDTO> getDraft(@PathVariable Long id,
             @RequestParam(required = false) Long companyId) throws HSException {
         return new ResponseEntity<>(processService.getDraftProcess(id, companyId), HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('INSPECTION_EXECUTE')")
     @DeleteMapping("/remove-checklist/{id}")
     public ResponseEntity<ResponseDTO> removeChecklist(@PathVariable Long id,
             @RequestParam(required = false) Long companyId) throws HSException {
@@ -113,6 +119,7 @@ public class InspectionProcessAPI {
         return new ResponseEntity<>(new ResponseDTO("Checklist removed successfully"), HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('INSPECTION_EXECUTE')")
     @DeleteMapping("/remove-measurement/{id}")
     public ResponseEntity<ResponseDTO> removeMeasurement(@PathVariable Long id,
             @RequestParam(required = false) Long companyId) throws HSException {
@@ -120,6 +127,7 @@ public class InspectionProcessAPI {
         return new ResponseEntity<>(new ResponseDTO("Measurement removed successfully"), HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('INSPECTION_VIEW')")
     @GetMapping("/getChecklists/{id}")
     public ResponseEntity<List<InspectionChecklistDTO>> getChecklists(@PathVariable Long id,
             @RequestParam(required = false) Long companyId) throws HSException {
@@ -127,6 +135,7 @@ public class InspectionProcessAPI {
                 HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('INSPECTION_VIEW')")
     @GetMapping("/getMeasurements/{id}")
     public ResponseEntity<List<InspectionMeasurementDTO>> getMeasurements(@PathVariable Long id,
             @RequestParam(required = false) Long companyId) throws HSException {
