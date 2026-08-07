@@ -311,6 +311,7 @@ const menuItems: MenuItem[] = [
         color: 'text-green-600',
         subItems: [
             { id: 'compliance-dashboard', label: 'Tableau de bord', icon: IconChartBar },
+            { id: 'regulatory-register', label: 'Obligations & code minier', icon: IconBook },
             { id: 'regulatory-licenses', label: 'Licences & permis', icon: IconCertificate },
             { id: 'work-authorizations', label: 'Autorisations de travaux', icon: IconTools },
             { id: 'mandatory-inspections', label: 'Inspections équipements', icon: IconClipboardCheck },
@@ -526,6 +527,7 @@ export const menuIdToUrl: Record<string, string> = {
 
     // Compliance Management
     "compliance-dashboard": "/compliance-dashboard",
+    "regulatory-register": "/compliance-obligations",
     "regulatory-licenses": "/compliance-licenses",
     "work-authorizations": "/compliance-authorizations",
     "mandatory-inspections": "/compliance-inspections",

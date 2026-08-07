@@ -132,6 +132,52 @@ export const inspectionResultConfig = (c?: string | null): ConfCfg | null =>
     c ? (INSPECTION_RESULT_CONFIG[c] ?? null) : null;
 export const INSPECTION_RESULT_OPTIONS = Object.entries(INSPECTION_RESULT_CONFIG).map(([value, cfg]) => ({ value, label: cfg.label }));
 
+// ─── Obligations réglementaires & code minier ────────────────────────────────
+export const OBLIGATION_CATEGORY_LABELS: Record<string, string> = {
+    CODE_MINIER:       'Code minier',
+    LOI:               'Loi',
+    DECRET:            'Décret',
+    ARRETE:            'Arrêté',
+    CONVENTION:        'Convention',
+    CODE_TRAVAIL:      'Code du travail',
+    CODE_ENVIRONNEMENT:"Code de l'environnement",
+    NORME:             'Norme',
+    AUTRE:             'Autre texte',
+};
+export const obligationCategoryLabel = (c?: string | null): string =>
+    OBLIGATION_CATEGORY_LABELS[c || ''] || c || '—';
+export const OBLIGATION_CATEGORY_OPTIONS = Object.entries(OBLIGATION_CATEGORY_LABELS).map(([value, label]) => ({ value, label }));
+
+export const DOMAIN_LABELS: Record<string, string> = {
+    SECURITE:      'Sécurité',
+    ENVIRONNEMENT: 'Environnement',
+    TRAVAIL:       'Travail',
+    EXPLOSIFS:     'Explosifs',
+    FONCIER:       'Foncier',
+    FISCAL:        'Fiscal',
+    SOCIAL:        'Social',
+    AUTRE:         'Autre',
+};
+export const domainLabel = (c?: string | null): string => DOMAIN_LABELS[c || ''] || c || '—';
+export const DOMAIN_OPTIONS = Object.entries(DOMAIN_LABELS).map(([value, label]) => ({ value, label }));
+
+/** Conformité de la mine vis-à-vis d'une obligation (évaluation). */
+export const OBLIGATION_STATUS_CONFIG: Record<string, ConfCfg> = {
+    CONFORME:     { label: 'Conforme',     chip: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: '#10b981' },
+    PARTIEL:      { label: 'Partiel',      chip: 'bg-amber-50 text-amber-700 border-amber-200',       dot: '#f59e0b' },
+    NON_CONFORME: { label: 'Non conforme', chip: 'bg-rose-50 text-rose-700 border-rose-200',           dot: '#f43f5e' },
+    A_EVALUER:    { label: 'À évaluer',    chip: 'bg-slate-50 text-slate-600 border-slate-200',        dot: '#94a3b8' },
+    SUSPENDU:     { label: 'Archivé',      chip: 'bg-slate-100 text-slate-500 border-slate-300',       dot: '#64748b' },
+};
+export const obligationStatusConfig = (c?: string | null): ConfCfg =>
+    OBLIGATION_STATUS_CONFIG[c || ''] ?? OBLIGATION_STATUS_CONFIG.A_EVALUER;
+export const OBLIGATION_STATUS_OPTIONS = [
+    { value: 'CONFORME', label: 'Conforme' },
+    { value: 'PARTIEL', label: 'Partiel' },
+    { value: 'NON_CONFORME', label: 'Non conforme' },
+    { value: 'A_EVALUER', label: 'À évaluer' },
+];
+
 // ─── Formateurs (fr-FR) ──────────────────────────────────────────────────────
 export const formatDateFr = (value?: string | null): string => {
     if (!value) return '—';

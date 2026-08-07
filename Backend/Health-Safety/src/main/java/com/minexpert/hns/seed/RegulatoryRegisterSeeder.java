@@ -14,10 +14,12 @@ import org.springframework.stereotype.Component;
 
 import com.minexpert.hns.entity.compliance.ExploitationLicense;
 import com.minexpert.hns.entity.compliance.MandatoryInspection;
+import com.minexpert.hns.entity.compliance.RegulatoryObligation;
 import com.minexpert.hns.entity.compliance.WorkAuthorization;
 import com.minexpert.hns.enums.Status;
 import com.minexpert.hns.repository.compliance.ExploitationLicenseRepository;
 import com.minexpert.hns.repository.compliance.MandatoryInspectionRepository;
+import com.minexpert.hns.repository.compliance.RegulatoryObligationRepository;
 import com.minexpert.hns.repository.compliance.WorkAuthorizationRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -45,6 +47,7 @@ public class RegulatoryRegisterSeeder implements ApplicationRunner {
     private final ExploitationLicenseRepository licenseRepository;
     private final WorkAuthorizationRepository authorizationRepository;
     private final MandatoryInspectionRepository inspectionRepository;
+    private final RegulatoryObligationRepository obligationRepository;
 
     @Override
     public void run(ApplicationArguments args) {
@@ -68,6 +71,11 @@ public class RegulatoryRegisterSeeder implements ApplicationRunner {
             seedInspections();
         } catch (Exception ex) {
             log.warn("[RegulatoryRegisterSeeder] Seed inspections interrompu (non bloquant) : {}", ex.getMessage());
+        }
+        try {
+            seedObligations();
+        } catch (Exception ex) {
+            log.warn("[RegulatoryRegisterSeeder] Seed obligations interrompu (non bloquant) : {}", ex.getMessage());
         }
     }
 
@@ -266,6 +274,85 @@ public class RegulatoryRegisterSeeder implements ApplicationRunner {
         i.setCreatedAt(LocalDateTime.now());
         i.setUpdatedAt(LocalDateTime.now());
         return i;
+    }
+
+    // ─── Obligations reglementaires & code minier ────────────────────────────
+
+    private void seedObligations() {
+        if (obligationRepository.count() > 0) {
+            log.info("[RegulatoryRegisterSeeder] Obligations deja presentes — seed ignore.");
+            return;
+        }
+        LocalDate today = LocalDate.now();
+        List<RegulatoryObligation> toSave = new ArrayList<>();
+
+        // Mine 1 — Burkina GOLD SA
+        toSave.add(obligation(MINE_BURKINA_GOLD, "CODE_MINIER", "Loi 036-2015/CNT", "art. 145-146",
+                "Constitution et alimentation du fonds de rehabilitation et de fermeture de la mine",
+                "ENVIRONNEMENT", "Ministere des Mines et des Carrieres", "CONFORME",
+                today.minusYears(6), today.minusMonths(3), today.plusMonths(9), null));
+        toSave.add(obligation(MINE_BURKINA_GOLD, "CODE_MINIER", "Loi 036-2015/CNT", "art. 101",
+                "Emploi et formation prioritaire de la main-d'oeuvre nationale (contenu local)",
+                "SOCIAL", "Ministere des Mines et des Carrieres", "PARTIEL",
+                today.minusYears(6), today.minusMonths(6), today.minusMonths(1),
+                "Renforcer le plan de formation des cadres nationaux et documenter les taux d'emploi local."));
+        toSave.add(obligation(MINE_BURKINA_GOLD, "CODE_ENVIRONNEMENT", "Loi 006-2013/AN", "art. 25",
+                "Realisation et mise a jour de l'etude d'impact environnemental et social (EIES)",
+                "ENVIRONNEMENT", "ANEVE", "CONFORME",
+                today.minusYears(3), today.minusMonths(2), today.plusMonths(10), null));
+        toSave.add(obligation(MINE_BURKINA_GOLD, "DECRET", "Decret 2017-0023", "art. 8",
+                "Reglementation de la detention, du transport et de l'emploi des explosifs",
+                "EXPLOSIFS", "Direction Generale des Mines", "CONFORME",
+                today.minusYears(4), today.minusMonths(1), today.plusMonths(11), null));
+        toSave.add(obligation(MINE_BURKINA_GOLD, "CONVENTION", "Convention OIT C176", "—",
+                "Securite et sante dans les mines : evaluation des risques et droit de retrait",
+                "SECURITE", "Ministere du Travail", "CONFORME",
+                today.minusYears(5), today.minusMonths(4), today.plusMonths(8), null));
+        toSave.add(obligation(MINE_BURKINA_GOLD, "ARRETE", "Arrete conjoint 2019-0145", "art. 3",
+                "Declaration et suivi des rejets et de la qualite des eaux (parametres cyanure, metaux)",
+                "ENVIRONNEMENT", "Ministere de l'Environnement", "NON_CONFORME",
+                today.minusYears(2), today.minusMonths(8), today.minusMonths(2),
+                "Mettre en conformite le point de rejet R2 et transmettre les analyses trimestrielles manquantes."));
+
+        // Mine 6 — SANAMA YIRI
+        toSave.add(obligation(MINE_SANAMA_YIRI, "CODE_MINIER", "Loi 036-2015/CNT", "art. 61-62",
+                "Respect des conditions du permis d'exploitation de petite mine",
+                "FONCIER", "Ministere des Mines et des Carrieres", "CONFORME",
+                today.minusYears(4), today.minusMonths(2), today.plusMonths(10), null));
+        toSave.add(obligation(MINE_SANAMA_YIRI, "CODE_TRAVAIL", "Loi 028-2008/AN", "art. 236",
+                "Mise en place du comite de securite et sante au travail (CSST)",
+                "TRAVAIL", "Ministere du Travail", "PARTIEL",
+                today.minusYears(3), today.minusMonths(5), today.plusMonths(1),
+                "Formaliser les proces-verbaux de reunion du CSST et la representation des travailleurs."));
+        toSave.add(obligation(MINE_SANAMA_YIRI, "CODE_ENVIRONNEMENT", "Loi 006-2013/AN", "art. 30",
+                "Notice d'impact environnemental et plan de gestion",
+                "ENVIRONNEMENT", "ANEVE", "A_EVALUER",
+                today.minusMonths(10), null, today.plusMonths(3), null));
+
+        obligationRepository.saveAll(toSave);
+        log.info("[RegulatoryRegisterSeeder] {} obligations reglementaires seedees (mines 1 & 6).", toSave.size());
+    }
+
+    private RegulatoryObligation obligation(Long companyId, String category, String reference, String article,
+            String title, String domain, String authority, String complianceStatus, LocalDate applicableSince,
+            LocalDate lastReview, LocalDate nextReview, String actionRequired) {
+        RegulatoryObligation o = new RegulatoryObligation();
+        o.setCompanyId(companyId);
+        o.setCategory(category);
+        o.setReference(reference);
+        o.setArticle(article);
+        o.setTitle(title);
+        o.setDomain(domain);
+        o.setAuthority(authority);
+        o.setComplianceStatus(complianceStatus);
+        o.setApplicableSince(applicableSince);
+        o.setLastReviewDate(lastReview);
+        o.setNextReviewDate(nextReview);
+        o.setActionRequired(actionRequired);
+        o.setStatus(Status.ACTIVE);
+        o.setCreatedAt(LocalDateTime.now());
+        o.setUpdatedAt(LocalDateTime.now());
+        return o;
     }
 
     private ExploitationLicense license(Long companyId, String type, String reference, String title,
