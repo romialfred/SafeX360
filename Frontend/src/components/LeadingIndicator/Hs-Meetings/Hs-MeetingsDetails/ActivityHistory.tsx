@@ -11,6 +11,8 @@ interface MeetingHistoryDetails {
     auditId: number;
     status: MeetingStatus;
     comment: string;
+    evaluation?: number | null;
+    closingReport?: string | null;
     ownerId: number;
     ownerName: string;
     createdAt: string;
@@ -50,6 +52,21 @@ const ActivityHistory = ({ history, meeting: _meeting, empMap }: MeetingHistoryP
                                 </Group>
 
                                 <Text size="sm" className="text-slate-700">{entry.comment || 'Aucun commentaire.'}</Text>
+
+                                {(entry.evaluation != null || entry.closingReport) && (
+                                    <div className="mt-2 pt-2 border-t border-slate-100 space-y-1">
+                                        {entry.evaluation != null && (
+                                            <Text size="sm" className="text-slate-600">
+                                                <span className="font-semibold">Évaluation qualité :</span> {entry.evaluation}/10
+                                            </Text>
+                                        )}
+                                        {entry.closingReport && (
+                                            <Text size="sm" className="text-slate-600">
+                                                <span className="font-semibold">Rapport de clôture :</span> {entry.closingReport}
+                                            </Text>
+                                        )}
+                                    </div>
+                                )}
 
                                 <Group justify="space-between" className="mt-2 text-xs text-slate-400">
                                     <div className="flex items-center gap-1">

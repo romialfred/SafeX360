@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 import com.minexpert.hns.enums.ActivityStatus;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.EnumType;
@@ -31,6 +32,11 @@ public class HsActivityHistory {
     @Enumerated(EnumType.STRING)
     private ActivityStatus status;
     private String comment;
+    /** Note qualite saisie a la cloture (1-10). LOT audit pre-prod : etait perdue. */
+    private Integer evaluation;
+    /** Rapport de cloture (texte libre). LOT audit pre-prod : etait perdu. */
+    @Column(length = 4000)
+    private String closingReport;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "hs_activity_id", nullable = false)
     private HsActivity hsActivity;

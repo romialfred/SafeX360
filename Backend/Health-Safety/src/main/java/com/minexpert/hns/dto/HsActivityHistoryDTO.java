@@ -20,12 +20,23 @@ public class HsActivityHistoryDTO {
     private LocalDate date;
     private ActivityStatus status;
     private String comment;
+    private Integer evaluation;
+    private String closingReport;
     private Long hsActivityId;
     private LocalDateTime createdAt;
 
+    /** Mapping par setters : robuste au changement d'arite (evite le piege @AllArgsConstructor). */
     public HsActivityHistory toEntity() {
-        return new HsActivityHistory(id, ownerId, date, status, comment,
-                hsActivityId != null ? new HsActivity(hsActivityId) : null,
-                createdAt);
+        HsActivityHistory e = new HsActivityHistory();
+        e.setId(id);
+        e.setOwnerId(ownerId);
+        e.setDate(date);
+        e.setStatus(status);
+        e.setComment(comment);
+        e.setEvaluation(evaluation);
+        e.setClosingReport(closingReport);
+        e.setHsActivity(hsActivityId != null ? new HsActivity(hsActivityId) : null);
+        e.setCreatedAt(createdAt);
+        return e;
     }
 }

@@ -45,13 +45,18 @@ public class HsActivityHistoryServiceImpl implements HsActivityHistoryService {
     @Cacheable(cacheNames = ActivityCacheNames.HS_ACTIVITY_HISTORY_BY_ACTIVITY, key = "#hsActivityId")
     public List<HsActivityHistoryDTO> getHsActivityHistoryByHsActivityId(Long hsActivityId) throws HSException {
         List<HsActivityHistory> histories = hsActivityHistoryRepository.findByHsActivityId(hsActivityId);
-        return histories.stream().map(h -> new HsActivityHistoryDTO(
-                h.getId(),
-                h.getOwnerId(),
-                h.getDate(),
-                h.getStatus(),
-                h.getComment(),
-                h.getHsActivity() != null ? h.getHsActivity().getId() : null,
-                h.getCreatedAt())).collect(Collectors.toList());
+        return histories.stream().map(h -> {
+            HsActivityHistoryDTO dto = new HsActivityHistoryDTO();
+            dto.setId(h.getId());
+            dto.setOwnerId(h.getOwnerId());
+            dto.setDate(h.getDate());
+            dto.setStatus(h.getStatus());
+            dto.setComment(h.getComment());
+            dto.setEvaluation(h.getEvaluation());
+            dto.setClosingReport(h.getClosingReport());
+            dto.setHsActivityId(h.getHsActivity() != null ? h.getHsActivity().getId() : null);
+            dto.setCreatedAt(h.getCreatedAt());
+            return dto;
+        }).collect(Collectors.toList());
     }
 }
