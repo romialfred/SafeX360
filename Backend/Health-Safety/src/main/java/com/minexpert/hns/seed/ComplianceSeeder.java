@@ -356,7 +356,7 @@ public class ComplianceSeeder implements ApplicationRunner {
                 + "2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n"
                 + "3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 595 842]>>endobj\n"
                 + "trailer<</Size 4/Root 1 0 R>>\n%%EOF";
-        return new Media(null, name, "application/pdf", pdf.getBytes(StandardCharsets.US_ASCII));
+        return new Media(null, name, "application/pdf", pdf.getBytes(StandardCharsets.US_ASCII), null);
     }
 
     private void clearComplianceCaches() {

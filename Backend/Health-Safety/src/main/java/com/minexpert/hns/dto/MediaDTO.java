@@ -21,7 +21,14 @@ public class MediaDTO {
     private String file;
 
     public Media toEntity() {
-        return new Media(id, name, type, file != null ? Base64.getDecoder().decode(file) : null);
+        // Mapping par setters : robuste au champ companyId ajouté sur Media (évite
+        // le piège @AllArgsConstructor/arité). companyId est renseigné par le service.
+        Media m = new Media();
+        m.setId(id);
+        m.setName(name);
+        m.setType(type);
+        m.setFile(file != null ? Base64.getDecoder().decode(file) : null);
+        return m;
     }
 
     public File toFile() throws IOException {

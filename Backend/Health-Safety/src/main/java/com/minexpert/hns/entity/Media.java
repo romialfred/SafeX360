@@ -25,6 +25,14 @@ public class Media {
     @Lob
     private byte[] file;
 
+    /**
+     * Cloisonnement par mine (audit pré-prod : sans lui, GET/DELETE /media/{id}
+     * permettait d'aspirer/supprimer les pièces jointes de toutes les mines).
+     * Renseigné à l'enregistrement depuis le contexte de requête ; null = média
+     * hérité (avant le correctif) — lecture tolérée, cf. MediaAPI.
+     */
+    private Long companyId;
+
     public MediaDTO toDTO() {
         return new MediaDTO(this.id, this.name, this.type,
                 file != null ? Base64.getEncoder().encodeToString(file) : null);

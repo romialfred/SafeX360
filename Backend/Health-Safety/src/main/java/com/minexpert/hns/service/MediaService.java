@@ -17,4 +17,7 @@ public interface MediaService {
 
     public MediaDTO getMediaById(Long id) throws HSException;
 
+    /** Mine propriétaire d'un média, ou null si héritée/inconnue (garde IDOR). */
+    public Long getMediaCompanyId(Long id);
+
 }

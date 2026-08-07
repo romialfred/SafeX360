@@ -50,7 +50,14 @@ public class MediaServiceImpl implements MediaService {
         if (mediaDTOs == null || mediaDTOs.isEmpty()) {
             return java.util.List.of().toString();
         }
-        List<Media> mediaList = mediaDTOs.stream().map(MediaDTO::toEntity).toList();
+        Long companyId = currentCompanyId();
+        List<Media> mediaList = mediaDTOs.stream().map(dto -> {
+            Media m = dto.toEntity();
+            if (m.getCompanyId() == null) {
+                m.setCompanyId(companyId);
+            }
+            return m;
+        }).toList();
         List<Long> savedMediaIds = ((List<Media>) mediaRepository.saveAll(mediaList)).stream().map(Media::getId)
                 .toList();
         return savedMediaIds.toString();
@@ -60,7 +67,11 @@ public class MediaServiceImpl implements MediaService {
     // @CacheEvict(cacheNames = { "mediaById", "mediaByIdsArray" }, allEntries =
     // true)
     public Long saveMedia(MediaDTO mediaDTO) throws HSException {
-        return mediaRepository.save(mediaDTO.toEntity()).getId();
+        Media media = mediaDTO.toEntity();
+        if (media.getCompanyId() == null) {
+            media.setCompanyId(currentCompanyId());
+        }
+        return mediaRepository.save(media).getId();
     }
 
     @Override
@@ -68,6 +79,30 @@ public class MediaServiceImpl implements MediaService {
     public MediaDTO getMediaById(Long id) throws HSException {
         return mediaRepository.findById(id)
                 .orElseThrow(() -> new HSException("MEDIA_NOT_FOUND")).toDTO();
+    }
+
+    @Override
+    public Long getMediaCompanyId(Long id) {
+        return mediaRepository.findCompanyIdById(id).orElse(null);
+    }
+
+    /**
+     * Mine de la requête courante (paramètre companyId injecté/clampé par
+     * CompanyScopeFilter). null hors contexte HTTP ou en vue « toutes mines ».
+     */
+    private Long currentCompanyId() {
+        var attrs = org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+        if (attrs instanceof org.springframework.web.context.request.ServletRequestAttributes servletAttrs) {
+            String value = servletAttrs.getRequest().getParameter("companyId");
+            if (value != null && !value.isBlank()) {
+                try {
+                    return Long.parseLong(value.trim());
+                } catch (NumberFormatException ignored) {
+                    // valeur non parsable -> pas de mine
+                }
+            }
+        }
+        return null;
     }
 
 }
