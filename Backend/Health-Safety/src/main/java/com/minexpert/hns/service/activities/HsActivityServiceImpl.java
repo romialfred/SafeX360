@@ -71,9 +71,12 @@ public class HsActivityServiceImpl implements HsActivityService {
             @CacheEvict(cacheNames = ActivityCacheNames.HS_ACTIVITY_TOURS, allEntries = true)
     })
     public void updateActivity(HsActivityDTO hsActivityDTO, Long companyId) throws HSException {
-        hsActivityRepository.findById(hsActivityDTO.getId())
+        HsActivity existing = hsActivityRepository.findById(hsActivityDTO.getId())
                 .orElseThrow(() -> new HSException("ACTIVITY_NOT_FOUND"));
         verifyCompany(hsActivityDTO.getId(), companyId);
+        // Préserver la date de création : le DTO d'édition ne la porte pas, donc
+        // save(toEntity()) la remettait à NULL à chaque modification (Réunions/Tournées).
+        hsActivityDTO.setCreatedAt(existing.getCreatedAt());
         hsActivityDTO.setUpdatedAt(LocalDateTime.now());
         hsActivityRepository.save(hsActivityDTO.toEntity());
     }

@@ -578,14 +578,14 @@ const router = createBrowserRouter([
 
 
             { path: 'hs-Meetings', element: <ModuleGuard moduleId='meetings'><HealthMeetingPage /></ModuleGuard>, },
-            { path: 'add-NewActivity', element: <AddHealthMeetingPage />, },
+            { path: 'add-NewActivity', element: <ModuleGuard moduleId='meetings'><AddHealthMeetingPage /></ModuleGuard>, },
             { path: 'hs-Meetings/editActivity/:id', element: <ModuleGuard moduleId='meetings'><EditHealthMeetingPage /></ModuleGuard>, },
             { path: 'hs-Meetings/activity-report/:id', element: <ModuleGuard moduleId='meetings'><ActivityReportPage /></ModuleGuard>, },
             { path: 'hs-Meetings/viewDetails-meeting/:id', element: <ModuleGuard moduleId='meetings'><ViewDetailsMeetingPage /></ModuleGuard>, },
             { path: 'hs-Meetings/details-meeting/:id', element: <ModuleGuard moduleId='meetings'><MeetingDetailsTabsPage /></ModuleGuard>, },
 
             { path: 'steering-tours', element: <ModuleGuard moduleId='management-tour'><SteeringTourPage /></ModuleGuard>, },
-            { path: "add-tour", element: <AddTourPage /> },
+            { path: "add-tour", element: <ModuleGuard moduleId='management-tour'><AddTourPage /></ModuleGuard> },
             { path: 'steering-tours/activity-report/:id', element: <ModuleGuard moduleId='management-tour'><ActivityReportPage /></ModuleGuard>, },
             { path: 'steering-tours/details-meeting/:id', element: <ModuleGuard moduleId='management-tour'><SteeringDetailsPage /></ModuleGuard>, },
             { path: 'steering-tours/viewDetails-meeting/:id', element: <ModuleGuard moduleId='management-tour'><ViewDetailsMeetingPage /></ModuleGuard>, },
