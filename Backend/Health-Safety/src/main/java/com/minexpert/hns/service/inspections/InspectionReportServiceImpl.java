@@ -85,6 +85,18 @@ public class InspectionReportServiceImpl implements InspectionReportService {
 
         existingReport.setUpdatedAt(LocalDateTime.now());
 
+        // Audit pre-prod : l'edition ne persistait QUE les pieces jointes — le
+        // compte rendu, la date et le redacteur modifies etaient perdus.
+        if (report.getDescription() != null) {
+            existingReport.setDescription(report.getDescription());
+        }
+        if (report.getReportDate() != null) {
+            existingReport.setReportDate(report.getReportDate());
+        }
+        if (report.getReportedId() != null) {
+            existingReport.setReportedId(report.getReportedId());
+        }
+
         if (report.getDocs() != null) {
             existingReport.setDocs(mediaService.saveAllMedia(report.getDocs()));
         }

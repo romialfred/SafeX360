@@ -14,7 +14,7 @@ import { hideOverlay, showOverlay } from "../../../../slices/OverlaySlice";
 import { errorNotification, successNotification } from "../../../../utility/NotificationUtility";
 import { formatDateShort } from "../../../../utility/DateFormats";
 import SafeHtml from "../../../UtilityComp/SafeHtml";
-import { addInspectionReport, getInspectionReportByInspectionId } from "../../../../services/PgiReportService";
+import { addInspectionReport, getInspectionReportByInspectionId, updateInspectionReport } from "../../../../services/PgiReportService";
 import { SECTION_TITLE_STYLE } from "../pgiLabels";
 
 interface InspectionReportProps {
@@ -54,6 +54,17 @@ const InspectionReport = ({ employee = [], empMap = {} }: InspectionReportProps)
             .then((res: any) => {
                 setReport(res);
                 setIsEditing(false);
+                // Pré-remplir le formulaire pour que « Modifier » reprenne les
+                // valeurs existantes (sinon champ vide + re-création = 409).
+                if (res) {
+                    form.setValues({
+                        reportedId: res.reportedId != null ? String(res.reportedId) : "",
+                        reportDate: res.reportDate || "",
+                        description: res.description || "",
+                        docs: [],
+                        generalInspectionId: res.generalInspectionId != null ? String(res.generalInspectionId) : "",
+                    });
+                }
             })
             .catch(() => {
                 setIsEditing(true);
@@ -83,7 +94,7 @@ const InspectionReport = ({ employee = [], empMap = {} }: InspectionReportProps)
                 dispatch(showOverlay());
                 try {
                     const evidence = await convertFilesToBase64New(values.docs);
-                    const payload = {
+                    const payload: any = {
                         generalInspectionId: parseInt(id || ""),
                         reportDate: dayjs(values.reportDate).format("YYYY-MM-DD"),
                         reportedId: Number(values.reportedId),
@@ -91,7 +102,14 @@ const InspectionReport = ({ employee = [], empMap = {} }: InspectionReportProps)
                         docs: evidence,
                     };
 
-                    await addInspectionReport(payload);
+                    // Un rapport par inspection : mise à jour si existant (sinon 409),
+                    // création sinon.
+                    if (report?.id) {
+                        payload.id = report.id;
+                        await updateInspectionReport(payload);
+                    } else {
+                        await addInspectionReport(payload);
+                    }
                     successNotification("Rapport d'inspection enregistré");
 
                     form.reset();
