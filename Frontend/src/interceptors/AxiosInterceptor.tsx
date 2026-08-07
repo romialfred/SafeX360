@@ -118,14 +118,14 @@ axiosInstance.interceptors.response.use(
 
 axiosInstance.interceptors.request.use(
     (config) => {
-        // Le module Dosimetrie (/hns/dosimetry/*) utilise un parametrage
-        // mineId du body et n'accepte pas l'ajout automatique de companyId
-        // en query string par cet interceptor (interferes avec @RequestBody
-        // et le filtre Spring de RBAC dosimetry). Skip auto-injection ici.
+        // NB : le module Dosimetrie (/hns/dosimetry/*) n'est PLUS exclu de
+        // l'injection de companyId. Ses controleurs scaffoldes exigent le
+        // parametre `companyId` ; sans lui, un utilisateur « toutes mines »
+        // (companyId injecte a null par CompanyScopeFilter) recevait un 400 sur
+        // toute creation/edition (worker, dosimetre, dose, seuil). Les
+        // controleurs plus recents lisent mineId dans le corps et ignorent
+        // simplement ce parametre de requete additionnel.
         const url = config.url ?? '';
-        if (url.includes('/hns/dosimetry/')) {
-            return config;
-        }
 
         const state = store.getState();
         let companyId = state.companySelection?.selectedCompanyId ?? null;
