@@ -156,6 +156,7 @@ const PerformanceReport = lazy(() => import('../components/NewComponents/Reports
 const CorporateReports = lazy(() => import('../components/NewComponents/Reports/CorporateReports'));
 const ExecutiveReports = lazy(() => import('../components/NewComponents/Reports/ExecutiveReports'));
 const TrendAnalysis = lazy(() => import('../components/NewComponents/Reports/TrendAnalysis'));
+import DemoDataBanner from '../components/UtilityComp/DemoDataBanner';
 const TechnicalDocumentation = lazy(() => import('../components/NewComponents/HelpCenter/TechnicalDocumentation'));
 const WorkProcess = lazy(() => import('../components/NewComponents/WorkProcess/WorkProcess'));
 const RiskAssessmentPage = lazy(() => import('../pages/dashboard/RiskManagement/RiskAssessmentPage'));
@@ -674,12 +675,14 @@ const router = createBrowserRouter([
             { path: 'chemical-register/edit/:id', element: <ModuleGuard moduleId='chemical-register'><EditChemicalRisk /></ModuleGuard>, },
             { path: 'chemical-register/chemicalRegister-details/:id', element: <ModuleGuard moduleId='chemical-register'><ChemicalDetails /></ModuleGuard>, },
 
-            { path: "monthly-reports", element: <MonthlyReports /> },
-            { path: "KPI-reports", element: <KpiReview /> },
-            { path: "performance-reports", element: <PerformanceReport /> },
-            { path: "corporate-reports", element: <CorporateReports /> },
-            { path: "executive-reports", element: <ExecutiveReports /> },
-            { path: "trend-analysis", element: <TrendAnalysis /> },
+            // Audit pré-prod : écrans à données de démonstration (non branchés) —
+            // bandeau non contournable en attendant leur branchement serveur.
+            { path: "monthly-reports", element: <DemoDataBanner><MonthlyReports /></DemoDataBanner> },
+            { path: "KPI-reports", element: <DemoDataBanner><KpiReview /></DemoDataBanner> },
+            { path: "performance-reports", element: <DemoDataBanner><PerformanceReport /></DemoDataBanner> },
+            { path: "corporate-reports", element: <DemoDataBanner><CorporateReports /></DemoDataBanner> },
+            { path: "executive-reports", element: <DemoDataBanner><ExecutiveReports /></DemoDataBanner> },
+            { path: "trend-analysis", element: <DemoDataBanner><TrendAnalysis /></DemoDataBanner> },
 
             // LOT — Module Dosimetrie & Expositions (2026-06-07 : lazy-loaded)
             // Toutes les pages sont enveloppees dans <DosimetrySuspense> pour
