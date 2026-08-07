@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.minexpert.hns.dto.ResponseDTO;
 import com.minexpert.hns.dto.equipment.EquipmentDTO;
 import com.minexpert.hns.exception.HSException;
+import com.minexpert.hns.inspections.config.InspectionRBACConfig;
 import com.minexpert.hns.service.equipment.EquipmentService;
 
 import lombok.RequiredArgsConstructor;
@@ -39,12 +41,14 @@ public class EquipmentAPI {
 
     private final EquipmentService equipmentService;
 
+    @PreAuthorize("hasAuthority('" + InspectionRBACConfig.INSPECTION_TEMPLATE_MANAGE + "')")
     @PostMapping("/create")
     public ResponseEntity<Long> createEquipment(@RequestParam(required = false) Long companyId,
             @RequestBody EquipmentDTO equipmentDTO) throws HSException {
         return new ResponseEntity<>(equipmentService.createEquipment(companyId, equipmentDTO), HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasAuthority('" + InspectionRBACConfig.INSPECTION_TEMPLATE_MANAGE + "')")
     @PutMapping("/update")
     public ResponseEntity<ResponseDTO> updateEquipment(@RequestParam(required = false) Long companyId,
             @RequestBody EquipmentDTO equipmentDTO) throws HSException {
@@ -52,18 +56,21 @@ public class EquipmentAPI {
         return new ResponseEntity<>(new ResponseDTO("Equipment updated."), HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('" + InspectionRBACConfig.INSPECTION_VIEW + "')")
     @GetMapping("/getAll")
     public ResponseEntity<List<EquipmentDTO>> getAllEquipment(@RequestParam(required = false) Long companyId)
             throws HSException {
         return new ResponseEntity<>(equipmentService.getAllEquipment(companyId), HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('" + InspectionRBACConfig.INSPECTION_VIEW + "')")
     @GetMapping("/get/{id}")
     public ResponseEntity<EquipmentDTO> getEquipmentById(@RequestParam(required = false) Long companyId,
             @PathVariable Long id) throws HSException {
         return new ResponseEntity<>(equipmentService.getEquipmentById(companyId, id), HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('" + InspectionRBACConfig.INSPECTION_TEMPLATE_MANAGE + "')")
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<ResponseDTO> deleteEquipment(@RequestParam(required = false) Long companyId,
             @PathVariable Long id) throws HSException {
