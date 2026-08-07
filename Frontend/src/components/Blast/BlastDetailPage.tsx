@@ -20,6 +20,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
+import { hasAuthority } from '../../utility/roleAuthorities';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -91,18 +92,14 @@ const formatDateTime = (iso: string | null | undefined, lang: string): string =>
 
 function hasBlastPermission(user: any, permission: string): boolean {
     if (!user) return false;
-    const ADMIN_ROLES = ['ADMIN', 'SUPER_ADMIN', 'ADMINISTRATOR', 'SAFEX_ADMIN', 'OWNER'];
-    if (typeof user.role === 'string' && ADMIN_ROLES.includes(user.role.toUpperCase())) {
-        return true;
-    }
-    const candidates: string[] = [];
-    if (Array.isArray(user.permissions)) candidates.push(...user.permissions);
-    if (Array.isArray(user.authorities)) {
-        candidates.push(...user.authorities.map((a: any) => a?.authority ?? a));
-    }
-    if (Array.isArray(user.roles)) candidates.push(...user.roles);
-    if (typeof user.role === 'string') candidates.push(user.role);
-    return candidates.includes(permission);
+    // Autorités réelles dérivées du RÔLE (miroir fidèle du gateway) — l'ancien code
+    // ne fonctionnait que pour un rôle littéral « Administrator », masquant tout le
+    // workflow aux rôles opérationnels (HSE_MANAGER/HSE_OFFICER/coordinateur).
+    if (hasAuthority(user.role, permission)) return true;
+    const explicit: string[] = [];
+    if (Array.isArray(user.permissions)) explicit.push(...user.permissions);
+    if (Array.isArray(user.authorities)) explicit.push(...user.authorities.map((a: any) => a?.authority ?? a));
+    return explicit.includes(permission);
 }
 
 const isoLocal = (d: Date): string => {

@@ -21,6 +21,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { hasAuthority } from '../../utility/roleAuthorities';
 import { extractErrorMessage } from '../../utility/NotificationUtility';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -108,15 +109,14 @@ const parseIncidents = (raw: string | null | undefined): string[] => {
  */
 function hasBlastPermission(user: any, permission: string): boolean {
     if (!user) return false;
-    if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') return true;
-    const candidates: string[] = [];
-    if (Array.isArray(user.permissions)) candidates.push(...user.permissions);
-    if (Array.isArray(user.authorities)) {
-        candidates.push(...user.authorities.map((a: any) => a?.authority ?? a));
-    }
-    if (Array.isArray(user.roles)) candidates.push(...user.roles);
-    if (typeof user.role === 'string') candidates.push(user.role);
-    return candidates.includes(permission);
+    // Autorités dérivées du RÔLE (miroir gateway). L'ancienne version n'acceptait
+    // que 'ADMIN'/'SUPER_ADMIN' → la SIGNATURE du rapport d'évacuation était
+    // inatteignable pour TOUS les rôles réels (dernière étape du workflow morte).
+    if (hasAuthority(user.role, permission)) return true;
+    const explicit: string[] = [];
+    if (Array.isArray(user.permissions)) explicit.push(...user.permissions);
+    if (Array.isArray(user.authorities)) explicit.push(...user.authorities.map((a: any) => a?.authority ?? a));
+    return explicit.includes(permission);
 }
 
 /** Declenche le telechargement d'un Blob avec le nom de fichier voulu. */

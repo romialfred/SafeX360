@@ -23,6 +23,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
+import { hasAuthority } from '../../utility/roleAuthorities';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -178,23 +179,13 @@ interface FiltersState {
 
 function hasBlastPermission(user: any, permission: string): boolean {
     if (!user) return false;
-    // Roles administrateurs reconnus comme proprietaires plateforme.
-    // Note : la chaine de garde finale reste cote backend (Spring @PreAuthorize)
-    // qui repond 403 si la permission n'est pas effective. Cote front, on est
-    // permissif pour ne pas masquer les actions a un compte ADMINISTRATOR
-    // standard de la plateforme.
-    const ADMIN_ROLES = ['ADMIN', 'SUPER_ADMIN', 'ADMINISTRATOR', 'SAFEX_ADMIN', 'OWNER'];
-    if (typeof user.role === 'string' && ADMIN_ROLES.includes(user.role.toUpperCase())) {
-        return true;
-    }
-    const candidates: string[] = [];
-    if (Array.isArray(user.permissions)) candidates.push(...user.permissions);
-    if (Array.isArray(user.authorities)) {
-        candidates.push(...user.authorities.map((a: any) => a?.authority ?? a));
-    }
-    if (Array.isArray(user.roles)) candidates.push(...user.roles);
-    if (typeof user.role === 'string') candidates.push(user.role);
-    return candidates.includes(permission);
+    // Autorités dérivées du RÔLE (miroir gateway) : la garde finale reste serveur
+    // (@PreAuthorize → 403). Corrige le masquage des actions aux rôles HSE.
+    if (hasAuthority(user.role, permission)) return true;
+    const explicit: string[] = [];
+    if (Array.isArray(user.permissions)) explicit.push(...user.permissions);
+    if (Array.isArray(user.authorities)) explicit.push(...user.authorities.map((a: any) => a?.authority ?? a));
+    return explicit.includes(permission);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
