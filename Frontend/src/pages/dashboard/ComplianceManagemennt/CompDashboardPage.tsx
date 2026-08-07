@@ -1,9 +1,9 @@
-import CompDashboard from "../../../components/ComplianceManagement/CompDashboard/CompDashboard"
+import ComplianceCockpit from "../../../components/ComplianceManagement/ComplianceCockpit/ComplianceCockpit"
 
 
 const CompDashboardPage = () => {
     return (
-        <CompDashboard />
+        <ComplianceCockpit />
     )
 }
 
