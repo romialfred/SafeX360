@@ -63,6 +63,7 @@ public class OverexposureCaseController {
         return new ResponseEntity<>(service.getById(id), HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('DOSIMETRY_ADMIN')")
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<ResponseDTO> delete(@PathVariable Long id) {
         service.delete(id);

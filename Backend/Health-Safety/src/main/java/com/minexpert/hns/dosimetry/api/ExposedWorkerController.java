@@ -85,6 +85,7 @@ public class ExposedWorkerController {
         return new ResponseEntity<>(service.getById(id, userId, userPermissions), HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('DOSIMETRY_ADMIN')")
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<ResponseDTO> delete(@PathVariable Long id,
             @RequestHeader(value = "X-User-Id", required = false) Long userId) {

@@ -1,5 +1,6 @@
 package com.minexpert.hns.dosimetry.api;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -61,6 +62,7 @@ public class DosimetryAuditLogController {
     }
 
     /** Append-only : refuse toute suppression. */
+    @PreAuthorize("hasAuthority('DOSIMETRY_ADMIN')")
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<ResponseDTO> delete(@PathVariable Long id) {
         return new ResponseEntity<>(

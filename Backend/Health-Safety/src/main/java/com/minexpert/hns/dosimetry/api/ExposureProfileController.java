@@ -1,5 +1,6 @@
 package com.minexpert.hns.dosimetry.api;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -52,6 +53,7 @@ public class ExposureProfileController {
         return new ResponseEntity<>(service.getById(id), HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAuthority('DOSIMETRY_ADMIN')")
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<ResponseDTO> delete(@PathVariable Long id) {
         service.delete(id);
