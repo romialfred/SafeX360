@@ -336,6 +336,7 @@ DUE_DATE_REQUIRED: L echeance de verification est obligatoire.
 
 # LOT 53 — verrouillage de cloture ISO 19011 (6.6) : conditions de fin d audit
 CLOSURE_REQUIRES_APPROVED_REPORT: Cloture impossible, le rapport d audit doit etre redige et APPROUVE (ISO 19011 6.5).
+CLOSURE_REQUIRES_REPORT: Cloture impossible, un rapport d audit doit d abord etre redige.
 CLOSURE_REQUIRES_COMPLETED_CHECKLIST: Cloture impossible, des questions de checklist restent A EVALUER (ISO 19011 6.4.7).
 CLOSURE_REQUIRES_CLASSIFIED_FINDINGS: Cloture impossible, tous les constats doivent etre classes (NC majeure/mineure, observation ou opportunite — ISO 19011 6.4.8).
 CLOSURE_REQUIRES_ESCALATED_NC: Cloture impossible, toute non-conformite doit etre escaladee vers les Constats centraux pour suivi des actions (ISO 19011 6.7).

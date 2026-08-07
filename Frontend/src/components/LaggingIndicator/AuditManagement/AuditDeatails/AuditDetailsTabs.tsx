@@ -101,8 +101,14 @@ const AuditDetailsTabs = () => {
     const handleSubmit = async (values: any) => {
         dispatch(showOverlay());
 
+        // Le champ « Évaluation qualité » du formulaire s'appelle `evaluation` mais
+        // le DTO serveur attend `rating` : sans ce mapping, la note de clôture était
+        // silencieusement jetée par Jackson (audit pré-prod).
+        const { evaluation, ...rest } = values;
         const payload = {
-            ...values,
+            ...rest,
+            rating: evaluation === undefined || evaluation === null || evaluation === ''
+                ? undefined : Number(evaluation),
             auditId: parseInt(id || ""), // ✅ Make sure auditId is included here
         };
 

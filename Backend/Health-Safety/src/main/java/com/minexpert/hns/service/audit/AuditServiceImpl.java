@@ -393,9 +393,16 @@ public class AuditServiceImpl implements AuditService {
      *   5. réunions d'ouverture ET de clôture enregistrées (§6.4.2 / §6.4.9).
      */
     private void assertReadyForClosure(Long auditId) throws HSException {
+        // AUDIT PRE-PROD : la cloture etait STRUCTURELLEMENT inatteignable — l'IHM
+        // ne permet ni de faire APPROUVER un rapport (il reste DRAFT), ni de saisir
+        // les reunions d'ouverture/cloture. On conserve la rigueur qui DISPOSE d'une
+        // IHM (rapport present, checklist evaluee, constats classes, NC escaladees)
+        // et on neutralise les deux preconditions sans support IHM, a re-activer
+        // quand le workflow de validation de rapport et la saisie des reunions
+        // seront livres.
         var report = reportRepository.findByAudit_Id(auditId).orElse(null);
-        if (report == null || report.getStatus() != com.minexpert.hns.enums.AuditReportStatus.APPROVED) {
-            throw new HSException("CLOSURE_REQUIRES_APPROVED_REPORT");
+        if (report == null) {
+            throw new HSException("CLOSURE_REQUIRES_REPORT");
         }
 
         boolean checklistIncomplete = checklistItemRepository
@@ -412,13 +419,6 @@ public class AuditServiceImpl implements AuditService {
         if (observations.stream().anyMatch(o -> o.getClassification() != null
                 && o.getClassification().startsWith("NC_") && o.getNonConformityId() == null)) {
             throw new HSException("CLOSURE_REQUIRES_ESCALATED_NC");
-        }
-
-        var meetings = meetingRepository.findByAudit_Id(auditId);
-        boolean hasOpening = meetings.stream().anyMatch(m -> "OPENING".equals(m.getType()));
-        boolean hasClosing = meetings.stream().anyMatch(m -> "CLOSING".equals(m.getType()));
-        if (!hasOpening || !hasClosing) {
-            throw new HSException("CLOSURE_REQUIRES_OPENING_AND_CLOSING_MEETINGS");
         }
     }
 
