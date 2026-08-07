@@ -93,6 +93,45 @@ export const riskLevelConfig = (c?: string | null): ConfCfg | null =>
 export const RISK_LEVEL_OPTIONS = Object.entries(RISK_LEVEL_CONFIG)
     .map(([value, cfg]) => ({ value, label: cfg.label }));
 
+// ─── Inspections réglementaires d'équipements ────────────────────────────────
+export const EQUIPMENT_TYPE_LABELS: Record<string, string> = {
+    CUVE_SOUS_PRESSION:    'Cuve sous pression',
+    APPAREIL_LEVAGE:       'Appareil de levage',
+    GRUE:                  'Grue',
+    PONT_ROULANT:          'Pont roulant',
+    COMPRESSEUR:           'Compresseur',
+    CHAUDIERE:             'Chaudière',
+    RESERVOIR_HYDROCARBURE:"Réservoir d'hydrocarbures",
+    INSTALLATION_ELECTRIQUE:'Installation électrique',
+    EXTINCTEUR:            'Extincteurs',
+    CONVOYEUR:             'Convoyeur',
+    AUTRE:                 'Autre équipement',
+};
+export const equipmentTypeLabel = (c?: string | null): string =>
+    EQUIPMENT_TYPE_LABELS[c || ''] || c || '—';
+export const EQUIPMENT_TYPE_OPTIONS = Object.entries(EQUIPMENT_TYPE_LABELS).map(([value, label]) => ({ value, label }));
+
+export const INSPECTION_TYPE_LABELS: Record<string, string> = {
+    VGP:                    'VGP (visite générale périodique)',
+    REQUALIFICATION:        'Requalification',
+    EPREUVE:                'Épreuve',
+    CONTROLE_REGLEMENTAIRE: 'Contrôle réglementaire',
+    VERIFICATION_PERIODIQUE:'Vérification périodique',
+    AUTRE:                  'Autre contrôle',
+};
+export const inspectionTypeLabel = (c?: string | null): string =>
+    INSPECTION_TYPE_LABELS[c || ''] || c || '—';
+export const INSPECTION_TYPE_OPTIONS = Object.entries(INSPECTION_TYPE_LABELS).map(([value, label]) => ({ value, label }));
+
+export const INSPECTION_RESULT_CONFIG: Record<string, ConfCfg> = {
+    CONFORME:               { label: 'Conforme',        chip: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: '#10b981' },
+    CONFORME_AVEC_RESERVES: { label: 'Avec réserves',   chip: 'bg-amber-50 text-amber-700 border-amber-200',       dot: '#f59e0b' },
+    NON_CONFORME:           { label: 'Non conforme',    chip: 'bg-rose-50 text-rose-700 border-rose-200',           dot: '#f43f5e' },
+};
+export const inspectionResultConfig = (c?: string | null): ConfCfg | null =>
+    c ? (INSPECTION_RESULT_CONFIG[c] ?? null) : null;
+export const INSPECTION_RESULT_OPTIONS = Object.entries(INSPECTION_RESULT_CONFIG).map(([value, cfg]) => ({ value, label: cfg.label }));
+
 // ─── Formateurs (fr-FR) ──────────────────────────────────────────────────────
 export const formatDateFr = (value?: string | null): string => {
     if (!value) return '—';

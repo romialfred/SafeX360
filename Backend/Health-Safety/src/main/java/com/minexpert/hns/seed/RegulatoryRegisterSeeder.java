@@ -13,9 +13,11 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import com.minexpert.hns.entity.compliance.ExploitationLicense;
+import com.minexpert.hns.entity.compliance.MandatoryInspection;
 import com.minexpert.hns.entity.compliance.WorkAuthorization;
 import com.minexpert.hns.enums.Status;
 import com.minexpert.hns.repository.compliance.ExploitationLicenseRepository;
+import com.minexpert.hns.repository.compliance.MandatoryInspectionRepository;
 import com.minexpert.hns.repository.compliance.WorkAuthorizationRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -42,6 +44,7 @@ public class RegulatoryRegisterSeeder implements ApplicationRunner {
 
     private final ExploitationLicenseRepository licenseRepository;
     private final WorkAuthorizationRepository authorizationRepository;
+    private final MandatoryInspectionRepository inspectionRepository;
 
     @Override
     public void run(ApplicationArguments args) {
@@ -60,6 +63,11 @@ public class RegulatoryRegisterSeeder implements ApplicationRunner {
             seedWorkAuthorizations();
         } catch (Exception ex) {
             log.warn("[RegulatoryRegisterSeeder] Seed autorisations interrompu (non bloquant) : {}", ex.getMessage());
+        }
+        try {
+            seedInspections();
+        } catch (Exception ex) {
+            log.warn("[RegulatoryRegisterSeeder] Seed inspections interrompu (non bloquant) : {}", ex.getMessage());
         }
     }
 
@@ -195,6 +203,69 @@ public class RegulatoryRegisterSeeder implements ApplicationRunner {
         a.setCreatedAt(LocalDateTime.now());
         a.setUpdatedAt(LocalDateTime.now());
         return a;
+    }
+
+    // ─── Inspections reglementaires d'equipements ────────────────────────────
+
+    private void seedInspections() {
+        if (inspectionRepository.count() > 0) {
+            log.info("[RegulatoryRegisterSeeder] Inspections deja presentes — seed ignore.");
+            return;
+        }
+        LocalDate today = LocalDate.now();
+        List<MandatoryInspection> toSave = new ArrayList<>();
+
+        // Mine 1 — Burkina GOLD SA
+        toSave.add(inspection(MINE_BURKINA_GOLD, "CUVE_SOUS_PRESSION", "CIL-CUVE-03",
+                "Cuve de cyanuration n°3 — requalification decennale", "REQUALIFICATION",
+                "APAVE", 120, today.minusMonths(6), today.plusMonths(114), "CONFORME", "APV-2026-1187"));
+        toSave.add(inspection(MINE_BURKINA_GOLD, "APPAREIL_LEVAGE", "MAINT-PONT-01",
+                "Pont roulant atelier maintenance — VGP", "VGP",
+                "Bureau Veritas", 12, today.minusMonths(11), today.plusMonths(1), "CONFORME_AVEC_RESERVES", "BV-2025-4471"));
+        toSave.add(inspection(MINE_BURKINA_GOLD, "RESERVOIR_HYDROCARBURE", "DEPOT-GO-01",
+                "Reservoir gasoil 50 m3 — controle d'etancheite", "CONTROLE_REGLEMENTAIRE",
+                "SOCOTEC", 24, today.minusMonths(25), today.minusMonths(1), "NON_CONFORME", "SOC-2024-0912"));
+        toSave.add(inspection(MINE_BURKINA_GOLD, "INSTALLATION_ELECTRIQUE", "HT-POSTE-01",
+                "Poste HT/BT principal — verification periodique", "VERIFICATION_PERIODIQUE",
+                "APAVE", 12, today.minusMonths(5), today.plusMonths(7), "CONFORME", "APV-2026-0233"));
+        toSave.add(inspection(MINE_BURKINA_GOLD, "COMPRESSEUR", "USINE-COMP-02",
+                "Compresseur d'air process — epreuve", "EPREUVE",
+                "Bureau Veritas", 60, today.minusMonths(58), today.plusMonths(2), "CONFORME", "BV-2021-7788"));
+
+        // Mine 6 — SANAMA YIRI
+        toSave.add(inspection(MINE_SANAMA_YIRI, "APPAREIL_LEVAGE", "ATEL-PALAN-01",
+                "Palan atelier — VGP", "VGP",
+                "APAVE", 12, today.minusMonths(13), today.minusMonths(1), "CONFORME", "APV-2025-3390"));
+        toSave.add(inspection(MINE_SANAMA_YIRI, "CUVE_SOUS_PRESSION", "PROC-CUVE-01",
+                "Cuve process sous pression — controle periodique", "CONTROLE_REGLEMENTAIRE",
+                "SOCOTEC", 48, today.minusMonths(2), today.plusMonths(46), "CONFORME", "SOC-2026-0455"));
+        toSave.add(inspection(MINE_SANAMA_YIRI, "EXTINCTEUR", "SITE-EXT-PARC",
+                "Parc d'extincteurs du site — verification annuelle", "VERIFICATION_PERIODIQUE",
+                "Prestataire agree local", 12, today.minusMonths(10), today.plusMonths(2), "CONFORME", "EXT-2025-0781"));
+
+        inspectionRepository.saveAll(toSave);
+        log.info("[RegulatoryRegisterSeeder] {} inspections reglementaires seedees (mines 1 & 6).", toSave.size());
+    }
+
+    private MandatoryInspection inspection(Long companyId, String equipmentType, String equipmentRef,
+            String title, String inspectionType, String body, Integer freqMonths, LocalDate last,
+            LocalDate next, String result, String certificate) {
+        MandatoryInspection i = new MandatoryInspection();
+        i.setCompanyId(companyId);
+        i.setEquipmentType(equipmentType);
+        i.setEquipmentRef(equipmentRef);
+        i.setTitle(title);
+        i.setInspectionType(inspectionType);
+        i.setInspectionBody(body);
+        i.setFrequencyMonths(freqMonths);
+        i.setLastInspectionDate(last);
+        i.setNextInspectionDate(next);
+        i.setResult(result);
+        i.setCertificateNumber(certificate);
+        i.setStatus(Status.ACTIVE);
+        i.setCreatedAt(LocalDateTime.now());
+        i.setUpdatedAt(LocalDateTime.now());
+        return i;
     }
 
     private ExploitationLicense license(Long companyId, String type, String reference, String title,
