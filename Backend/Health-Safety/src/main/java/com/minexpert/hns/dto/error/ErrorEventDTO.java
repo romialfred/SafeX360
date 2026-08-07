@@ -21,7 +21,9 @@ import lombok.NoArgsConstructor;
 public class ErrorEventDTO {
     private Long id;
     private String reference;
-    @NotNull(message = "companyId is required")
+    // companyId est DERIVE du parametre de requete (clampe par CompanyScopeFilter)
+    // et jamais lu depuis le corps par le service : le rendre @NotNull sur le body
+    // rejetait toute declaration en 400 (le front ne l'envoie pas dans le body).
     private Long companyId;
     @NotNull(message = "eventTypeId is required")
     private Long eventTypeId;

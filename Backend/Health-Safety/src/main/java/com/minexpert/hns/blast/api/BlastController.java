@@ -56,6 +56,10 @@ public class BlastController {
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "0") Long userId) {
         if (companyId != null) {
             dto.setCompanyId(companyId);
+            // Cloisonnement : la mine cible est celle validee par le contexte, jamais
+            // un mineId choisi dans le corps (sinon ecriture cross-mine). Aligne sur
+            // BlastSettingController.update.
+            dto.setMineId(companyId);
         }
         return new ResponseEntity<>(service.create(dto, userId), HttpStatus.CREATED);
     }

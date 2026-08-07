@@ -102,7 +102,9 @@ public class CommunicationServiceImpl implements CommunicationService {
 
         updated.setId(existing.getId());
         updated.setCreatedAt(existing.getCreatedAt());
-        updated.setExpiresAt(existing.getExpiresAt());
+        // L'echeance (expiresAt) EST editable : ne pas la reecraser avec l'ancienne
+        // valeur, sinon toute modification de la date limite etait silencieusement
+        // perdue (le formulaire d'edition la rend et l'envoie).
         // Conserve la mine d'origine : companyId non modifiable via update.
         updated.setCompanyId(existing.getCompanyId());
         if (dto.getAttachments() != null && !dto.getAttachments().isEmpty()) {
