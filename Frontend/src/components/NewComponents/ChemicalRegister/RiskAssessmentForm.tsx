@@ -132,12 +132,16 @@ const RiskAssessmentForm: React.FC<RiskAssessmentFormProps> = ({ onCancel, asses
     const handleSubmit = (values: RiskAssessmentFormValues) => {
         setSubmitting(true);
         dispatch(showOverlay());
-        const residualRiskLevel = values.residualProbability && values.residualSeverity
-            ? '' + values.residualProbability + values.residualSeverity
+        // Audit pré-prod : riskLevel doit encoder (probabilité, GRAVITÉ) — c'est
+        // ainsi que le registre le décode (riskMap[prob+gravité]). Encoder le rang
+        // (`severity`) en 2e chiffre faussait le niveau (risques élevés sous-cotés,
+        // non comptés dans le KPI « risques élevés »).
+        const residualRiskLevel = values.residualProbability && values.residualGravity
+            ? '' + values.residualProbability + values.residualGravity
             : '';
         addChemicalRiskAnalysis({
             ...values,
-            riskLevel: ('' + (values?.probability ?? '') + (values?.severity ?? '')),
+            riskLevel: ('' + (values?.probability ?? '') + (values?.gravity ?? '')),
             residualGravity: values.residualGravity ? Number(values.residualGravity) : null,
             residualProbability: values.residualProbability ? Number(values.residualProbability) : null,
             residualSeverity: values.residualSeverity ? Number(values.residualSeverity) : null,
