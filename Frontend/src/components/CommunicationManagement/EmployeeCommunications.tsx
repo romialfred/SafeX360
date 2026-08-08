@@ -168,7 +168,7 @@ const EmployeeCommunications = () => {
             setCommunications((prev) => prev.map((comm) => (comm.id === normalized.id ? normalized : comm)));
             successNotification(successMessages[action]);
         } catch (error: any) {
-            errorNotification(error?.response?.data?.message || t('list.scheduleUpdateError'));
+            errorNotification(error?.response?.data?.errorMessage || t('list.scheduleUpdateError'));
         } finally {
             dispatch(hideOverlay());
             setScheduleActionLoading((prev) => {

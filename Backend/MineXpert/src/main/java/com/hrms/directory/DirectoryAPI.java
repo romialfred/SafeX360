@@ -66,7 +66,10 @@ public class DirectoryAPI {
             try {
                 String login = jwtHelper.getUsernameFromToken(token);
                 Account admin = accountRepository.findByLogin(login).orElse(null);
-                if (admin != null && "SYSTEM_ADMINISTRATOR".equalsIgnoreCase(admin.getRole())
+                // Source unique des rôles admin (Administrator/SYSTEM_ADMINISTRATOR/ADMIN) :
+                // ne reconnaître QUE SYSTEM_ADMINISTRATOR verrouillait le vrai admin prod
+                // « Administrator » hors de la configuration de l'annuaire LDAP.
+                if (admin != null && com.hrms.security.AdminRoles.isAdmin(admin.getRole())
                         && "ACTIVE".equalsIgnoreCase(admin.getStatus())) {
                     return;
                 }

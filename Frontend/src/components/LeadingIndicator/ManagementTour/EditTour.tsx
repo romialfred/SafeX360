@@ -56,8 +56,10 @@ const EditTour = () => {
 
     const form = useForm({
         initialValues: {
+            // Une tournée est un ActivityType 'ST' (Steering Tour). 'TDM' est une
+            // CATÉGORIE, pas un type — valeur latente invalide (400 si res.type null).
             activityId: '',
-            type: 'TDM',
+            type: 'ST',
             locationId: '',
             plannedDate: undefined,
             startTime: '',

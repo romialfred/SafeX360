@@ -26,11 +26,6 @@ const getAllChemicalRisks = async () => {
 };
 
 
-const updateChemicalRiskStatus = async (id: number, status: "ACTIVE" | "INACTIVE") => {
-    return axiosInstance.put(`${url}/status/${id}?status=${status}`)
-        .then((response) => response.data);
-};
-
 /**
  * DTO partiel d'un risque chimique : seuls les champs ISO 45001 §6.1.2
  * (identification du danger) ajoutés en phase B sont typés ici, le reste
@@ -46,4 +41,4 @@ export interface ChemicalRiskIdentificationFields {
     nextReviewDate?: string | null; // yyyy-MM-dd
 }
 
-export { createChemicalRisk, updateChemicalRisk, getChemicalRiskByID, getAllChemicalRisks, updateChemicalRiskStatus };
+export { createChemicalRisk, updateChemicalRisk, getChemicalRiskByID, getAllChemicalRisks };
