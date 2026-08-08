@@ -333,6 +333,7 @@ const ErrorDeclarationPage = () => {
                                         setOccurredAt(v instanceof Date ? v : v ? new Date(v) : null)
                                     }
                                     valueFormat="DD/MM/YYYY HH:mm"
+                                    maxDate={new Date()}
                                     error={errors.occurredAt}
                                     withAsterisk
                                     clearable
