@@ -123,10 +123,6 @@ const enableUserMfa = (id: number) =>
 const disableUserMfa = (id: number) =>
     axiosInstance.post(`/hrms/admin/users/${id}/mfa/disable`).then((r) => r.data);
 
-/** Réinitialise le second facteur : le compte devra s'enrôler à nouveau. */
-const resetUserMfa = (id: number) =>
-    axiosInstance.post(`/hrms/admin/users/${id}/mfa/reset`).then((r) => r.data);
-
 /**
  * Catalogue des modules attribuables. L'IHM ne tient PAS sa propre liste : la
  * matrice de droits est construite depuis cette réponse, ce qui rend impossible
@@ -157,7 +153,6 @@ export {
     getUserActivity,
     enableUserMfa,
     disableUserMfa,
-    resetUserMfa,
     getModuleCatalog,
     getAccountModules,
     updateAccountModules,

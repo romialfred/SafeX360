@@ -4,6 +4,7 @@
  * Endpoints couverts (via gateway /hrms/admin/users et /hrms/me) :
  *  - createUser()          : POST /hrms/admin/users/create
  *  - resetUserPassword()   : POST /hrms/admin/users/reset-password/{id}
+ *  - resetUserMfa()        : POST /hrms/admin/users/{id}/mfa/reset
  *  - toggleUserStatus()    : PUT  /hrms/admin/users/toggle-status/{id}
  *  - getMyProfile()        : GET  /hrms/me/profile
  *  - changePasswordFirst() : POST /hrms/me/change-password-first
@@ -48,6 +49,9 @@ export interface ResetPasswordResponse {
     accountId: number;
     temporaryPassword: string | null;
     emailSent: boolean;
+    /** Faux uniquement pour un compte Active Directory dont le mot de passe reste géré par l'annuaire. */
+    passwordReset: boolean;
+    mfaReset: boolean;
     message: string;
 }
 
@@ -100,6 +104,16 @@ const createUser = async (req: CreateUserRequest): Promise<CreateUserResponse> =
 
 const resetUserPassword = async (accountId: number): Promise<ResetPasswordResponse> => {
     const res = await axiosInstance.post(`/hrms/admin/users/reset-password/${accountId}`);
+    return res.data;
+};
+
+/**
+ * Réinitialise l'enrôlement MFA. Pour un compte LOCAL, le serveur renouvelle
+ * également le mot de passe et force le parcours mot de passe puis MFA au
+ * prochain accès. Le mot de passe d'un compte AD reste géré par l'annuaire.
+ */
+const resetUserMfa = async (accountId: number): Promise<ResetPasswordResponse> => {
+    const res = await axiosInstance.post(`/hrms/admin/users/${accountId}/mfa/reset`);
     return res.data;
 };
 
@@ -195,6 +209,7 @@ export const validateEmail = (email: string): string | null => {
 export {
     createUser,
     resetUserPassword,
+    resetUserMfa,
     toggleUserStatus,
     deleteUser,
     getMyProfile,

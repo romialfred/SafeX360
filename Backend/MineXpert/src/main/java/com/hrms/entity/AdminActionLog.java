@@ -18,6 +18,7 @@ import lombok.NoArgsConstructor;
  * Append-only : aucune mise à jour ni suppression exposée par l'API.
  *
  * Actions tracées : USER_CREATED, USER_CREATED_FROM_AD, PASSWORD_RESET,
+ * MFA_RESET, MFA_AND_PASSWORD_RESET,
  * INVITATION_RESENT, STATUS_ACTIVATED, STATUS_DEACTIVATED, PERMISSIONS_UPDATED,
  * DIRECTORY_SETTINGS_UPDATED.
  */

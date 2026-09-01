@@ -4,7 +4,8 @@
  * Fonctionnalites :
  *  - Liste des comptes (nom, login, email, role, statut)
  *  - Filtres : recherche, statut (ACTIVE/INACTIVE), role
- *  - Actions par ligne : reinitialiser MDP, activer/desactiver, editer modules, SUPPRIMER
+ *  - Actions par ligne : reinitialiser MDP seul, reinitialiser MFA + MDP,
+ *    activer/desactiver, editer modules, SUPPRIMER
  *  - Action header : creer un nouvel utilisateur (page CreateUserPage)
  *
  * Securite frontend :
@@ -35,7 +36,10 @@ import {
 import PageHeader from '../../UtilityComp/PageHeader';
 import { usePermissions } from '../../../hooks/usePermissions';
 import { getAllAccounts } from '../../../services/AccountService';
-import { resetUserPassword, toggleUserStatus, deleteUser } from '../../../services/UserManagementService';
+import {
+    resetUserMfa, resetUserPassword, toggleUserStatus, deleteUser,
+    type ResetPasswordResponse,
+} from '../../../services/UserManagementService';
 import { successNotification, errorNotification } from '../../../utility/NotificationUtility';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -54,6 +58,10 @@ interface Account {
     company?: any;
     department?: any;
 }
+
+type ResetKind = 'password' | 'mfa';
+type ResetResult = ResetPasswordResponse & { login: string; kind: ResetKind };
+type ApiError = { response?: { data?: { errorMessage?: string } } };
 
 const ROLE_COLOR: Record<string, string> = {
     SYSTEM_ADMINISTRATOR: 'red',
@@ -82,7 +90,7 @@ export default function UsersAdminPage() {
     const [roleFilter, setRoleFilter] = useState<string | null>('ALL');
 
     // Modal reset password — affiche le MDP temporaire si email non envoye
-    const [resetResult, setResetResult] = useState<{ login: string; tempPassword: string | null; emailSent: boolean } | null>(null);
+    const [resetResult, setResetResult] = useState<ResetResult | null>(null);
 
     // Modal confirmation toggle status
     const [statusConfirm, setStatusConfirm] = useState<Account | null>(null);
@@ -130,14 +138,43 @@ export default function UsersAdminPage() {
         try {
             const resp = await resetUserPassword(account.id);
             setResetResult({
+                ...resp,
                 login: account.login,
-                tempPassword: resp.temporaryPassword,
-                emailSent: resp.emailSent,
+                kind: 'password',
             });
             successNotification(t('userMgmt.list.resetSuccess', { login: account.login }));
         } catch (e: any) {
             errorNotification(e?.response?.data?.errorMessage || t('userMgmt.list.resetError'));
         }
+    };
+
+    const performResetMfa = async (account: Account) => {
+        try {
+            const resp = await resetUserMfa(account.id);
+            setResetResult({ ...resp, login: account.login, kind: 'mfa' });
+            successNotification(t('userMgmt.list.mfaResetSuccess', { login: account.login }));
+        } catch (e: unknown) {
+            const apiError = e as ApiError;
+            errorNotification(apiError.response?.data?.errorMessage || t('userMgmt.list.mfaResetError'));
+        }
+    };
+
+    const handleResetMfa = (account: Account) => {
+        modals.openConfirmModal({
+            title: <Text fw={700} size="lg">{t('userMgmt.list.mfaResetConfirmTitle')}</Text>,
+            centered: true,
+            children: (
+                <Text size="sm">
+                    {t('userMgmt.list.mfaResetConfirmText', { login: account.login })}
+                </Text>
+            ),
+            labels: {
+                confirm: t('userMgmt.list.mfaResetConfirm'),
+                cancel: t('userMgmt.list.cancel'),
+            },
+            confirmProps: { color: 'orange' },
+            onConfirm: () => { void performResetMfa(account); },
+        });
     };
 
     const handleToggleStatus = async () => {
@@ -257,6 +294,16 @@ export default function UsersAdminPage() {
                         onClick={() => handleResetPassword(row)}
                     >
                         <IconLock size={14} />
+                    </ActionIcon>
+                </Tooltip>
+                <Tooltip label={t('userMgmt.list.actionResetMfa')}>
+                    <ActionIcon
+                        variant="light"
+                        color="violet"
+                        size="sm"
+                        onClick={() => handleResetMfa(row)}
+                    >
+                        <IconShieldLock size={14} />
                     </ActionIcon>
                 </Tooltip>
                 <Tooltip label={(row.status || 'ACTIVE').toUpperCase() === 'ACTIVE' ? t('userMgmt.list.actionDeactivate') : t('userMgmt.list.actionActivate')}>
@@ -429,42 +476,63 @@ export default function UsersAdminPage() {
                         <Column header={t('userMgmt.list.colEmail')} body={renderEmail} sortable sortField="email" />
                         <Column header={t('userMgmt.list.colRole')} body={renderRole} sortable sortField="role" />
                         <Column header={t('userMgmt.list.colStatus')} body={renderStatus} sortable sortField="status" />
-                        <Column header={t('userMgmt.list.colActions')} body={renderActions} style={{ width: 180, textAlign: 'center' }} />
+                        <Column header={t('userMgmt.list.colActions')} body={renderActions} style={{ width: 210, textAlign: 'center' }} />
                     </DataTable>
                 )}
             </Paper>
 
-            {/* Modal reset password — affiche MDP si email non envoye */}
+            {/* Résultat d'une réinitialisation — le secret temporaire n'est visible
+                que si l'email n'a pas pu être envoyé. */}
             <Modal
                 opened={resetResult !== null}
                 onClose={() => setResetResult(null)}
-                title={<Text fw={600}>{t('userMgmt.list.resetTitle')}</Text>}
+                title={<Text fw={600}>{t(resetResult?.kind === 'mfa'
+                    ? 'userMgmt.list.mfaResetTitle'
+                    : 'userMgmt.list.resetTitle')}</Text>}
                 centered
                 size="md"
             >
                 {resetResult && (
                     <Stack gap="md">
                         <Alert
-                            color={resetResult.emailSent ? 'teal' : 'orange'}
-                            icon={resetResult.emailSent ? <IconCircleCheck size={16} /> : <IconAlertCircle size={16} />}
+                            color={resetResult.kind === 'mfa' && !resetResult.passwordReset
+                                ? 'blue'
+                                : resetResult.emailSent ? 'teal' : 'orange'}
+                            icon={resetResult.emailSent
+                                ? <IconCircleCheck size={16} />
+                                : resetResult.kind === 'mfa' && !resetResult.passwordReset
+                                    ? <IconShieldLock size={16} />
+                                    : <IconAlertCircle size={16} />}
                         >
-                            {resetResult.emailSent ? (
+                            {resetResult.kind === 'mfa' && !resetResult.passwordReset ? (
+                                <Text size="sm">{t('userMgmt.list.mfaResetAdNotice')}</Text>
+                            ) : resetResult.kind === 'mfa' && resetResult.emailSent ? (
+                                <Text size="sm">{t('userMgmt.list.mfaResetEmailSent', { login: resetResult.login })}</Text>
+                            ) : resetResult.kind === 'mfa' ? (
+                                <Text size="sm">{t('userMgmt.list.mfaResetEmailNotSent')}</Text>
+                            ) : resetResult.emailSent ? (
                                 <Text size="sm">{t('userMgmt.list.resetEmailSent', { login: resetResult.login })}</Text>
                             ) : (
                                 <Text size="sm">{t('userMgmt.list.resetEmailNotSent')}</Text>
                             )}
                         </Alert>
 
-                        {resetResult.tempPassword && (
+                        {resetResult.kind === 'mfa' && resetResult.passwordReset && (
+                            <Text size="sm" c="dimmed">
+                                {t('userMgmt.list.mfaResetNextSteps')}
+                            </Text>
+                        )}
+
+                        {resetResult.temporaryPassword && (
                             <Paper p="md" radius="md" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
                                 <Text size="xs" c="dimmed" fw={600} tt="uppercase" mb={6}>
                                     {t('userMgmt.list.resetTempLabel', { login: resetResult.login })}
                                 </Text>
                                 <Group gap={6}>
                                     <Code style={{ fontSize: 14, padding: '6px 10px' }}>
-                                        {resetResult.tempPassword}
+                                        {resetResult.temporaryPassword}
                                     </Code>
-                                    <CopyButton value={resetResult.tempPassword}>
+                                    <CopyButton value={resetResult.temporaryPassword}>
                                         {({ copied, copy }) => (
                                             <Button
                                                 size="xs"
@@ -527,4 +595,3 @@ export default function UsersAdminPage() {
         </Box>
     );
 }
-

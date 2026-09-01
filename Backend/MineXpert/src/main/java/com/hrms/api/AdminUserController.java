@@ -58,6 +58,7 @@ import lombok.Setter;
  * <ul>
  *   <li>POST /create — cree un compte avec MDP temporaire fort + envoi email + init permissions HSE</li>
  *   <li>POST /reset-password/{id} — regenere un MDP temporaire + email + force firstLogin=true</li>
+ *   <li>POST /{id}/mfa/reset — efface le MFA et renouvelle aussi le MDP local</li>
  *   <li>PUT  /toggle-status/{id} — active ou desactive un compte</li>
  * </ul>
  *
@@ -357,6 +358,8 @@ public class AdminUserController {
         private Long accountId;
         private String temporaryPassword;
         private boolean emailSent;
+        private boolean passwordReset;
+        private boolean mfaReset;
         private String message;
     }
 
@@ -394,6 +397,8 @@ public class AdminUserController {
                 id,
                 emailSent ? null : tempPassword,
                 emailSent,
+                true,
+                false,
                 emailSent
                     ? "MDP reinitialise. Email envoye (valable " + INVITATION_VALIDITY_HOURS + " h)."
                     : "MDP reinitialise. Email NON envoye - copiez le mot de passe ci-dessous (valable " + INVITATION_VALIDITY_HOURS + " h)."
@@ -405,9 +410,14 @@ public class AdminUserController {
     // ─────────────────────────────────────────────────────────────────────
 
     /**
-     * Réinitialise l'état MFA d'un compte : secret TOTP, codes de récupération
-     * et anti-rejeu effacés, {@code mfaEnabled=false}. Au prochain login, le
-     * rôle étant toujours privilégié, un NOUVEL enrôlement est exigé.
+     * Réinitialise les identifiants de sécurité d'un compte local : secret TOTP,
+     * codes de récupération et anti-rejeu effacés, nouveau mot de passe temporaire
+     * et {@code firstLogin=true}. Au prochain accès, l'utilisateur change d'abord
+     * ce mot de passe, puis enregistre un NOUVEAU second facteur.
+     *
+     * <p>Un compte Active Directory conserve nécessairement son mot de passe
+     * d'annuaire, que SafeX ne possède pas et ne peut pas modifier. Son enrôlement
+     * MFA est néanmoins effacé et devra être recréé après authentification AD.</p>
      *
      * <p><b>Pourquoi cet endpoint existe.</b> Le dispositif MFA livré ne
      * prévoyait AUCUN secours : un utilisateur privilégié qui perdait son
@@ -423,27 +433,61 @@ public class AdminUserController {
             @CacheEvict(cacheNames = "accountById", key = "#id"),
             @CacheEvict(cacheNames = "accountByLogin", allEntries = true)
     })
-    public ResponseEntity<ResponseDTO> resetMfa(@PathVariable Long id,
+    public ResponseEntity<ResetPasswordResponse> resetMfa(@PathVariable Long id,
             @CookieValue(name = "jwt", required = false) String token,
             HttpServletRequest httpRequest) throws HRMSException {
         String performedBy = requireAdmin(token, httpRequest);
         Account account = accountRepository.findById(id)
                 .orElseThrow(() -> new HRMSException("ACCOUNT_NOT_FOUND"));
 
+        boolean adAccount = "ACTIVE_DIRECTORY".equalsIgnoreCase(account.getIdentitySource());
+        String tempPassword = null;
+        if (!adAccount) {
+            tempPassword = PasswordGenerator.generate(14);
+            account.setPassword(passwordEncoder.encode(tempPassword));
+            account.setFirstLogin(true);
+            account.setInvitationExpiresAt(LocalDateTime.now().plusHours(INVITATION_VALIDITY_HOURS));
+        }
+
         account.setMfaEnabled(false);
         account.setMfaSecretEncrypted(null);
         account.setMfaRecoveryCodeHashes(null);
         account.setMfaLastAcceptedStep(null);
         account.setMfaEnrolledAt(null);
+        // Une réinitialisation demande un nouvel enrôlement : une ancienne dispense
+        // ne doit pas transformer silencieusement l'opération en désactivation MFA.
+        account.setMfaExempt(false);
         accountRepository.save(account);
 
-        adminActionLogRepository.save(AdminActionLog.of("MFA_RESET",
+        adminActionLogRepository.save(AdminActionLog.of(
+                adAccount ? "MFA_RESET" : "MFA_AND_PASSWORD_RESET",
                 account.getId(), account.getLogin(), performedBy,
-                "MFA réinitialisée — nouvel enrôlement exigé au prochain login"));
+                adAccount
+                    ? "MFA réinitialisée — mot de passe AD inchangé, nouvel enrôlement exigé"
+                    : "MFA et mot de passe réinitialisés — changement du MDP puis nouvel enrôlement exigés"));
 
-        return new ResponseEntity<>(new ResponseDTO(
-                "MFA réinitialisée. L'utilisateur enrôlera un nouveau facteur à sa prochaine connexion."),
-                HttpStatus.OK);
+        boolean emailSent = adAccount
+                ? sendAdMfaResetEmail(account.getEmail(), account.getName(), account.getLogin())
+                : sendMfaResetEmail(account.getEmail(), account.getName(), account.getLogin(), tempPassword);
+
+        String message;
+        if (adAccount) {
+            message = emailSent
+                    ? "MFA réinitialisée. Notification envoyée ; le mot de passe Active Directory reste inchangé."
+                    : "MFA réinitialisée. Notification non envoyée ; le mot de passe Active Directory reste inchangé.";
+        } else {
+            message = emailSent
+                    ? "MFA et mot de passe réinitialisés. Instructions envoyées par email."
+                    : "MFA et mot de passe réinitialisés. Email non envoyé : copiez le mot de passe temporaire.";
+        }
+
+        return new ResponseEntity<>(new ResetPasswordResponse(
+                id,
+                emailSent ? null : tempPassword,
+                emailSent,
+                !adAccount,
+                true,
+                message), HttpStatus.OK);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -612,7 +656,8 @@ public class AdminUserController {
             message.setFrom(fromEmail);
             message.setSubject("SafeX 360 — Bienvenue, vos identifiants de connexion");
             message.setText(buildEmailBody(name, login, tempPassword,
-                    "Bienvenue sur la plateforme SafeX 360. Voici vos identifiants temporaires de connexion.", baseUrl), true);
+                    "Bienvenue sur la plateforme SafeX 360. Voici vos identifiants temporaires de connexion.",
+                    baseUrl, false), true);
             mailSender.send(mm);
             return true;
         } catch (Exception e) {
@@ -685,7 +730,8 @@ public class AdminUserController {
             message.setFrom(fromEmail);
             message.setSubject("SafeX 360 — Reinitialisation de votre mot de passe");
             message.setText(buildEmailBody(name, login, tempPassword,
-                    "Votre mot de passe a ete reinitialise par un administrateur. Voici vos nouveaux identifiants temporaires.", loginUrl), true);
+                    "Votre mot de passe a été réinitialisé par un administrateur. Voici vos nouveaux identifiants temporaires.",
+                    loginUrl, false), true);
             mailSender.send(mm);
             return true;
         } catch (Exception e) {
@@ -694,7 +740,51 @@ public class AdminUserController {
         }
     }
 
-    private String buildEmailBody(String name, String login, String tempPassword, String intro, String baseUrl) {
+    private boolean sendMfaResetEmail(String to, String name, String login, String tempPassword) {
+        try {
+            MimeMessage mm = mailSender.createMimeMessage();
+            MimeMessageHelper message = new MimeMessageHelper(mm, true);
+            message.setTo(to);
+            message.setFrom(fromEmail);
+            message.setSubject("SafeX 360 — Réinitialisation du MFA et du mot de passe");
+            message.setText(buildEmailBody(name, login, tempPassword,
+                    "Votre enrôlement MFA et votre mot de passe ont été réinitialisés par un administrateur.",
+                    loginUrl, true), true);
+            mailSender.send(mm);
+            return true;
+        } catch (Exception e) {
+            LOG.warn("Email reset MFA echec pour {}: {}", to, e.getMessage());
+            return false;
+        }
+    }
+
+    private boolean sendAdMfaResetEmail(String to, String name, String login) {
+        try {
+            MimeMessage mm = mailSender.createMimeMessage();
+            MimeMessageHelper message = new MimeMessageHelper(mm, true);
+            message.setTo(to);
+            message.setFrom(fromEmail);
+            message.setSubject("SafeX 360 — Réinitialisation de votre second facteur");
+            message.setText("<html><body style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px'>"
+                    + "<div style='background:#0F766E;color:white;padding:20px;border-radius:8px 8px 0 0'>"
+                    + "<h2 style='margin:0'>SafeX 360</h2></div>"
+                    + "<div style='background:#f9fafb;padding:24px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px'>"
+                    + "<p>Bonjour <strong>" + escapeHtml(name) + "</strong>,</p>"
+                    + "<p>Votre enrôlement MFA a été réinitialisé par un administrateur.</p>"
+                    + "<p>Connectez-vous avec votre identifiant Active Directory <strong>" + escapeHtml(login)
+                    + "</strong> et votre mot de passe habituel. SafeX vous demandera ensuite d'enregistrer un nouveau second facteur.</p>"
+                    + "<a href='" + loginUrl + "' style='display:inline-block;background:#0F766E;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;margin-top:8px'>Accéder à SafeX 360</a>"
+                    + "</div></body></html>", true);
+            mailSender.send(mm);
+            return true;
+        } catch (Exception e) {
+            LOG.warn("Email reset MFA AD echec pour {}: {}", to, e.getMessage());
+            return false;
+        }
+    }
+
+    private String buildEmailBody(String name, String login, String tempPassword, String intro,
+            String baseUrl, boolean mfaReset) {
         return "<html><body style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px'>"
             + "<div style='background:#0F766E;color:white;padding:20px;border-radius:8px 8px 0 0'>"
             + "  <h2 style='margin:0'>SafeX 360</h2>"
@@ -709,7 +799,9 @@ public class AdminUserController {
             + "    <p style='margin:4px 0'><strong>Mot de passe temporaire :</strong> <code style='background:#fef3c7;padding:2px 6px;border-radius:3px;font-size:14px'>" + escapeHtml(tempPassword) + "</code></p>"
             + "  </div>"
             + "  <p style='background:#fef3c7;border-left:4px solid #f59e0b;padding:12px;font-size:13px'>"
-            + "    <strong>Important :</strong> ce mot de passe est temporaire. Vous serez invite a le changer obligatoirement lors de votre premiere connexion."
+            + (mfaReset
+                ? "    <strong>Important :</strong> changez d'abord ce mot de passe temporaire, puis enregistrez un nouveau second facteur lorsque SafeX vous le demande."
+                : "    <strong>Important :</strong> ce mot de passe est temporaire. Vous serez invité à le changer obligatoirement lors de votre première connexion.")
             + "  </p>"
             + "  <a href='" + baseUrl + "' style='display:inline-block;background:#0F766E;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;margin-top:8px'>Acceder a SafeX 360</a>"
             + "  <hr style='border:none;border-top:1px solid #e5e7eb;margin:24px 0'>"

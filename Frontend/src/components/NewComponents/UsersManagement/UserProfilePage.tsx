@@ -1,22 +1,28 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
-    ActionIcon, Alert, Badge, Button, Card, Group, Loader, Modal, Pagination, ScrollArea,
-    Select, Switch, Table, Tabs, Text, TextInput, Title, Tooltip,
+    ActionIcon, Alert, Badge, Button, Card, Code, CopyButton, Group, Loader, Modal,
+    Pagination, Paper, ScrollArea, Select, Stack, Switch, Table, Tabs, Text, TextInput,
+    Title, Tooltip,
 } from '@mantine/core';
 import {
-    IconAlertTriangle, IconArrowLeft, IconCheck, IconClipboardList, IconDeviceDesktop,
-    IconDeviceFloppy, IconEdit, IconHistory, IconId, IconLock, IconRefresh, IconSearch,
-    IconShieldCheck, IconUserCircle, IconX,
+    IconAlertTriangle, IconArrowLeft, IconCheck, IconCircleCheck, IconClipboardList,
+    IconCopy, IconDeviceDesktop, IconDeviceFloppy, IconEdit, IconHistory, IconId,
+    IconLock, IconRefresh, IconSearch, IconShieldCheck, IconUserCircle, IconX,
 } from '@tabler/icons-react';
 
 import {
     disableUserMfa, enableUserMfa, getAccountModules, getModuleCatalog, getUserActivity,
-    getUserOverview, getUserSessions, resetUserMfa, updateAccountModules, updateUserProfile,
+    getUserOverview, getUserSessions, updateAccountModules, updateUserProfile,
     type ModuleCatalogCategory, type UserActivityRow, type UserOverview, type UserSessionRow,
 } from '../../../services/UserTraceabilityService';
+import { resetUserMfa, type ResetPasswordResponse } from '../../../services/UserManagementService';
 import { getActiveModulesForCompany } from '../../../services/ModuleManagementService';
 import { errorNotification, successNotification } from '../../../utility/NotificationUtility';
+
+type ApiError = {
+    response?: { data?: { errorMessage?: string; message?: string } };
+};
 
 /**
  * FICHE UTILISATEUR — écran unique de consultation et d'administration d'un compte.
@@ -143,6 +149,8 @@ export default function UserProfilePage() {
 
     const [mfaBusy, setMfaBusy] = useState(false);
     const [confirmDisable, setConfirmDisable] = useState(false);
+    const [confirmResetMfa, setConfirmResetMfa] = useState(false);
+    const [resetResult, setResetResult] = useState<ResetPasswordResponse | null>(null);
 
     // Édition de l'identité (nom / courriel / téléphone).
     const [editing, setEditing] = useState(false);
@@ -267,21 +275,37 @@ export default function UserProfilePage() {
         }
     };
 
-    const applyMfa = async (action: 'enable' | 'disable' | 'reset') => {
+    const applyMfa = async (action: 'enable' | 'disable') => {
         setMfaBusy(true);
         try {
             const result = action === 'enable' ? await enableUserMfa(accountId)
-                : action === 'disable' ? await disableUserMfa(accountId)
-                    : await resetUserMfa(accountId);
+                : await disableUserMfa(accountId);
             await loadOverview();
             successNotification(result?.message || "L'état du second facteur a été modifié.");
-        } catch (e: any) {
-            const data = e?.response?.data;
+        } catch (e: unknown) {
+            const data = (e as ApiError).response?.data;
             errorNotification(data?.errorMessage || data?.message
                 || "Action refusée : elle n'a pas pu être appliquée.");
         } finally {
             setMfaBusy(false);
             setConfirmDisable(false);
+        }
+    };
+
+    const performResetMfa = async () => {
+        setMfaBusy(true);
+        try {
+            const result = await resetUserMfa(accountId);
+            setResetResult(result);
+            await loadOverview();
+            successNotification(result.message || 'MFA et identifiants réinitialisés.');
+        } catch (e: any) {
+            const data = e?.response?.data;
+            errorNotification(data?.errorMessage || data?.message
+                || "La réinitialisation MFA n'a pas pu être appliquée.");
+        } finally {
+            setMfaBusy(false);
+            setConfirmResetMfa(false);
         }
     };
 
@@ -555,9 +579,19 @@ export default function UserProfilePage() {
                             {overview.mfa.enrolled && !overview.mfa.exempt && (
                                 <Button mt="md" variant="light" fullWidth loading={mfaBusy}
                                     leftSection={<IconRefresh size={16} />}
-                                    onClick={() => applyMfa('reset')}>
-                                    Réinitialiser l'enrôlement
+                                    onClick={() => setConfirmResetMfa(true)}>
+                                    {isAd
+                                        ? "Réinitialiser l'enrôlement MFA"
+                                        : 'Réinitialiser MFA et mot de passe'}
                                 </Button>
+                            )}
+
+                            {overview.mfa.enrolled && !overview.mfa.exempt && !isAd && (
+                                <Text size="xs" c="dimmed" mt="xs">
+                                    Le mot de passe actuel sera remplacé. À la prochaine connexion,
+                                    l'utilisateur changera le mot de passe temporaire puis enregistrera
+                                    un nouveau second facteur.
+                                </Text>
                             )}
 
                             {overview.mfa.exempt && (
@@ -765,6 +799,67 @@ export default function UserProfilePage() {
                     )}
                 </Tabs.Panel>
             </Tabs>
+
+            <Modal opened={confirmResetMfa} onClose={() => setConfirmResetMfa(false)}
+                title={isAd ? "Réinitialiser l'enrôlement MFA ?" : 'Réinitialiser MFA et mot de passe ?'}
+                centered>
+                <Text size="sm" mb="md">
+                    {isAd
+                        ? "Le secret MFA et les codes de récupération seront effacés. Le mot de passe Active Directory restera inchangé. Un nouvel enrôlement sera imposé à la prochaine connexion."
+                        : "Le secret MFA, les codes de récupération et le mot de passe actuel seront invalidés. Un mot de passe temporaire sera généré ; l'utilisateur devra le changer avant d'enregistrer un nouveau second facteur."}
+                </Text>
+                <Group justify="flex-end">
+                    <Button variant="default" onClick={() => setConfirmResetMfa(false)}>Annuler</Button>
+                    <Button color="orange" loading={mfaBusy} onClick={performResetMfa}>
+                        Confirmer la réinitialisation
+                    </Button>
+                </Group>
+            </Modal>
+
+            <Modal opened={resetResult !== null} onClose={() => setResetResult(null)}
+                title="Réinitialisation terminée" centered>
+                {resetResult && (
+                    <Stack gap="md">
+                        <Alert
+                            color={resetResult.passwordReset
+                                ? resetResult.emailSent ? 'teal' : 'orange'
+                                : 'blue'}
+                            icon={resetResult.emailSent
+                                ? <IconCircleCheck size={16} />
+                                : <IconAlertTriangle size={16} />}
+                        >
+                            <Text size="sm">{resetResult.message}</Text>
+                        </Alert>
+
+                        {resetResult.temporaryPassword && (
+                            <Paper p="md" radius="md" withBorder>
+                                <Text size="xs" c="dimmed" fw={600} tt="uppercase" mb={6}>
+                                    Mot de passe temporaire
+                                </Text>
+                                <Group gap="xs">
+                                    <Code style={{ fontSize: 14, padding: '6px 10px' }}>
+                                        {resetResult.temporaryPassword}
+                                    </Code>
+                                    <CopyButton value={resetResult.temporaryPassword}>
+                                        {({ copied, copy }) => (
+                                            <Button size="xs" variant="light" onClick={copy}
+                                                leftSection={<IconCopy size={12} />}
+                                                color={copied ? 'teal' : 'gray'}>
+                                                {copied ? 'Copié' : 'Copier'}
+                                            </Button>
+                                        )}
+                                    </CopyButton>
+                                </Group>
+                                <Text size="xs" c="dimmed" mt="sm">
+                                    Communiquez ce mot de passe par un canal sécurisé. Il ne sera plus affiché.
+                                </Text>
+                            </Paper>
+                        )}
+
+                        <Button color="teal" onClick={() => setResetResult(null)}>Fermer</Button>
+                    </Stack>
+                )}
+            </Modal>
 
             {/* Retirer une protection se confirme : c'est une décision, pas un réflexe. */}
             <Modal opened={confirmDisable} onClose={() => setConfirmDisable(false)}
