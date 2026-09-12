@@ -16,7 +16,9 @@ import {
 import SafeXLogoColor from '../../UtilityComp/SafeXLogoColor';
 import OtpQrCode from '../../UtilityComp/OtpQrCode';
 import { Button, Modal, PasswordInput, TextInput, Loader } from '@mantine/core';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { ensureLanguageResources } from '../../../i18n';
 import { isNativePlatform } from '../../../m/utils/capacitorBridge';
 import {
     confirmMfaEnrollment,
@@ -30,31 +32,88 @@ import {
 import { useAppDispatch } from '../../../slices/hooks';
 import { setUser } from '../../../slices/UserSlice';
 import { useForm } from '@mantine/form';
-import IsoBadge from '../../UtilityComp/IsoBadge';
+import LoginHeroPanel from './LoginHeroPanel';
+import MicrosoftSignInButton from './MicrosoftSignInButton';
+import { getLoginCopy, type LoginCopy, type LoginLanguage } from './loginCopy';
+import { resolveRedirect } from './safeRedirect';
 
 /**
- * SafeX 360 — Page de connexion v4 (LOT 41).
+ * SafeX 360 — Page de connexion v5.
  *
- * REFONTE ÉPURÉE après audit utilisateur :
- *   - Suppression des 5 features bullets (colonne gauche encombrée)
- *   - Suppression du label "BIENVENUE" + barres horizontales (clutter)
- *   - Suppression du footer carte ("Connexion chiffrée · v2.4")
- *   - Typographie EN BLANC sur la photo (fini les titres noirs illisibles)
- *   - Carte de connexion compacte, centrée
- *   - Page épurée à 3 éléments : marque · phrase d'accroche · formulaire
+ * Mise en page en deux zones sur desktop :
+ *   - gauche  : visuel minier + surcouche analytique (voir LoginHeroPanel)
+ *   - droite  : carte de connexion sur fond bleu nuit (#061A22)
+ * Sous 768 px, la photo devient un arrière-plan sombre et le formulaire prend
+ * la priorité.
  *
- * Contraste WCAG 2.2 AA garanti via text-shadow renforcé sur les textes
- * blancs et un overlay sombre suffisant sur l'image.
+ * La logique d'authentification est INCHANGÉE : mot de passe, double
+ * authentification TOTP (enrôlement, vérification, codes de récupération),
+ * première connexion (mot de passe temporaire avant 2FA), réveil du serveur,
+ * limitation des tentatives (429) et invitation expirée.
+ *
+ * Langue : pilotée par le système i18n existant (react-i18next), les libellés
+ * de cet écran public venant de `loginCopy.ts` (convention *Labels.ts).
  */
 
-const HERO_IMAGE_FALLBACK =
-    'https://images.unsplash.com/photo-1581092334651-ddf26d9a09d0?auto=format&fit=crop&w=3840&q=85';
+/**
+ * Style commun des champs du formulaire — hauteur 56 px, rayon 10 px, bordure
+ * 1 px, et TOUS les états visibles (survol, focus, saisie, désactivé, erreur).
+ * Factorisé : deux définitions divergeraient au premier ajustement.
+ */
+const LOGIN_FIELD_STYLES = {
+    label: {
+        color: '#9EB2B8',
+        fontSize: '11.5px',
+        fontWeight: 500,
+        letterSpacing: '0.12em',
+        textTransform: 'uppercase' as const,
+        marginBottom: '8px',
+    },
+    input: {
+        height: '56px',
+        backgroundColor: 'rgba(6,26,34,0.85)',
+        // La couleur de bordure vit dans LOGIN_PAGE_CSS : posée ici en style
+        // en ligne, elle l'emporterait sur les états survol / focus / erreur.
+        color: '#F4F7F6',
+        fontSize: '15px',
+    },
+    section: { color: '#7C9299' },
+    error: { color: '#FF8D91', fontSize: '12.5px', marginTop: '6px' },
+};
+
+/**
+ * États des champs et polices de l'écran.
+ *
+ * Les pseudo-classes ne passent pas par la prop `styles` de Mantine 7 (elle
+ * n'accepte que des propriétés CSS simples) : elles vivent donc ici, dans une
+ * feuille scopée à la page. La famille sans-serif est imposée explicitement —
+ * le thème global applique une serif aux titres, absente de cette maquette.
+ */
+const LOGIN_PAGE_CSS = `
+.sx-login, .sx-login h1, .sx-login h2, .sx-login input, .sx-login button {
+    font-family: Inter, 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+}
+.sx-login .sx-input { border-color: rgba(158,178,184,0.28) !important; }
+.sx-login .sx-input:hover:not(:disabled) { border-color: rgba(25,199,181,0.45) !important; }
+.sx-login .sx-input:focus { border-color: #19C7B5 !important; box-shadow: 0 0 0 3px rgba(25,199,181,0.16); }
+.sx-login .sx-input[data-error], .sx-login .sx-input[aria-invalid='true'] { border-color: #EF4E54 !important; }
+.sx-login .sx-input:disabled { opacity: .55; }
+.sx-login .sx-input::placeholder { color: #7C9299; }
+.sx-login :focus-visible { outline: 2px solid #19C7B5; outline-offset: 2px; }
+.sx-login .sx-card { animation: sxCardIn .45s ease-out both; }
+@keyframes sxCardIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .sx-login .sx-card { animation: none; } }
+`;
 
 /* ── Tuiles de téléchargement — style « badge store » compact ─────────────
    Android : télécharge l'APK signé. iOS : annonce (pas encore de build IPA).
    Réutilisées en bas à gauche (desktop) et sous les badges ISO (mobile). */
 
-type StoreT = { mobileVersion: string; storeAndroidTop: string; storeAndroidBottom: string; storeAndroidMeta: string; storeIosTop: string; storeIosBottom: string; mobileDownloadAria: string; iosSoonAria: string };
+type StoreT = Pick<
+    LoginCopy,
+    'mobileVersion' | 'storeAndroidTop' | 'storeAndroidBottom' | 'storeAndroidMeta'
+    | 'storeIosTop' | 'storeIosBottom' | 'mobileDownloadAria' | 'iosSoonAria'
+>;
 
 const StoreTileAndroid = ({ t }: { t: StoreT }) => (
     <a
@@ -62,8 +121,12 @@ const StoreTileAndroid = ({ t }: { t: StoreT }) => (
         download="SafeX 360 HSE.apk"
         aria-label={t.mobileDownloadAria}
         title={t.storeAndroidMeta}
-        className="group flex items-center gap-2.5 pl-3 pr-3.5 h-[52px] rounded-xl bg-black/65 hover:bg-black/80 border border-white/15 hover:border-teal-400/45 backdrop-blur-md transition-all"
-        style={{ boxShadow: '0 6px 24px rgba(0,0,0,0.4)' }}
+        className="group flex items-center gap-2.5 px-4 h-[44px] rounded-[10px] border transition-colors"
+        style={{
+            background: 'rgba(11,37,43,0.55)',
+            borderColor: 'rgba(158,178,184,0.24)',
+            color: '#F4F7F6',
+        }}
     >
         {/* Logo officiel Google Play (triangle quadricolore) */}
         <svg viewBox="0 0 512 512" className="w-6 h-6 flex-shrink-0" aria-hidden="true">
@@ -72,18 +135,8 @@ const StoreTileAndroid = ({ t }: { t: StoreT }) => (
             <path fill="#FBBC04" d="m472.2 225.6-58.9-34.1-65.7 64.5 65.7 64.5 60.1-34.1c18-14.3 18-46.5-1.2-60.8z" />
             <path fill="#EA4335" d="m104.6 499 280.8-161.2-60.1-60.1L104.6 499z" />
         </svg>
-        <div className="leading-tight text-left">
-            <div className="text-[8.5px] uppercase tracking-[0.14em] text-white/60">
-                {t.storeAndroidTop}
-            </div>
-            <div className="text-[14px] font-semibold text-white flex items-center gap-1.5">
-                {t.storeAndroidBottom}
-                <span className="text-[9px] px-1.5 py-px rounded-full bg-teal-500/25 text-teal-300 font-medium">{t.mobileVersion}</span>
-            </div>
-        </div>
-        <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 ml-1 text-teal-300/80 group-hover:text-teal-200 transition-colors" aria-hidden="true">
-            <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-        </svg>
+        <span className="text-[14px] font-medium">{t.storeAndroidBottom}</span>
+        <span className="text-[9.5px] px-1.5 py-px rounded-full bg-[#19C7B5]/20 text-[#19C7B5] font-medium">{t.mobileVersion}</span>
     </a>
 );
 
@@ -92,28 +145,38 @@ const StoreTileIos = ({ t }: { t: StoreT }) => (
         role="img"
         aria-label={t.iosSoonAria}
         title={t.iosSoonAria}
-        className="flex items-center gap-2.5 pl-3 pr-3.5 h-[52px] rounded-xl bg-black/45 border border-white/10 backdrop-blur-md opacity-80 cursor-default select-none"
-        style={{ boxShadow: '0 6px 24px rgba(0,0,0,0.3)' }}
+        className="flex items-center gap-2.5 px-4 h-[44px] rounded-[10px] border cursor-not-allowed select-none"
+        style={{
+            background: 'rgba(11,37,43,0.35)',
+            borderColor: 'rgba(158,178,184,0.16)',
+            color: '#9EB2B8',
+            opacity: 0.7,
+        }}
     >
         {/* Pomme Apple */}
-        <svg viewBox="0 0 384 512" className="w-5 h-6 flex-shrink-0" fill="#E2E8F0" aria-hidden="true">
+        <svg viewBox="0 0 384 512" className="w-4 h-5 flex-shrink-0" fill="#9EB2B8" aria-hidden="true">
             <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
         </svg>
-        <div className="leading-tight text-left">
-            <div className="text-[8.5px] uppercase tracking-[0.14em] text-white/55">
-                {t.storeIosTop}
-            </div>
-            <div className="text-[14px] font-semibold text-white/85">
-                {t.storeIosBottom}
-            </div>
-        </div>
+        <span className="text-[14px] font-medium">{`${t.storeIosBottom} — ${t.storeIosTop.toLowerCase()}`}</span>
     </div>
 );
 
 const LoginsPage = () => {
     const navigate = useNavigate();
-    const [language, setLanguage] = useState<'fr' | 'en'>('fr');
+    const location = useLocation();
+    // Langue pilotée par le système i18n existant (persistance localStorage
+    // `safex360-lang`, synchronisation de <html lang>) : le choix fait ici
+    // reste actif une fois dans l'application.
+    const { i18n } = useTranslation();
+    // On lit `language` (le choix explicite) et non `resolvedLanguage` : tant
+    // que le bundle EN n'est pas enregistré, i18next « résout » encore vers le
+    // français et la page resterait bloquée en FR après un clic sur EN.
+    const language: LoginLanguage =
+        (i18n.language || i18n.resolvedLanguage || 'fr').split('-')[0] === 'en' ? 'en' : 'fr';
     const [loading, setLoading] = useState(false);
+    // Destination initialement demandée (posée par ProtectedRoute) — assainie
+    // contre les redirections ouvertes.
+    const redirectTo = resolveRedirect(location.state, location.search);
     const dispatch = useAppDispatch();
     type LoginErrorKind = 'credentials' | 'network' | 'server' | 'waking' | 'rateLimit' | 'invitationExpired' | null;
     const [errorKind, setErrorKind] = useState<LoginErrorKind>(null);
@@ -141,6 +204,9 @@ const LoginsPage = () => {
     const [mfaRemaining, setMfaRemaining] = useState<number>(0);
     const [keyCopied, setKeyCopied] = useState(false);
     const [showManualKey, setShowManualKey] = useState(false);
+    // Visibilité du mot de passe pilotée ici pour nommer correctement le bouton
+    // bascule auprès des lecteurs d'écran (« afficher » / « masquer »).
+    const [showPassword, setShowPassword] = useState(false);
 
     const copyManualKey = async (key: string) => {
         // Copie robuste : l'API presse-papiers moderne exige un contexte
@@ -198,93 +264,26 @@ const LoginsPage = () => {
         setKeyCopied(false);
     };
 
-    const t = language === 'fr'
-        ? {
-            tagline: 'Plateforme HSE pour l\'industrie minière',
-            loginTitle: 'Connexion',
-            loginSubtitle: 'Accédez à votre espace de pilotage',
-            loginLabel: 'Identifiant',
-            loginPlaceholder: 'votre identifiant',
-            passwordLabel: 'Mot de passe',
-            passwordPlaceholder: '••••••••',
-            forgotPassword: 'Mot de passe oublié',
-            loginButton: 'Se connecter',
-            loginProgress: 'Connexion…',
-            errorCredentials: 'Identifiant ou mot de passe incorrect.',
-            errorNetwork: 'Service injoignable — réessayez dans un instant.',
-            errorServer: 'Erreur serveur — réessayez.',
-            errorWaking: 'Réveil du serveur… nouvelle tentative.',
-            errorRateLimit: 'Trop de tentatives échouées — réessayez dans quelques minutes.',
-            popupTitleError: 'Connexion impossible',
-            popupTitleTechnical: 'Problème technique',
-            popupTitleBlocked: 'Accès temporairement bloqué',
-            popupCredentials: 'Les informations saisies ne correspondent à aucun compte. Vérifiez votre identifiant et votre mot de passe, puis réessayez.',
-            popupNetwork: 'Le serveur SafeX est actuellement injoignable. Cela ne vient pas de vos identifiants — vérifiez votre connexion internet ou réessayez dans quelques instants.',
-            popupServer: 'Le service rencontre un problème technique temporaire. Ce n\'est pas lié à vos identifiants. Veuillez réessayer dans quelques instants ou contacter votre administrateur si le problème persiste.',
-            popupWaking: 'Le serveur SafeX démarre, veuillez patienter…',
-            popupRateLimit: 'Par mesure de sécurité, votre accès a été temporairement bloqué après plusieurs tentatives infructueuses. Veuillez réessayer dans 15 minutes.',
-            popupInvitationExpired: 'Votre invitation a expiré. Veuillez contacter votre administrateur pour en recevoir une nouvelle.',
-            popupClose: 'Compris',
-            standards: 'ISO 45001 · 14001 · 9001 · 19011',
-            mobileVersion: 'v3.0',
-            storeGroupLabel: 'Application mobile SafeX 360 HSE',
-            storeAndroidTop: 'Télécharger pour',
-            storeAndroidBottom: 'Android',
-            storeAndroidMeta: '86 Mo · Android 7.0+',
-            storeIosTop: 'Bientôt disponible',
-            storeIosBottom: 'iOS',
-            mobileDownloadAria: 'Télécharger SafeX 360 HSE pour Android (APK, 86 Mo)',
-            iosSoonAria: 'Application iOS bientôt disponible',
-        }
-        : {
-            tagline: 'HSE platform for mining operations',
-            loginTitle: 'Sign in',
-            loginSubtitle: 'Access your operations dashboard',
-            loginLabel: 'User ID',
-            loginPlaceholder: 'your user ID',
-            passwordLabel: 'Password',
-            passwordPlaceholder: '••••••••',
-            forgotPassword: 'Forgot password',
-            loginButton: 'Sign in',
-            loginProgress: 'Signing in…',
-            errorCredentials: 'Incorrect user ID or password.',
-            errorNetwork: 'Service unreachable — please retry shortly.',
-            errorServer: 'Server error — please retry.',
-            errorWaking: 'Server waking up… retrying.',
-            errorRateLimit: 'Too many failed attempts — please try again in a few minutes.',
-            popupTitleError: 'Unable to Sign In',
-            popupTitleTechnical: 'Technical Issue',
-            popupTitleBlocked: 'Access Temporarily Blocked',
-            popupCredentials: 'The credentials you entered do not match any account. Please check your user ID and password, then try again.',
-            popupNetwork: 'The SafeX server is currently unreachable. This is not related to your credentials — please check your internet connection or try again shortly.',
-            popupServer: 'The service is experiencing a temporary technical issue. This is not related to your credentials. Please try again shortly or contact your administrator if the problem persists.',
-            popupWaking: 'The SafeX server is starting up, please wait…',
-            popupRateLimit: 'For security purposes, your access has been temporarily blocked after several unsuccessful attempts. Please try again in 15 minutes.',
-            popupInvitationExpired: 'Your invitation has expired. Please contact your administrator for a new one.',
-            popupClose: 'Got it',
-            standards: 'ISO 45001 · 14001 · 9001 · 19011',
-            mobileVersion: 'v3.0',
-            storeGroupLabel: 'SafeX 360 HSE mobile app',
-            storeAndroidTop: 'Download for',
-            storeAndroidBottom: 'Android',
-            storeAndroidMeta: '86 MB · Android 7.0+',
-            storeIosTop: 'Coming soon',
-            storeIosBottom: 'iOS',
-            mobileDownloadAria: 'Download SafeX 360 HSE for Android (APK, 86 MB)',
-            iosSoonAria: 'iOS app coming soon',
-        };
+    const t = getLoginCopy(language);
 
-    const toggleLanguage = () => setLanguage(language === 'fr' ? 'en' : 'fr');
+    /** Bascule de langue — passe par i18n (chargement du bundle EN à la demande). */
+    const changeLanguage = async (lng: LoginLanguage) => {
+        if (lng === language) return;
+        await ensureLanguageResources(lng);
+        await i18n.changeLanguage(lng);
+        // Les ressources peuvent arriver après la bascule (import dynamique) :
+        // i18next garde alors sa résolution précédente. Une seconde bascule,
+        // une fois les bundles enregistrés, réaligne toute l'application.
+        if ((i18n.resolvedLanguage || '').split('-')[0] !== lng) {
+            await i18n.changeLanguage(lng);
+        }
+    };
 
     const form = useForm({
         initialValues: { login: '', password: '' },
         validate: {
-            login: (value) => (value.trim().length === 0
-                ? (language === 'fr' ? 'Requis' : 'Required')
-                : null),
-            password: (value) => (!value
-                ? (language === 'fr' ? 'Requis' : 'Required')
-                : null),
+            login: (value) => (value.trim().length === 0 ? t.loginRequired : null),
+            password: (value) => (!value ? t.passwordRequired : null),
         },
     });
 
@@ -355,6 +354,10 @@ const LoginsPage = () => {
     };
 
     const handleSubmit = async (values: any) => {
+        // Protection contre les doubles soumissions : le bouton est désactivé
+        // pendant l'appel, mais la touche Entrée soumettrait quand même le
+        // formulaire.
+        if (loading) return;
         setErrorKind(null);
         setServerDetail('');
         setWakingStep(0);
@@ -373,7 +376,7 @@ const LoginsPage = () => {
                 setWakingStep(4);
                 const res: any = await getUser();
                 dispatch(setUser(res));
-                navigate(isNativePlatform() ? '/m/home' : '/');
+                navigate(isNativePlatform() ? '/m/home' : redirectTo, { replace: true });
             } catch (err: any) {
                 const isNetwork = !err?.response;
                 const status = err?.response?.status;
@@ -451,7 +454,7 @@ const LoginsPage = () => {
     const completeAuthenticatedSession = async () => {
         const res = await getUser();
         dispatch(setUser(res));
-        navigate(isNativePlatform() ? '/m/home' : '/');
+        navigate(isNativePlatform() ? '/m/home' : redirectTo, { replace: true });
     };
 
     const handleMfaVerification = async () => {
@@ -491,348 +494,210 @@ const LoginsPage = () => {
     };
 
     return (
-        // Refonte 2026-06-09 : plein écran + overflow-hidden pour ZERO scroll vertical.
-        // h-dvh (viewport dynamique) : sur mobile, le clavier virtuel réduit le
-        // viewport — h-screen (100vh statique) masquait le bas du formulaire.
-        <div className="h-screen h-dvh w-screen fixed inset-0 overflow-hidden bg-slate-950 text-white">
+        // Refonte 2026-09 : page plein écran en deux zones (visuel / connexion).
+        // `min-h-[100dvh]` : sur mobile le clavier virtuel réduit le viewport —
+        // 100vh masquait le bas du formulaire.
+        <div className="sx-login fixed inset-0 w-screen overflow-y-auto bg-[#061A22] text-[#F4F7F6] grid grid-cols-1 lg:grid-cols-[1fr_minmax(420px,40%)]">
+            <style>{LOGIN_PAGE_CSS}</style>
 
-            {/* ═══ Image plein écran — flou minimal pour rendre la scene mine bien visible ═══ */}
-            <div
-                className="absolute inset-0 bg-cover bg-center"
-                style={{
-                    // LOT — Background Login : photo reelle "2 mineurs africains + tablette
-                    // + overlay digital HSE cyan, mine au coucher de soleil"
-                    // Source : imgs/Login/Login 1.png → public/login-mine-team.png
-                    // Fallback en chaine : nouvelle image, ancienne image, image Unsplash
-                    backgroundImage: `url('/login-mine-team.png'), url('/login-bg.jpg'), url('${HERO_IMAGE_FALLBACK}')`,
-                    // LOT 49 — Photo nette : flou ramene a 1.5px (le 5px noyait la scene).
-                    // La lisibilite est portee par l'overlay leger + le panneau verre depoli.
-                    filter: 'blur(1.5px) saturate(1.05)',
-                    transform: 'scale(1.03)', // absorbe les bords adoucis
-                }}
-            />
+            {/* ═══ Zone visuelle gauche (tablette et desktop) ═══ */}
+            <div className="relative hidden lg:block min-h-[100dvh]">
+                <LoginHeroPanel t={t} />
+            </div>
 
-            {/* ═══ Overlay dégradé — opacite augmentee pour effet "translucide/depoli" ═══ */}
-            <div
-                className="absolute inset-0"
-                style={{
-                    // LOT 49 — Voile allege : la photo reste visible et nette, le
-                    // contraste du texte est assure par les text-shadows et le panneau.
-                    background: `linear-gradient(135deg, rgba(2,44,40,0.38) 0%, rgba(2,44,40,0.26) 50%, rgba(2,44,40,0.48) 100%)`,
-                }}
-            />
+            {/* ═══ Zone de connexion droite ═══ */}
+            <div className="relative flex min-h-[100dvh] flex-col bg-[#061A22]">
 
-            {/* Halo teal subtil au centre pour amener un accent de couleur */}
-            <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                    background: 'radial-gradient(circle at 50% 38%, rgba(20,184,166,0.14) 0%, rgba(20,184,166,0) 50%)',
-                }}
-            />
-
-            {/* ═══ Retour au site vitrine (haut gauche) — texte bleu sur pastille
-                sombre : le fond blanc translucide rendait le lien illisible sur
-                le ciel clair de la photo ═══ */}
-            <button
-                onClick={() => navigate('/')}
-                className="absolute top-5 left-5 z-30 flex items-center gap-1.5 px-3 h-8 rounded-full bg-slate-900/60 hover:bg-slate-900/80 border border-white/20 backdrop-blur-md transition-all"
-                style={{ color: '#7CB8FF', fontSize: '12px', textShadow: '0 1px 6px rgba(0,0,0,0.6)' }}
-                aria-label={language === 'fr' ? 'Retourner sur le site SafeX 360' : 'Back to the SafeX 360 website'}
-            >
-                <IconArrowLeft size={13} aria-hidden="true" />
-                <span className="tracking-wide font-medium">{language === 'fr' ? 'Retour au site' : 'Back to site'}</span>
-            </button>
-
-            {/* ═══ Toggle langue (haut droit) ═══ */}
-            <button
-                onClick={toggleLanguage}
-                className="absolute top-5 right-5 z-30 flex items-center gap-2 px-3 h-9 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md transition-all text-[12.5px] text-white"
-                aria-label={language === 'fr' ? 'Passer en anglais' : 'Switch to French'}
-            >
-                <IconWorld size={14} aria-hidden="true" />
-                <span className="tracking-wide">{language === 'fr' ? 'FR' : 'EN'}</span>
-                <span className="text-white/40">·</span>
-                <span className="text-white/60">{language === 'fr' ? 'EN' : 'FR'}</span>
-            </button>
-
-            {/* ═══ Tuiles de téléchargement (bas gauche, desktop) ═══
-                Compactes façon badges de store, hors du flux central : le logo,
-                la carte et les badges ISO restent parfaitement centrés.
-                Masquées dans l'APK Capacitor et sur mobile (< md : version
-                inline sous les badges ISO, dans le flux scrollable). */}
-            {!isNativePlatform() && (
-                <div
-                    className="absolute left-5 z-30 hidden md:flex flex-row items-center gap-2.5"
-                    // Alignées sur la ligne du bouton « Se connecter » : le bloc central
-                    // est centré verticalement, le centre du bouton est à +203px du
-                    // centre du viewport (mesuré) — écart constant quel que soit l'écran.
-                    style={{ top: 'calc(50% + 203px)', transform: 'translateY(-50%)' }}
-                    role="group"
-                    aria-label={t.storeGroupLabel}
-                >
-                    <StoreTileAndroid t={t} />
-                    <StoreTileIos t={t} />
+                {/* Arrière-plan mobile (< md) : la photo minière assombrie, la
+                    zone visuelle complète n'étant pas affichée à cette taille. */}
+                <div className="absolute inset-0 lg:hidden" aria-hidden="true">
+                    <img
+                        src="/login-mine-team.png"
+                        alt=""
+                        width={1672}
+                        height={941}
+                        fetchPriority="high"
+                        decoding="async"
+                        className="h-full w-full object-cover"
+                        style={{ objectPosition: '64% center' }}
+                    />
+                    <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(6,26,34,0.68) 0%, rgba(6,26,34,0.90) 38%, #061A22 72%)' }} />
                 </div>
-            )}
 
-            {/* Refonte centrage 2026-07-08 : PLUS AUCUN décalage horizontal — le
-                logo, la carte de connexion et les badges ISO partagent le même
-                axe vertical, parfaitement centrés dans le viewport. Les tuiles
-                de téléchargement vivent désormais en bas à gauche (hors flux). */}
-            <div className="relative z-10 h-full w-full flex flex-col items-center [justify-content:safe_center] px-4 py-3 md:py-4 overflow-y-auto">
+                {/* ── Barre haute : retour au site + sélecteur de langue ── */}
+                <div className="relative z-10 flex items-center justify-between gap-3 px-5 pt-4 sm:px-8">
+                    <button
+                        type="button"
+                        onClick={() => navigate('/')}
+                        className="sx-link inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-[12.5px] text-[#9EB2B8] transition-colors hover:text-[#F4F7F6]"
+                    >
+                        <IconArrowLeft size={14} aria-hidden="true" />
+                        <span>{t.backToSite}</span>
+                    </button>
 
-                {/* Marque + tagline — logo coloré (bouclier teal gradient) */}
-                <div className="flex flex-col items-center text-center mb-3 md:mb-5 max-w-md shrink-0">
-                    {/* Bouclier coloré (gradient teal → rouge — identité HSE forte) */}
+                    {/* Sélecteur de langue — capsule FR | EN */}
                     <div
-                        className="mb-2 md:mb-3"
-                        style={{ filter: 'drop-shadow(0 10px 30px rgba(20,184,166,0.6))' }}
+                        role="group"
+                        aria-label={t.languageGroupLabel}
+                        className="inline-flex h-[46px] items-center gap-1 rounded-full border px-2"
+                        style={{ borderColor: 'rgba(158,178,184,0.28)', background: 'rgba(11,37,43,0.45)' }}
                     >
-                        <svg
-                            width="52"
-                            height="52"
-                            className="md:w-[60px] md:h-[60px]"
-                            viewBox="0 0 64 64"
-                            xmlns="http://www.w3.org/2000/svg"
-                            aria-label="SafeX 360"
-                        >
-                            <defs>
-                                <linearGradient id="shieldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                    <stop offset="0%" stopColor="#5EEAD4" />
-                                    <stop offset="55%" stopColor="#14B8A6" />
-                                    <stop offset="100%" stopColor="#EF4444" />
-                                </linearGradient>
-                                <linearGradient id="shieldHighlight" x1="0%" y1="0%" x2="0%" y2="60%">
-                                    <stop offset="0%" stopColor="rgba(255,255,255,0.4)" />
-                                    <stop offset="100%" stopColor="rgba(255,255,255,0)" />
-                                </linearGradient>
-                            </defs>
-                            {/* Bouclier — fond gradient teal → rouge */}
-                            <path
-                                d="M32 3 L56 11 C56.5 11.2, 57 11.6, 57 12.3 L57 30 C57 44, 36 60, 32.7 61.6 C32.3 61.8, 31.7 61.8, 31.3 61.6 C28 60, 7 44, 7 30 L7 12.3 C7 11.6, 7.5 11.2, 8 11 Z"
-                                fill="url(#shieldGradient)"
-                                stroke="rgba(255,255,255,0.35)"
-                                strokeWidth="0.8"
-                            />
-                            {/* Highlight subtil */}
-                            <path
-                                d="M32 3 L56 11 C56.5 11.2, 57 11.6, 57 12.3 L57 30 C57 38, 50 42, 32 42 C14 42, 7 38, 7 30 L7 12.3 C7 11.6, 7.5 11.2, 8 11 Z"
-                                fill="url(#shieldHighlight)"
-                            />
-                            {/* Coche blanche épaisse */}
-                            <path
-                                d="M 20 31 L 29 40 L 45 21"
-                                stroke="white"
-                                strokeWidth="5"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                fill="none"
-                            />
-                        </svg>
+                        <IconWorld size={16} className="ml-1.5 text-[#9EB2B8]" aria-hidden="true" />
+                        {(['fr', 'en'] as const).map((lng, index) => (
+                            <span key={lng} className="flex items-center">
+                                {index === 1 && <span className="px-1 text-[#9EB2B8]" aria-hidden="true">|</span>}
+                                <button
+                                    type="button"
+                                    onClick={() => { void changeLanguage(lng); }}
+                                    aria-pressed={language === lng}
+                                    aria-label={lng === 'fr' ? t.languageSwitchFr : t.languageSwitchEn}
+                                    className="rounded-full px-2.5 py-1 text-[13px] font-medium transition-colors"
+                                    style={language === lng
+                                        ? { background: 'rgba(25,199,181,0.16)', color: '#19C7B5' }
+                                        : { color: '#9EB2B8' }}
+                                >
+                                    {lng.toUpperCase()}
+                                </button>
+                            </span>
+                        ))}
                     </div>
-
-                    {/* Wordmark — "Safe" blanc, "X" teal vif, "360" rouge accent identité */}
-                    <h1
-                        className="flex items-baseline gap-0.5"
-                        style={{
-                            fontFamily: "'Source Serif 4', Georgia, serif",
-                            fontWeight: 600,
-                            fontSize: 'clamp(28px, 3.6vw, 38px)',
-                            letterSpacing: '-0.022em',
-                            lineHeight: 1,
-                            textShadow: '0 4px 28px rgba(0,0,0,0.7)',
-                        }}
-                    >
-                        <span className="text-white">Safe</span>
-                        <span style={{
-                            color: '#2DD4BF',
-                            textShadow: '0 0 24px rgba(45,212,191,0.55), 0 2px 14px rgba(0,0,0,0.6)',
-                        }}>X</span>
-                        <span style={{
-                            color: '#EF4444',
-                            marginLeft: '0.4rem',
-                            textShadow: '0 0 24px rgba(239,68,68,0.55), 0 2px 14px rgba(0,0,0,0.6)',
-                        }}>360</span>
-                    </h1>
-
-                    {/* Tagline */}
-                    <p
-                        className="text-white/85 mt-2 md:mt-3 max-w-sm"
-                        style={{
-                            fontFamily: "'Source Serif 4', Georgia, serif",
-                            fontWeight: 400,
-                            fontSize: '13.5px',
-                            letterSpacing: '0.005em',
-                            lineHeight: 1.45,
-                            textShadow: '0 2px 14px rgba(0,0,0,0.7)',
-                        }}
-                    >
-                        {t.tagline}
-                    </p>
                 </div>
 
-                {/* Carte de connexion compacte — seule au centre, sous le logo.
-                    LOT 48 P6.d : verre teal profond avec bordure teal lumineuse —
-                    cohérent avec l'identité HSE SafeX (bouclier teal→rouge). */}
-                <div
-                    className="w-full max-w-[400px] rounded-2xl shadow-2xl overflow-hidden shrink-0"
-                    style={{
-                        background: 'linear-gradient(135deg, rgba(6, 78, 70, 0.58) 0%, rgba(4, 47, 46, 0.62) 100%)',
-                        backdropFilter: 'blur(22px) saturate(160%)',
-                        WebkitBackdropFilter: 'blur(22px) saturate(160%)',
-                        border: '1px solid rgba(94, 234, 212, 0.28)',
-                        boxShadow: '0 20px 60px -10px rgba(0,0,0,0.65), 0 0 0 1px rgba(94,234,212,0.08) inset',
-                    }}
-                >
-                    <div className="px-6 py-6 sm:px-7 sm:py-7">
+                {/* ── Carte de connexion, centrée verticalement ── */}
+                <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-5 py-5 sm:px-8">
+                    {/* Marque — la zone visuelle gauche n'existe pas sous 1024 px,
+                        le logo SafeX 360 reste donc présent au-dessus de la carte. */}
+                    <div className="mb-6 flex flex-col items-center lg:hidden">
+                        <SafeXLogoColor variant="stack" tone="light" size={42} />
+                        <p className="mt-2 text-center text-[12.5px] text-[#9EB2B8]">{t.tagline}</p>
+                    </div>
+                    <div
+                        className="sx-card w-full max-w-[550px] rounded-[16px] p-6 sm:p-8 xl:p-10"
+                        style={{
+                            background: 'rgba(11,37,43,0.72)',
+                            border: '1px solid rgba(25,199,181,0.18)',
+                            boxShadow: '0 24px 60px -24px rgba(0,0,0,0.65)',
+                        }}
+                    >
+                        {/* En-tête centré */}
+                        <h1 className="text-center font-semibold" style={{ fontSize: 'clamp(26px, 2.4vw, 34px)', letterSpacing: '-0.02em', color: '#F4F7F6' }}>
+                            {t.welcomeTitle}
+                        </h1>
+                        <div className="mx-auto mt-3 h-[2px] w-12 rounded-full bg-[#19C7B5]" aria-hidden="true" />
+                        <p className="mt-2.5 text-center text-[15px] text-[#9EB2B8]">{t.welcomeSubtitle}</p>
 
-                        {/* Titre Connexion — BLANC PUR, gros, sans décorations qui le rendent illisible */}
-                        <h2
-                            className="text-center text-white"
-                            style={{
-                                fontFamily: "'Source Serif 4', Georgia, serif",
-                                fontWeight: 600,
-                                fontSize: '24px',
-                                letterSpacing: '-0.014em',
-                                lineHeight: 1.15,
-                                color: '#FFFFFF',
-                            }}
-                        >
-                            {t.loginTitle}
-                        </h2>
-                        {/* Petite barre d'accent rouge SOUS le titre (pas autour) */}
-                        <div
-                            className="mx-auto mt-2 mb-3 h-[2px] rounded-full"
-                            style={{
-                                width: '40px',
-                                background: 'linear-gradient(90deg, #2DD4BF 0%, #EF4444 100%)',
-                            }}
-                            aria-hidden="true"
-                        />
-                        <p className="text-[12.5px] text-white/85 text-center">
-                            {t.loginSubtitle}
+                        {/* Annonce accessible des erreurs générales (hors modale) */}
+                        <p className="sr-only" role="status" aria-live="polite">
+                            {errorKind === 'credentials' ? t.errorCredentials
+                                : errorKind === 'rateLimit' ? t.errorRateLimit
+                                    : errorKind === 'network' ? t.errorNetwork
+                                        : errorKind === 'server' ? t.errorServer
+                                            : errorKind === 'waking' ? t.errorWaking
+                                                : ''}
                         </p>
 
-
-                        <form onSubmit={form.onSubmit(handleSubmit)} className="mt-5 space-y-4">
-
+                        <form onSubmit={form.onSubmit(handleSubmit)} className="mt-5 space-y-3.5 text-left" noValidate>
                             <TextInput
-                                label={
-                                    <span className="text-[11.5px] uppercase tracking-[0.14em] text-white/80">
-                                        {t.loginLabel}
-                                    </span>
-                                }
+                                label={t.loginLabel}
                                 placeholder={t.loginPlaceholder}
-                                withAsterisk
                                 size="md"
-                                radius="md"
+                                radius={10}
                                 autoComplete="username"
-                                leftSection={<IconUser size={15} className="text-white/55" aria-hidden="true" />}
-                                styles={{
-                                    input: {
-                                        // Refonte teal : fond légèrement plus profond + bordure teal subtile
-                                        backgroundColor: 'rgba(3, 36, 34, 0.65)',
-                                        borderColor: 'rgba(94, 234, 212, 0.22)',
-                                        color: '#ffffff',
-                                        fontSize: '14px',
-                                    },
-                                }}
+                                autoCapitalize="none"
+                                spellCheck={false}
+                                disabled={loading}
+                                leftSection={<IconUser size={17} aria-hidden="true" />}
+                                classNames={{ input: 'sx-input' }}
+                                styles={LOGIN_FIELD_STYLES}
                                 {...form.getInputProps('login')}
                             />
 
                             <PasswordInput
-                                label={
-                                    <span className="text-[11.5px] uppercase tracking-[0.14em] text-white/80">
-                                        {t.passwordLabel}
-                                    </span>
-                                }
+                                label={t.passwordLabel}
                                 placeholder={t.passwordPlaceholder}
-                                withAsterisk
                                 size="md"
-                                radius="md"
+                                radius={10}
                                 autoComplete="current-password"
+                                disabled={loading}
+                                leftSection={<IconLock size={17} aria-hidden="true" />}
                                 visibilityToggleIcon={({ reveal }) =>
-                                    reveal ? <IconEyeOff size={15} aria-hidden="true" /> : <IconEye size={15} aria-hidden="true" />
+                                    reveal ? <IconEyeOff size={17} aria-hidden="true" /> : <IconEye size={17} aria-hidden="true" />
                                 }
-                                leftSection={<IconLock size={15} className="text-white/55" aria-hidden="true" />}
-                                styles={{
-                                    input: {
-                                        // Refonte teal : fond légèrement plus profond + bordure teal subtile
-                                        backgroundColor: 'rgba(3, 36, 34, 0.65)',
-                                        borderColor: 'rgba(94, 234, 212, 0.22)',
-                                        color: '#ffffff',
-                                        fontSize: '14px',
-                                    },
+                                visibilityToggleButtonProps={{
+                                    'aria-label': showPassword ? t.passwordHide : t.passwordShow,
                                 }}
+                                visible={showPassword}
+                                onVisibilityChange={setShowPassword}
+                                classNames={{ input: 'sx-input' }}
+                                styles={LOGIN_FIELD_STYLES}
                                 {...form.getInputProps('password')}
                             />
 
-                            {/* Mot de passe oublié — discret */}
-                            <div className="flex justify-end -mt-1">
+                            <div className="flex justify-end">
                                 <button
                                     type="button"
                                     onClick={() => navigate('/forget-password')}
-                                    className="text-[12px] text-white/70 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-white/40 focus:ring-offset-2 focus:ring-offset-slate-900 rounded"
+                                    className="rounded text-[13px] text-[#19C7B5] underline-offset-4 transition-colors hover:underline"
                                 >
                                     {t.forgotPassword}
                                 </button>
                             </div>
 
-                            {/* CTA principal */}
-                            <Button
+                            <button
                                 type="submit"
-                                fullWidth
-                                loading={loading}
                                 disabled={loading}
-                                size="md"
-                                radius="md"
-                                rightSection={loading
-                                    ? <Loader size="xs" color="white" />
-                                    : <IconArrowRight size={16} aria-hidden="true" />
-                                }
-                                styles={{
-                                    root: {
-                                        background: '#ffffff',
-                                        color: '#0f172a',
-                                        fontSize: '14px',
-                                        fontWeight: 500,
-                                        letterSpacing: '0.005em',
-                                        height: '42px',
-                                        marginTop: '4px',
-                                        border: 'none',
-                                        boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
-                                    },
-                                    label: {
-                                        color: '#0f172a',
-                                    },
+                                aria-busy={loading}
+                                className="flex h-[58px] w-full items-center justify-center gap-2.5 rounded-[10px] text-[15.5px] font-semibold transition-[filter] hover:brightness-[1.06] disabled:cursor-not-allowed disabled:opacity-70"
+                                style={{
+                                    background: 'linear-gradient(90deg, #19C7B5 0%, #21D98B 100%)',
+                                    color: '#052027',
                                 }}
-                                className="hover:!bg-slate-100 transition-colors"
                             >
-                                {loading ? t.loginProgress : t.loginButton}
-                            </Button>
+                                {loading ? <Loader size="xs" color="#052027" /> : null}
+                                <span>{loading ? t.loginProgress : t.loginButton}</span>
+                                {loading ? null : <IconArrowRight size={18} aria-hidden="true" />}
+                            </button>
                         </form>
+
+                        {/* Séparateur « OU » */}
+                        <div className="mt-5 flex items-center gap-3" aria-hidden="true">
+                            <span className="h-px flex-1" style={{ background: 'rgba(158,178,184,0.22)' }} />
+                            <span className="text-[11.5px] uppercase tracking-[0.18em] text-[#9EB2B8]">{t.separatorOr}</span>
+                            <span className="h-px flex-1" style={{ background: 'rgba(158,178,184,0.22)' }} />
+                        </div>
+
+                        <MicrosoftSignInButton t={t} redirectTo={redirectTo} disabled={loading} />
+
+                        <p className="mt-3.5 flex items-center justify-center gap-1.5 text-[12px] text-[#9EB2B8]">
+                            <IconLock size={13} aria-hidden="true" />
+                            <span>{t.secureNote}</span>
+                        </p>
                     </div>
+
+                    {/* ── Application mobile ── */}
+                    {!isNativePlatform() && (
+                        <div className="mt-4 w-full max-w-[550px]">
+                            <div className="h-px w-full" style={{ background: 'rgba(158,178,184,0.16)' }} aria-hidden="true" />
+                            <p className="mt-4 text-center text-[12.5px] text-[#9EB2B8]">{t.mobileTitle}</p>
+                            <div className="mt-3 flex flex-wrap items-center justify-center gap-3" role="group" aria-label={t.storeGroupLabel}>
+                                <StoreTileAndroid t={t} />
+                                <StoreTileIos t={t} />
+                            </div>
+                        </div>
+                    )}
                 </div>
 
-                {/* Référentiels pris en compte (repères, pas d'attestation tierce) —
-                    regroupés sur un bandeau dépoli pour une lecture claire et premium. */}
-                <div
-                    className="mt-3 md:mt-4 flex items-center justify-center gap-3 md:gap-3.5 px-4 py-2 rounded-full bg-black/30 border border-white/12 backdrop-blur-md shrink-0"
-                    aria-label={language === 'fr' ? 'Référentiels pris en compte' : 'Referenced frameworks'}
-                >
-                    {(['ISO 45001', 'ISO 14001', 'ISO 9001', 'ISO 19011'] as const).map((norm) => (
-                        <IsoBadge key={norm} norm={norm} theme="dark" size="md" />
-                    ))}
-                </div>
-
-                {/* Tuiles de téléchargement — version mobile (< md) : dans le flux,
-                    sous les badges ISO. Sur desktop elles vivent en bas à gauche. */}
-                {!isNativePlatform() && (
-                    <div className="mt-4 flex md:hidden items-center justify-center gap-2.5 shrink-0" role="group" aria-label={t.storeGroupLabel}>
-                        <StoreTileAndroid t={t} />
-                        <StoreTileIos t={t} />
-                    </div>
-                )}
+                {/* ── Pied de page ── */}
+                <footer className="relative z-10 flex flex-wrap items-center justify-between gap-2 px-5 pb-3.5 text-[12px] text-[#9EB2B8] sm:px-8">
+                    <span>{t.footerCopyright}</span>
+                    <span className="flex items-center gap-2">
+                        {/* Aucune page « Confidentialité » n'existe à ce jour :
+                            mention affichée sans lien plutôt qu'un lien mort. */}
+                        <span>{t.footerPrivacy}</span>
+                        <span aria-hidden="true">•</span>
+                        <a href="/#demo" className="transition-colors hover:text-[#F4F7F6]">{t.footerSupport}</a>
+                    </span>
+                </footer>
 
                 {/* ═══ Modale MFA SafeX — en-tête de marque + QR d'enrôlement ═══ */}
                 <Modal
