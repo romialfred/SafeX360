@@ -40,7 +40,7 @@ export type LoginCopy = {
     microsoftProgress: string;
     microsoftUnavailable: string;
     microsoftError: string;
-    secureNote: string;
+    designedBy: string;
 
     mobileTitle: string;
     mobileVersion: string;
@@ -110,7 +110,7 @@ const FR: LoginCopy = {
     microsoftProgress: 'Redirection vers Microsoft…',
     microsoftUnavailable: 'Authentification Microsoft non configurée sur cet environnement.',
     microsoftError: 'La connexion Microsoft a échoué ou a été annulée.',
-    secureNote: 'Connexion sécurisée • Données chiffrées',
+    designedBy: 'Conçu par',
 
     mobileTitle: 'Télécharger l’application mobile',
     mobileVersion: 'v3.0',
@@ -180,7 +180,7 @@ const EN: LoginCopy = {
     microsoftProgress: 'Redirecting to Microsoft…',
     microsoftUnavailable: 'Microsoft sign-in is not configured on this environment.',
     microsoftError: 'Microsoft sign-in failed or was cancelled.',
-    secureNote: 'Secure connection • Encrypted data',
+    designedBy: 'Designed by',
 
     mobileTitle: 'Download the mobile app',
     mobileVersion: 'v3.0',

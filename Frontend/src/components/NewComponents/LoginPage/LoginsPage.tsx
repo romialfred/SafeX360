@@ -88,6 +88,10 @@ const LOGIN_FIELD_STYLES = {
  * feuille scopée à la page. La famille sans-serif est imposée explicitement —
  * le thème global applique une serif aux titres, absente de cette maquette.
  */
+/** Concepteur de la plateforme, crédité dans le pied de page. */
+const DESIGNER_NAME = 'Data Universe';
+const DESIGNER_URL = 'https://www.datauniverse.bf';
+
 const LOGIN_PAGE_CSS = `
 .sx-login, .sx-login h1, .sx-login h2, .sx-login input, .sx-login button {
     font-family: Inter, 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
@@ -131,7 +135,6 @@ const LOGIN_PAGE_CSS = `
     .sx-login .sx-main { padding-top: 8px; padding-bottom: 8px; }
     .sx-login .sx-form { margin-top: 18px; }
     .sx-login .sx-sep, .sx-login .sx-mobile { margin-top: 16px; }
-    .sx-login .sx-secure { margin-top: 12px; }
 }
 @media (min-width: 1024px) and (max-height: 860px) {
     .sx-login .sx-topbar { padding-top: 12px; }
@@ -145,7 +148,6 @@ const LOGIN_PAGE_CSS = `
     .sx-login .sx-submit { height: 52px; }
     .sx-login .sx-ms-btn { height: 50px; }
     .sx-login .sx-sep, .sx-login .sx-mobile { margin-top: 12px; }
-    .sx-login .sx-secure { margin-top: 8px; }
     .sx-login .sx-mobile > div:last-child { margin-top: 8px; }
 }
 @media (min-width: 1024px) and (max-height: 760px) {
@@ -160,7 +162,6 @@ const LOGIN_PAGE_CSS = `
     .sx-login .sx-submit { height: 46px; }
     .sx-login .sx-ms-btn { height: 44px; }
     .sx-login .sx-sep, .sx-login .sx-mobile { margin-top: 8px; }
-    .sx-login .sx-secure { margin-top: 5px; }
     .sx-login .sx-mobile a, .sx-login .sx-mobile [role='img'] { height: 38px; }
     .sx-login .sx-mobile > div:last-child { margin-top: 6px; }
 }
@@ -730,11 +731,6 @@ const LoginsPage = () => {
                         </div>
 
                         <MicrosoftSignInButton t={t} redirectTo={redirectTo} disabled={loading} />
-
-                        <p className="sx-secure mt-4 flex items-center justify-center gap-1.5 text-[12.5px]" style={{ color: '#5A6B72' }}>
-                            <IconLock size={14} aria-hidden="true" />
-                            <span>{t.secureNote}</span>
-                        </p>
                     </div>
 
                     {/* ── Application mobile ── */}
@@ -751,7 +747,20 @@ const LoginsPage = () => {
 
                 {/* ── Pied de page ── */}
                 <footer className="sx-footer relative z-10 flex flex-wrap items-center justify-between gap-2 px-6 pb-5 text-[12.5px] sm:px-10" style={{ color: '#5A6B72' }}>
-                    <span>{t.footerCopyright}</span>
+                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span>{t.footerCopyright}</span>
+                        <span aria-hidden="true" style={{ color: '#C3D0D2' }}>|</span>
+                        {/* Concepteur de la plateforme */}
+                        <a
+                            href={DESIGNER_URL}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            className="transition-opacity hover:opacity-70"
+                            style={{ color: '#0E9E93' }}
+                        >
+                            {`${t.designedBy} ${DESIGNER_NAME}`}
+                        </a>
+                    </span>
                     <span className="flex items-center gap-2.5">
                         {/* Aucune page « Confidentialité » n'existe à ce jour :
                             mention affichée sans lien plutôt qu'un lien mort. */}

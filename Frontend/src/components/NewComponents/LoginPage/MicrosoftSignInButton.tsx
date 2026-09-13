@@ -60,7 +60,10 @@ export default function MicrosoftSignInButton({ t, redirectTo, disabled = false 
                 onClick={start}
                 disabled={inactive}
                 aria-disabled={inactive}
-                aria-describedby={configured ? undefined : 'sx-ms-unavailable'}
+                // Le motif d'indisponibilité n'encombre plus l'écran : il reste
+                // porté par le nom accessible et l'infobulle du bouton.
+                aria-label={configured ? undefined : `${t.microsoftButton} — ${t.microsoftUnavailable}`}
+                title={configured ? undefined : t.microsoftUnavailable}
                 className="sx-ms-btn flex h-[56px] w-full items-center justify-center gap-3 rounded-[10px] border text-[15px] font-medium transition-colors"
                 style={{
                     background: '#FFFFFF',
@@ -73,11 +76,6 @@ export default function MicrosoftSignInButton({ t, redirectTo, disabled = false 
                 {redirecting ? <Loader size="xs" color="#0E9E93" /> : <MicrosoftLogo />}
                 <span>{redirecting ? t.microsoftProgress : t.microsoftButton}</span>
             </button>
-            {!configured && (
-                <p id="sx-ms-unavailable" className="mt-2 text-center text-[11.5px]" style={{ color: '#7C8C93' }}>
-                    {t.microsoftUnavailable}
-                </p>
-            )}
         </div>
     );
 }
