@@ -103,6 +103,67 @@ const LOGIN_PAGE_CSS = `
 .sx-login .sx-card { animation: sxCardIn .45s ease-out both; }
 @keyframes sxCardIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .sx-login .sx-card { animation: none; } }
+
+/* ── Zéro défilement sur ordinateur ──────────────────────────────────────
+   La page occupe exactement la fenêtre. Le rythme vertical se resserre par
+   paliers de hauteur d'écran (1440x900, 1366x768, 1280x720…) : rien n'est
+   masqué, tout tient dans le viewport. Sous 1024 px de large, le défilement
+   reste autorisé — le formulaire y est empilé et doit pouvoir remonter
+   au-dessus du clavier virtuel. */
+@media (min-width: 1024px) {
+    .sx-login { overflow: hidden; }
+    .sx-login .sx-right { height: 100dvh; min-height: 0; overflow: hidden; }
+    .sx-login .sx-main { min-height: 0; }
+}
+@media (min-width: 1024px) and (max-height: 940px) {
+    .sx-login .sx-card { padding: 28px 32px; }
+    .sx-login .sx-main { padding-top: 8px; padding-bottom: 8px; }
+    .sx-login .sx-form { margin-top: 18px; }
+    .sx-login .sx-sep, .sx-login .sx-mobile { margin-top: 14px; }
+    .sx-login .sx-secure { margin-top: 10px; }
+}
+@media (min-width: 1024px) and (max-height: 820px) {
+    .sx-login .sx-card { padding: 22px 28px; }
+    .sx-login .sx-topbar { padding-top: 10px; }
+    .sx-login .sx-footer { padding-bottom: 10px; }
+    .sx-login .sx-form { margin-top: 14px; }
+    .sx-login .sx-form > * + * { margin-top: 10px; }
+    .sx-login .sx-input { height: 50px !important; }
+    .sx-login .sx-submit { height: 52px; }
+    .sx-login .sx-ms-btn { height: 50px; }
+    .sx-login .sx-mobile > p { margin-top: 10px; }
+    .sx-login .sx-mobile > div:last-child { margin-top: 8px; }
+    .sx-login .sx-main { padding-top: 4px; padding-bottom: 4px; }
+}
+@media (min-width: 1024px) and (max-height: 740px) {
+    .sx-login .sx-card { padding: 16px 24px; }
+    .sx-login .sx-card h1 { font-size: 24px; }
+    .sx-login .sx-form { margin-top: 10px; }
+    .sx-login .sx-form > * + * { margin-top: 8px; }
+    .sx-login .sx-input { height: 44px !important; }
+    .sx-login .sx-submit { height: 46px; }
+    .sx-login .sx-ms-btn { height: 44px; }
+    .sx-login .sx-sep, .sx-login .sx-mobile { margin-top: 8px; }
+    .sx-login .sx-secure { margin-top: 6px; }
+    .sx-login .sx-mobile a, .sx-login .sx-mobile [role='img'] { height: 38px; }
+    .sx-login .sx-mobile > p { margin-top: 6px; }
+    .sx-login .sx-mobile > div:last-child { margin-top: 6px; }
+    .sx-login .sx-main { padding-top: 2px; padding-bottom: 2px; }
+    .sx-login .sx-topbar { padding-top: 8px; }
+    .sx-login .sx-footer { padding-bottom: 8px; }
+}
+/* Tablette : une seule colonne, mais on resserre pour rester dans la fenêtre
+   sur les formats courants (768x1024, 900x1000). */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .sx-login .sx-card { padding: 28px 32px; }
+    .sx-login .sx-main { padding-top: 8px; padding-bottom: 8px; }
+    .sx-login .sx-form { margin-top: 18px; }
+}
+/* Soupape de sécurité : sur un écran vraiment court, la colonne de droite
+   défile SEULE plutôt que de laisser le contenu chevaucher le pied de page. */
+@media (min-width: 1024px) and (max-height: 640px) {
+    .sx-login .sx-main { overflow-y: auto; }
+}
 `;
 
 /* ── Tuiles de téléchargement — style « badge store » compact ─────────────
@@ -506,7 +567,7 @@ const LoginsPage = () => {
             </div>
 
             {/* ═══ Zone de connexion droite ═══ */}
-            <div className="relative flex min-h-[100dvh] flex-col bg-[#061A22]">
+            <div className="sx-right relative flex min-h-[100dvh] flex-col bg-[#061A22]">
 
                 {/* Arrière-plan mobile (< md) : la photo minière assombrie, la
                     zone visuelle complète n'étant pas affichée à cette taille. */}
@@ -525,7 +586,7 @@ const LoginsPage = () => {
                 </div>
 
                 {/* ── Barre haute : retour au site + sélecteur de langue ── */}
-                <div className="relative z-10 flex items-center justify-between gap-3 px-5 pt-4 sm:px-8">
+                <div className="sx-topbar relative z-10 flex items-center justify-between gap-3 px-5 pt-4 sm:px-8">
                     <button
                         type="button"
                         onClick={() => navigate('/')}
@@ -564,7 +625,7 @@ const LoginsPage = () => {
                 </div>
 
                 {/* ── Carte de connexion, centrée verticalement ── */}
-                <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-5 py-5 sm:px-8">
+                <div className="sx-main relative z-10 flex flex-1 flex-col items-center justify-center px-5 py-5 sm:px-8">
                     {/* Marque — la zone visuelle gauche n'existe pas sous 1024 px,
                         le logo SafeX 360 reste donc présent au-dessus de la carte. */}
                     <div className="mb-6 flex flex-col items-center lg:hidden">
@@ -596,7 +657,7 @@ const LoginsPage = () => {
                                                 : ''}
                         </p>
 
-                        <form onSubmit={form.onSubmit(handleSubmit)} className="mt-5 space-y-3.5 text-left" noValidate>
+                        <form onSubmit={form.onSubmit(handleSubmit)} className="sx-form mt-5 space-y-3.5 text-left" noValidate>
                             <TextInput
                                 label={t.loginLabel}
                                 placeholder={t.loginPlaceholder}
@@ -647,7 +708,7 @@ const LoginsPage = () => {
                                 type="submit"
                                 disabled={loading}
                                 aria-busy={loading}
-                                className="flex h-[58px] w-full items-center justify-center gap-2.5 rounded-[10px] text-[15.5px] font-semibold transition-[filter] hover:brightness-[1.06] disabled:cursor-not-allowed disabled:opacity-70"
+                                className="sx-submit flex h-[58px] w-full items-center justify-center gap-2.5 rounded-[10px] text-[15.5px] font-semibold transition-[filter] hover:brightness-[1.06] disabled:cursor-not-allowed disabled:opacity-70"
                                 style={{
                                     background: 'linear-gradient(90deg, #19C7B5 0%, #21D98B 100%)',
                                     color: '#052027',
@@ -660,7 +721,7 @@ const LoginsPage = () => {
                         </form>
 
                         {/* Séparateur « OU » */}
-                        <div className="mt-5 flex items-center gap-3" aria-hidden="true">
+                        <div className="sx-sep mt-5 flex items-center gap-3" aria-hidden="true">
                             <span className="h-px flex-1" style={{ background: 'rgba(158,178,184,0.22)' }} />
                             <span className="text-[11.5px] uppercase tracking-[0.18em] text-[#9EB2B8]">{t.separatorOr}</span>
                             <span className="h-px flex-1" style={{ background: 'rgba(158,178,184,0.22)' }} />
@@ -668,7 +729,7 @@ const LoginsPage = () => {
 
                         <MicrosoftSignInButton t={t} redirectTo={redirectTo} disabled={loading} />
 
-                        <p className="mt-3.5 flex items-center justify-center gap-1.5 text-[12px] text-[#9EB2B8]">
+                        <p className="sx-secure mt-3.5 flex items-center justify-center gap-1.5 text-[12px] text-[#9EB2B8]">
                             <IconLock size={13} aria-hidden="true" />
                             <span>{t.secureNote}</span>
                         </p>
@@ -676,7 +737,7 @@ const LoginsPage = () => {
 
                     {/* ── Application mobile ── */}
                     {!isNativePlatform() && (
-                        <div className="mt-4 w-full max-w-[550px]">
+                        <div className="sx-mobile mt-4 w-full max-w-[550px]">
                             <div className="h-px w-full" style={{ background: 'rgba(158,178,184,0.16)' }} aria-hidden="true" />
                             <p className="mt-4 text-center text-[12.5px] text-[#9EB2B8]">{t.mobileTitle}</p>
                             <div className="mt-3 flex flex-wrap items-center justify-center gap-3" role="group" aria-label={t.storeGroupLabel}>
@@ -688,7 +749,7 @@ const LoginsPage = () => {
                 </div>
 
                 {/* ── Pied de page ── */}
-                <footer className="relative z-10 flex flex-wrap items-center justify-between gap-2 px-5 pb-3.5 text-[12px] text-[#9EB2B8] sm:px-8">
+                <footer className="sx-footer relative z-10 flex flex-wrap items-center justify-between gap-2 px-5 pb-3.5 text-[12px] text-[#9EB2B8] sm:px-8">
                     <span>{t.footerCopyright}</span>
                     <span className="flex items-center gap-2">
                         {/* Aucune page « Confidentialité » n'existe à ce jour :
