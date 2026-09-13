@@ -1,5 +1,5 @@
 /**
- * SafeX 360 — Textes de la page de connexion (FR / EN).
+ * e-SafeX 360 — Textes de la page de connexion (FR / EN).
  *
  * Convention `*Labels.ts` du projet : le dictionnaire local sert de source de
  * repli typée, la langue active vient du système i18n existant (`react-i18next`).
@@ -10,14 +10,15 @@
  */
 
 export type LoginCopy = {
+    brandPrefix: string;
+    brandName: string;
+    brandSuffix: string;
+    portalBadge: string;
     tagline: string;
     heroLine1: string;
     heroLine2: string;
     heroHighlight: string;
     heroSubtitle: string;
-    riskCardTitle: string;
-    riskCardValue: string;
-    riskCardScope: string;
     heroImageAlt: string;
 
     welcomeTitle: string;
@@ -79,20 +80,21 @@ export type LoginCopy = {
 };
 
 const FR: LoginCopy = {
-    tagline: 'Plateforme HSE pour l’industrie minière',
-    heroLine1: 'La sécurité,',
-    heroLine2: 'pilotée avec',
-    heroHighlight: 'intelligence.',
-    heroSubtitle: 'Anticipez les risques. Protégez vos équipes. Décidez en temps réel.',
-    riskCardTitle: 'Niveau de risque',
-    riskCardValue: 'Faible',
-    riskCardScope: 'Toutes les zones opérationnelles',
-    heroImageAlt: 'Deux professionnels HSE équipés de leurs EPI consultent SafeX 360 sur tablette devant une fosse minière',
+    brandPrefix: 'e-',
+    brandName: 'SafeX',
+    brandSuffix: '360',
+    portalBadge: 'Portail employé',
+    tagline: 'Plateforme HSE pour les opérations minières',
+    heroLine1: 'La sécurité, guidée',
+    heroLine2: 'par',
+    heroHighlight: 'l’intelligence.',
+    heroSubtitle: 'Anticiper les risques. Protéger les équipes. Décider en temps réel.',
+    heroImageAlt: 'Deux professionnels HSE équipés de leurs EPI consultent e-SafeX 360 sur tablette devant une fosse minière',
 
     welcomeTitle: 'Bienvenue',
-    welcomeSubtitle: 'Connectez-vous à votre espace SafeX 360',
+    welcomeSubtitle: 'Connectez-vous à votre espace e-SafeX 360',
     loginLabel: 'Identifiant',
-    loginPlaceholder: 'Adresse e-mail ou matricule',
+    loginPlaceholder: 'Adresse e-mail ou matricule employé',
     loginRequired: 'Saisissez votre identifiant.',
     passwordLabel: 'Mot de passe',
     passwordPlaceholder: 'Votre mot de passe',
@@ -121,7 +123,7 @@ const FR: LoginCopy = {
     mobileDownloadAria: 'Télécharger SafeX 360 HSE pour Android (APK, 86 Mo)',
     iosSoonAria: 'Application iOS bientôt disponible',
 
-    footerCopyright: '© 2026 SafeX 360',
+    footerCopyright: '© 2026 e-SafeX 360',
     footerPrivacy: 'Confidentialité',
     footerSupport: 'Assistance',
 
@@ -148,18 +150,19 @@ const FR: LoginCopy = {
 };
 
 const EN: LoginCopy = {
+    brandPrefix: 'e-',
+    brandName: 'SafeX',
+    brandSuffix: '360',
+    portalBadge: 'Employee portal',
     tagline: 'HSE platform for mining operations',
-    heroLine1: 'Safety,',
-    heroLine2: 'driven by',
+    heroLine1: 'Safety, guided',
+    heroLine2: 'by',
     heroHighlight: 'intelligence.',
     heroSubtitle: 'Anticipate risks. Protect your teams. Decide in real time.',
-    riskCardTitle: 'Risk level',
-    riskCardValue: 'Low',
-    riskCardScope: 'All operational areas',
-    heroImageAlt: 'Two HSE professionals in personal protective equipment reviewing SafeX 360 on a tablet in front of a mining pit',
+    heroImageAlt: 'Two HSE professionals in personal protective equipment reviewing e-SafeX 360 on a tablet in front of a mining pit',
 
     welcomeTitle: 'Welcome',
-    welcomeSubtitle: 'Sign in to your SafeX 360 workspace',
+    welcomeSubtitle: 'Sign in to your e-SafeX 360 workspace',
     loginLabel: 'User ID',
     loginPlaceholder: 'Email address or employee ID',
     loginRequired: 'Enter your user ID.',
@@ -190,7 +193,7 @@ const EN: LoginCopy = {
     mobileDownloadAria: 'Download SafeX 360 HSE for Android (APK, 86 MB)',
     iosSoonAria: 'iOS app coming soon',
 
-    footerCopyright: '© 2026 SafeX 360',
+    footerCopyright: '© 2026 e-SafeX 360',
     footerPrivacy: 'Privacy',
     footerSupport: 'Support',
 

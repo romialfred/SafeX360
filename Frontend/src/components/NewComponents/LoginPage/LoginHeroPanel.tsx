@@ -1,13 +1,14 @@
-import SafeXLogoColor from '../../UtilityComp/SafeXLogoColor';
+import { useId } from 'react';
 import type { LoginCopy } from './loginCopy';
 
 /**
  * Zone visuelle gauche de la page de connexion.
  *
- * Photo minière réelle (`public/login-mine-team.png`) + surcouche vectorielle
- * légère : drone d'inspection, faisceau d'analyse dirigé vers la fosse, lignes
- * télémétriques et carte « Niveau de risque ». La surcouche est purement
- * décorative (`aria-hidden`) : aucune information n'existe uniquement là.
+ * Photo minière réelle (`public/login-mine-team.png`) laissée lumineuse — seul
+ * un dégradé de pied assure la lisibilité de l'accroche — plus une surcouche
+ * vectorielle légère : drone d'inspection, trajectoire de télémétrie et
+ * pastille d'analyse. La surcouche est décorative (`aria-hidden`) : aucune
+ * information n'existe uniquement là.
  *
  * Toutes les animations sont neutralisées sous `prefers-reduced-motion`.
  */
@@ -16,28 +17,63 @@ const HERO_IMAGE = '/login-mine-team.png';
 
 type Props = { t: LoginCopy };
 
+/**
+ * Bloc de marque « e-SafeX 360 ».
+ * Ton « light » : texte blanc, posé sur la photo.
+ * Ton « dark »  : texte bleu nuit, pour le panneau clair — affiché sous
+ * 1024 px, là où la zone photo n'est pas rendue.
+ */
+export function BrandLockup({ t, tone = 'light', size = 42 }: Props & { tone?: 'light' | 'dark'; size?: number }) {
+    // Identifiant unique par instance : deux dégradés portant le même id dans
+    // le document se télescopent et le bouclier se rend alors sans remplissage.
+    const gradientId = `${useId()}-shield`;
+    return (
+        <div className="flex items-center gap-3">
+            <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true" focusable="false" className="shrink-0">
+                <defs>
+                    <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#5FE3D2" />
+                        <stop offset="100%" stopColor="#0E9E93" />
+                    </linearGradient>
+                </defs>
+                <path
+                    d="M32 4 L55 12 C55.5 12.2, 56 12.6, 56 13.3 L56 30 C56 43, 36 58, 32.7 59.5 C32.3 59.7, 31.7 59.7, 31.3 59.5 C28 58, 8 43, 8 30 L8 13.3 C8 12.6, 8.5 12.2, 9 12 Z"
+                    fill={`url(#${gradientId})`}
+                />
+                <path d="M21 31 L29 39 L44 21" stroke="#FFFFFF" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            </svg>
+            <p
+                className="flex items-baseline gap-1.5 font-semibold"
+                style={{
+                    fontSize: size * 0.72,
+                    letterSpacing: '-0.02em',
+                    color: tone === 'dark' ? '#0B2A38' : '#FFFFFF',
+                    textShadow: tone === 'dark' ? 'none' : '0 2px 16px rgba(0,0,0,0.45)',
+                }}
+            >
+                <span>{`${t.brandPrefix}${t.brandName}`}</span>
+                <span style={{ color: '#F2604C' }}>{t.brandSuffix}</span>
+            </p>
+        </div>
+    );
+}
+
 export default function LoginHeroPanel({ t }: Props) {
     return (
-        <section
-            className="sx-hero relative h-full w-full overflow-hidden bg-[#04141B]"
-            aria-label="SafeX 360"
-        >
+        <section className="sx-hero relative h-full w-full overflow-hidden bg-[#0B2432]" aria-label={`${t.brandPrefix}${t.brandName} ${t.brandSuffix}`}>
             <style>{`
-                @keyframes sxDroneFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
-                @keyframes sxBeamPulse { 0%,100% { opacity: .28; } 50% { opacity: .5; } }
-                @keyframes sxTelemetry { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -240; } }
+                @keyframes sxDroneFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+                @keyframes sxTrace { from { stroke-dashoffset: 320; } to { stroke-dashoffset: 0; } }
                 .sx-drone { animation: sxDroneFloat 7s ease-in-out infinite; }
-                .sx-beam { animation: sxBeamPulse 6s ease-in-out infinite; }
-                .sx-telemetry { animation: sxTelemetry 34s linear infinite; }
+                .sx-trace { stroke-dasharray: 6 7; animation: sxTrace 26s linear infinite; }
                 @media (prefers-reduced-motion: reduce) {
-                    .sx-drone, .sx-beam, .sx-telemetry { animation: none !important; }
+                    .sx-drone, .sx-trace { animation: none !important; }
                 }
             `}</style>
 
-            {/* Photo — jamais déformée : object-cover + cadrage sur les deux
-                professionnels, le drone et la fosse. `fetchPriority=high` :
-                c'est l'élément LCP de la page. Dimensions natives déclarées
-                pour figer le ratio et éviter tout layout shift. */}
+            {/* Photo — jamais déformée : object-cover, cadrée sur les deux
+                professionnels et la fosse. `fetchPriority=high` : élément LCP.
+                Dimensions natives déclarées pour figer le ratio (pas de saut). */}
             <img
                 src={HERO_IMAGE}
                 alt={t.heroImageAlt}
@@ -49,175 +85,114 @@ export default function LoginHeroPanel({ t }: Props) {
                 style={{ objectPosition: '64% center' }}
             />
 
-            {/* Dégradé de lisibilité — assombrit le bas et le bord droit sans
-                masquer les professionnels ni la fosse. */}
+            {/* Dégradé de pied uniquement : la scène reste lumineuse, l'accroche
+                reste lisible. */}
             <div
                 className="absolute inset-0"
                 aria-hidden="true"
                 style={{
                     background:
-                        'linear-gradient(to top, rgba(4,20,27,0.98) 0%, rgba(4,20,27,0.96) 38%, rgba(4,20,27,0.72) 52%, rgba(4,20,27,0.24) 68%, rgba(4,20,27,0.40) 100%),'
-                        + 'linear-gradient(to right, rgba(4,20,27,0.50) 0%, rgba(4,20,27,0) 34%, rgba(6,26,34,0.55) 100%)',
+                        'linear-gradient(to top, rgba(6,28,38,0.92) 0%, rgba(6,28,38,0.72) 18%, rgba(6,28,38,0.18) 40%, rgba(6,28,38,0) 58%),'
+                        + 'linear-gradient(to bottom, rgba(6,28,38,0.42) 0%, rgba(6,28,38,0) 26%)',
                 }}
             />
 
-            {/* ── Surcouche analytique : drone, faisceau, télémétrie ───────── */}
+            {/* ── Surcouche analytique : trajectoire + pastille d'analyse ──── */}
             <svg
-                className="absolute inset-0 h-full w-full pointer-events-none"
+                className="absolute inset-0 h-full w-full pointer-events-none hidden sm:block"
                 viewBox="0 0 100 100"
                 preserveAspectRatio="none"
                 aria-hidden="true"
                 focusable="false"
             >
-                {/* Lignes télémétriques discrètes vers la fosse */}
-                <g
-                    className="sx-telemetry"
-                    stroke="#19C7B5"
-                    strokeWidth="0.12"
+                <path
+                    className="sx-trace"
+                    d="M30 22 C 34 30, 26 34, 22 40 C 18 46, 22 50, 26 52"
+                    stroke="#7FF0E2"
+                    strokeWidth="0.22"
                     fill="none"
-                    opacity="0.32"
-                    strokeDasharray="2 3"
-                >
-                    <path d="M8 58 C 26 52, 44 61, 62 49" />
-                    <path d="M4 68 C 24 64, 40 71, 58 60" />
-                    <path d="M12 47 C 28 43, 42 50, 56 41" />
-                </g>
+                    opacity="0.85"
+                />
             </svg>
 
-            {/* Drone + faisceau — positionnés en pourcentage du panneau pour
-                rester devant les professionnels quel que soit le recadrage. */}
-            <div
-                className="absolute pointer-events-none hidden sm:block"
-                style={{ left: '26%', top: '13%', width: '21%' }}
-                aria-hidden="true"
-            >
-                {/* Faisceau d'analyse cyan dirigé vers la fosse (bas-gauche) */}
+            {/* Drone d'inspection */}
+            <div className="absolute hidden sm:block" style={{ left: '18%', top: '17%', width: '17%' }} aria-hidden="true">
                 <svg
-                    className="sx-beam absolute"
-                    style={{ left: '-72%', top: '52%', width: '190%' }}
-                    viewBox="0 0 200 150"
+                    className="sx-drone w-full"
+                    viewBox="0 0 200 96"
                     aria-hidden="true"
                     focusable="false"
-                >
-                    <defs>
-                        <linearGradient id="sxBeamGrad" x1="100%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stopColor="#19C7B5" stopOpacity="0.55" />
-                            <stop offset="100%" stopColor="#19C7B5" stopOpacity="0" />
-                        </linearGradient>
-                    </defs>
-                    <path d="M176 6 L 34 132 L 92 140 Z" fill="url(#sxBeamGrad)" />
-                    <ellipse cx="60" cy="134" rx="34" ry="7" fill="none" stroke="#19C7B5" strokeOpacity="0.45" strokeWidth="1.2" />
-                </svg>
-
-                {/* Drone professionnel quadrirotor + caméra stabilisée sous la nacelle */}
-                <svg
-                    className="sx-drone relative w-full"
-                    viewBox="0 0 200 110"
-                    aria-hidden="true"
-                    focusable="false"
-                    style={{ filter: 'drop-shadow(0 10px 26px rgba(0,0,0,0.55))' }}
+                    style={{ filter: 'drop-shadow(0 12px 22px rgba(0,0,0,0.45))' }}
                 >
                     {/* Bras */}
-                    <g stroke="#0E2A33" strokeWidth="7" strokeLinecap="round">
-                        <path d="M70 46 L 34 30" />
-                        <path d="M130 46 L 166 30" />
-                        <path d="M74 56 L 40 66" />
-                        <path d="M126 56 L 160 66" />
+                    <g stroke="#22404F" strokeWidth="7" strokeLinecap="round">
+                        <path d="M72 42 L 36 26" />
+                        <path d="M128 42 L 164 26" />
+                        <path d="M76 52 L 42 62" />
+                        <path d="M124 52 L 158 62" />
                     </g>
                     {/* Hélices */}
-                    <g fill="none" stroke="#CBD5E1" strokeOpacity="0.75" strokeWidth="2.4">
-                        <ellipse cx="30" cy="28" rx="24" ry="4" />
-                        <ellipse cx="170" cy="28" rx="24" ry="4" />
-                        <ellipse cx="36" cy="68" rx="22" ry="4" />
-                        <ellipse cx="164" cy="68" rx="22" ry="4" />
+                    <g fill="none" stroke="#E8EFF1" strokeOpacity="0.9" strokeWidth="2.6">
+                        <ellipse cx="32" cy="24" rx="25" ry="4" />
+                        <ellipse cx="168" cy="24" rx="25" ry="4" />
+                        <ellipse cx="38" cy="64" rx="23" ry="4" />
+                        <ellipse cx="162" cy="64" rx="23" ry="4" />
                     </g>
                     {/* Fuselage */}
-                    <rect x="62" y="36" width="76" height="30" rx="13" fill="#12313B" stroke="#1E4A57" strokeWidth="2" />
-                    <rect x="72" y="42" width="30" height="8" rx="4" fill="#1E4A57" />
-                    <circle cx="126" cy="46" r="3" fill="#21D98B" />
+                    <rect x="64" y="32" width="72" height="28" rx="13" fill="#2C4A59" stroke="#42697A" strokeWidth="2" />
+                    <rect x="74" y="38" width="28" height="7" rx="3.5" fill="#42697A" />
+                    <circle cx="124" cy="42" r="3" fill="#5FE3D2" />
                     {/* Nacelle + caméra stabilisée */}
-                    <path d="M92 66 L 92 74 M112 66 L 112 74" stroke="#1E4A57" strokeWidth="4" strokeLinecap="round" />
-                    <rect x="86" y="72" width="30" height="20" rx="8" fill="#0E2A33" stroke="#1E4A57" strokeWidth="2" />
-                    <circle cx="101" cy="82" r="7.5" fill="#04141B" stroke="#19C7B5" strokeWidth="2" />
-                    <circle cx="101" cy="82" r="3" fill="#19C7B5" fillOpacity="0.65" />
+                    <path d="M92 60 L 92 68 M110 60 L 110 68" stroke="#42697A" strokeWidth="4" strokeLinecap="round" />
+                    <rect x="86" y="66" width="30" height="19" rx="8" fill="#22404F" stroke="#42697A" strokeWidth="2" />
+                    <circle cx="101" cy="75" r="7" fill="#0B2432" stroke="#5FE3D2" strokeWidth="2" />
+                    <circle cx="101" cy="75" r="2.6" fill="#5FE3D2" fillOpacity="0.8" />
                 </svg>
-            </div>
-
-            {/* ── Carte translucide « Niveau de risque » ───────────────────── */}
-            <div
-                className="absolute hidden lg:block rounded-xl px-4 py-3"
-                style={{
-                    left: '51%',
-                    top: '11%',
-                    background: 'rgba(6,26,34,0.62)',
-                    border: '1px solid rgba(25,199,181,0.30)',
-                    backdropFilter: 'blur(10px)',
-                    WebkitBackdropFilter: 'blur(10px)',
-                    boxShadow: '0 14px 40px rgba(0,0,0,0.45)',
-                }}
-            >
-                <div className="flex items-start gap-3">
-                    {/* Pictogramme casque — décoratif */}
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="mt-0.5 shrink-0">
-                        <path d="M4 16a8 8 0 0 1 16 0" stroke="#19C7B5" strokeWidth="1.6" strokeLinecap="round" />
-                        <path d="M9.5 8.6V5.8a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2.8" stroke="#19C7B5" strokeWidth="1.6" strokeLinecap="round" />
-                        <path d="M2.8 16h18.4a.8.8 0 0 1 .8.8v.9a.8.8 0 0 1-.8.8H2.8a.8.8 0 0 1-.8-.8v-.9a.8.8 0 0 1 .8-.8Z" stroke="#19C7B5" strokeWidth="1.6" />
-                    </svg>
-                    <div className="min-w-0">
-                        <p className="text-[11.5px] tracking-[0.02em] text-[#9EB2B8]">{t.riskCardTitle}</p>
-                        <p className="flex items-center gap-2 text-[19px] font-semibold leading-tight text-[#21D98B]">
-                            {t.riskCardValue}
-                        </p>
-                        <p className="mt-0.5 text-[11px] text-[#9EB2B8]">{t.riskCardScope}</p>
-                    </div>
-                    <span
-                        className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-[#21D98B]"
-                        style={{ boxShadow: '0 0 10px rgba(33,217,139,0.75)' }}
-                        aria-hidden="true"
-                    />
-                </div>
             </div>
 
             {/* ── Marque, en haut à gauche ─────────────────────────────────── */}
-            <div className="absolute left-7 top-6 flex items-center gap-3 xl:left-10 xl:top-8">
-                <SafeXLogoColor variant="full" tone="light" size={44} />
+            <div className="absolute left-7 top-6 max-w-[70%] xl:left-12 xl:top-9">
+                <BrandLockup t={t} />
+                <p
+                    className="mt-2 max-w-[24ch] text-[13.5px] leading-snug"
+                    style={{ color: 'rgba(255,255,255,0.88)', textShadow: '0 2px 12px rgba(0,0,0,0.55)' }}
+                >
+                    {t.tagline}
+                </p>
             </div>
-            <p
-                className="absolute left-7 top-[74px] max-w-[22ch] text-[12.5px] xl:left-10 xl:top-[86px]"
-                style={{ color: '#C6D6DA', textShadow: '0 2px 12px rgba(0,0,0,0.65)' }}
-            >
-                {t.tagline}
-            </p>
 
-            {/* ── Message principal, en bas à gauche ───────────────────────── */}
-            <div className="absolute bottom-10 left-7 right-8 xl:bottom-14 xl:left-10">
+            {/* ── Accroche, en bas à gauche ────────────────────────────────── */}
+            <div className="absolute bottom-10 left-7 right-8 xl:bottom-14 xl:left-12">
                 <h2
-                    className="font-semibold"
                     style={{
                         // Couleur posée en ligne : une règle globale de App.css
                         // impose sinon un titre bleu nuit, illisible sur la photo.
-                        color: '#F4F7F6',
-                        fontWeight: 650,
+                        color: '#FFFFFF',
+                        fontWeight: 700,
                         fontSize: 'clamp(28px, 3.1vw, 46px)',
-                        lineHeight: 1.12,
-                        letterSpacing: '-0.02em',
-                        textShadow: '0 4px 26px rgba(0,0,0,0.62)',
+                        lineHeight: 1.14,
+                        letterSpacing: '-0.022em',
+                        textShadow: '0 4px 24px rgba(0,0,0,0.55)',
                     }}
                 >
                     {t.heroLine1}
                     <br />
-                    {/* UN SEUL nœud texte par fragment : des nœuds frères
-                        mis à jour après le montage cassent Google Translate. */}
+                    {/* UN SEUL nœud texte par fragment : des nœuds frères mis à
+                        jour après le montage cassent Google Translate. */}
                     {`${t.heroLine2} `}
-                    <span style={{ color: '#19C7B5' }}>{t.heroHighlight}</span>
+                    <span style={{ color: '#3BD6C6' }}>{t.heroHighlight}</span>
                 </h2>
                 <p
-                    className="mt-4 max-w-[46ch]"
-                    style={{ color: '#C6D6DA', fontSize: 'clamp(13px, 1.1vw, 16px)', textShadow: '0 2px 14px rgba(0,0,0,0.7)' }}
+                    className="mt-4 max-w-[48ch]"
+                    style={{
+                        color: 'rgba(255,255,255,0.9)',
+                        fontSize: 'clamp(13px, 1.05vw, 16px)',
+                        textShadow: '0 2px 14px rgba(0,0,0,0.6)',
+                    }}
                 >
                     {t.heroSubtitle}
                 </p>
-                <div className="mt-5 h-[3px] w-16 rounded-full bg-[#19C7B5]" aria-hidden="true" />
+                <div className="mt-5 h-[3px] w-16 rounded-full" style={{ background: '#3BD6C6' }} aria-hidden="true" />
             </div>
         </section>
     );

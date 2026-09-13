@@ -61,20 +61,20 @@ export default function MicrosoftSignInButton({ t, redirectTo, disabled = false 
                 disabled={inactive}
                 aria-disabled={inactive}
                 aria-describedby={configured ? undefined : 'sx-ms-unavailable'}
-                className="sx-ms-btn flex h-[54px] w-full items-center justify-center gap-3 rounded-[10px] border text-[14.5px] font-medium transition-colors"
+                className="sx-ms-btn flex h-[56px] w-full items-center justify-center gap-3 rounded-[10px] border text-[15px] font-medium transition-colors"
                 style={{
-                    background: 'rgba(11,37,43,0.55)',
-                    borderColor: 'rgba(158,178,184,0.30)',
-                    color: '#F4F7F6',
+                    background: '#FFFFFF',
+                    borderColor: '#DCE5E6',
+                    color: '#0B2A38',
                     cursor: inactive ? 'not-allowed' : 'pointer',
-                    opacity: configured ? 1 : 0.62,
+                    opacity: configured ? 1 : 0.65,
                 }}
             >
-                {redirecting ? <Loader size="xs" color="#19C7B5" /> : <MicrosoftLogo />}
+                {redirecting ? <Loader size="xs" color="#0E9E93" /> : <MicrosoftLogo />}
                 <span>{redirecting ? t.microsoftProgress : t.microsoftButton}</span>
             </button>
             {!configured && (
-                <p id="sx-ms-unavailable" className="mt-1.5 text-center text-[11.5px] text-[#9EB2B8]">
+                <p id="sx-ms-unavailable" className="mt-2 text-center text-[11.5px]" style={{ color: '#7C8C93' }}>
                     {t.microsoftUnavailable}
                 </p>
             )}
