@@ -5721,6 +5721,9 @@ const moisDePeriode = (p) => ({ '7j':1, '30j':1, '90j':3, 'YTD':new Date().getMo
 const prorata = (p) => (p === '7j' ? 7 / 30 : 1);
 const cumule = (rows, champs) => rows.reduce((acc, r) => { champs.forEach(c => { acc[c] = (acc[c] || 0) + r[c]; }); return acc; }, {});
 const pctFr = (n) => (Math.round(n * 10) / 10).toLocaleString('fr-FR') + ' %';
+/* Variation : sans periode precedente comparable, on n'affiche rien plutot qu'un NaN. */
+const varPct = (cur, prev) => (prev > 0 ? +(((cur - prev) / prev) * 100).toFixed(1) : undefined);
+const varPts = (cur, prev, comparable) => (comparable ? +(cur - prev).toFixed(1) : undefined);
 
 /* Répartition d'un total entre les postes, proportionnelle à l'effectif, avec une dérive stable. */
 const repartitionPostes = (total) => {
@@ -5800,7 +5803,7 @@ const PageMbaCards = () => {
       }),
     }));
 
-    return { serie, t, tp, tauxNC, tauxNCprec, tauxAut, tauxAutPrec, delai, delaiPrec, postes, depts, ncGroupes, risques, chaleur };
+    return { serie, t, tp, comparable: prec.length > 0, tauxNC, tauxNCprec, tauxAut, tauxAutPrec, delai, delaiPrec, postes, depts, ncGroupes, risques, chaleur };
   }, [periode]);
 
   const { t, serie } = data;
@@ -5826,22 +5829,22 @@ const PageMbaCards = () => {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <KPI label="Cartes créées" value={t.cartes.toLocaleString('fr-FR')} icon="dashboard" tone="teal"
-             delta={+(((t.cartes - data.tp.cartes) / Math.max(1, data.tp.cartes)) * 100).toFixed(1)}
+             delta={varPct(t.cartes, data.tp.cartes)}
              spark={serie.map(m => m.cartes)} sub={`${t.brouillons.toLocaleString('fr-FR')} brouillons`}/>
         <KPI label="Transmises" value={pctFr((t.soumises / Math.max(1, t.cartes)) * 100)} icon="external" tone="blue"
              sub={`${t.soumises.toLocaleString('fr-FR')} cartes`}/>
         <KPI label="Autorisées" value={pctFr(data.tauxAut)} icon="check" tone="green"
-             delta={+(data.tauxAut - data.tauxAutPrec).toFixed(1)} spark={serie.map(m => m.tauxAutorisation)}
+             delta={varPts(data.tauxAut, data.tauxAutPrec, data.comparable)} spark={serie.map(m => m.tauxAutorisation)}
              sub={`${t.refusees} refusées · ${t.corrections} corrections`}/>
         <KPI label="Non-conformité" value={pctFr(data.tauxNC)} icon="incident" tone="orange" deltaInvert
-             delta={+(data.tauxNC - data.tauxNCprec).toFixed(1)} spark={serie.map(m => m.tauxNC)}
+             delta={varPts(data.tauxNC, data.tauxNCprec, data.comparable)} spark={serie.map(m => m.tauxNC)}
              sub={`${t.nc.toLocaleString('fr-FR')} réponses NC`}/>
         <KPI label="Non applicable" value={pctFr((t.na / Math.max(1, t.reponses)) * 100)} icon="info" tone="ink"
              sub="NA n'est pas C"/>
         <KPI label="Délai d'examen" value={data.delai.toFixed(1)} unit="h" icon="calendar" tone="purple" deltaInvert
-             delta={+(data.delai - data.delaiPrec).toFixed(1)} sub="transmission → décision"/>
+             delta={varPts(data.delai, data.delaiPrec, data.comparable)} sub="transmission → décision"/>
         <KPI label="Arrêts de tâche" value={t.arrets} icon="flag" tone="red" deltaInvert
-             delta={+(((t.arrets - data.tp.arrets) / Math.max(1, data.tp.arrets)) * 100).toFixed(1)} spark={serie.map(m => m.arrets)}/>
+             delta={varPct(t.arrets, data.tp.arrets)} spark={serie.map(m => m.arrets)}/>
         <KPI label="Clôturées" value={t.cloturees.toLocaleString('fr-FR')} icon="report" tone="teal"
              sub="une clôture ne referme pas les actions"/>
       </div>
@@ -6105,7 +6108,7 @@ const PageEone = () => {
       }),
     }));
 
-    return { serie, t, tp, delai, delaiPrec, themes, tete, serieThemes, depts, matrice };
+    return { serie, t, tp, comparable: prec.length > 0, delai, delaiPrec, themes, tete, serieThemes, depts, matrice };
   }, [periode]);
 
   const { t, serie, themes } = data;
@@ -6133,18 +6136,18 @@ const PageEone = () => {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <KPI label="Dossiers e-One" value={t.dossiers.toLocaleString('fr-FR')} icon="user" tone="blue"
-             delta={+(((t.dossiers - data.tp.dossiers) / Math.max(1, data.tp.dossiers)) * 100).toFixed(1)}
+             delta={varPct(t.dossiers, data.tp.dossiers)}
              spark={serie.map(m => m.dossiers)} sub={`${t.prevention.toLocaleString('fr-FR')} en prévention`}/>
         <KPI label="Taux de réponse" value={pctFr(tauxReponse)} icon="check" tone="teal"
-             delta={+(tauxReponse - tauxReponsePrec).toFixed(1)} spark={serie.map(m => m.tauxReponse)}/>
+             delta={varPts(tauxReponse, tauxReponsePrec, data.comparable)} spark={serie.map(m => m.tauxReponse)}/>
         <KPI label="Dossiers validés" value={pctFr((t.valides / Math.max(1, t.dossiers)) * 100)} icon="audit" tone="green"
              sub={`${t.clotures.toLocaleString('fr-FR')} clôturés · ${t.enCours} en cours`}/>
         <KPI label="Délai validation" value={data.delai.toFixed(1)} unit="h" icon="calendar" tone="purple" deltaInvert
-             delta={+(data.delai - data.delaiPrec).toFixed(1)}/>
+             delta={varPts(data.delai, data.delaiPrec, data.comparable)}/>
         <KPI label="Engagements ouverts" value={t.actions.toLocaleString('fr-FR')} icon="target" tone="ink"
              sub={`${pctFr((t.actionsVerifiees / Math.max(1, t.actions)) * 100)} vérifiés sur le terrain`}/>
         <KPI label="Engagements en retard" value={t.actionsRetard} icon="bell" tone="red" deltaInvert
-             delta={+(((t.actionsRetard - data.tp.actionsRetard) / Math.max(1, data.tp.actionsRetard)) * 100).toFixed(1)}
+             delta={varPct(t.actionsRetard, data.tp.actionsRetard)}
              spark={serie.map(m => m.actionsRetard)}/>
         <KPI label="Reconnaissance" value={pctFr((t.reconnaissance / Math.max(1, t.dossiers)) * 100)} icon="star" tone="green"
              sub={`${t.reconnaissance.toLocaleString('fr-FR')} dossiers`}/>
