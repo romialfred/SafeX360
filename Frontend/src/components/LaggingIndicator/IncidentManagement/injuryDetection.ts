@@ -58,6 +58,33 @@ export const mentionneBlessure = (valeur: unknown): boolean => {
     return texte.length > 0 && REGEX_BLESSURE.test(texte);
 };
 
+/**
+ * Catégories dont un incident peut atteindre une personne, donc les seules où la
+ * question de la blessure est posée. Un dommage matériel ou un écart de processus
+ * n'a pas de partie du corps à renseigner : poser la question y était du bruit.
+ *
+ * Liste volontairement explicite et facile à étendre : le référentiel compte
+ * aussi « Incendie et explosion », « Dynamitage », « Transport » et
+ * « Communauté », qui peuvent blesser. Leur ajout est une décision métier, pas
+ * une déduction du code — ne pas les inscrire ici ferme la saisie chez eux.
+ */
+const CATEGORIES_CORPORELLES = [
+    /** FR : « Santé et sécurité ». EN : « Health and safety », « Health & safety ». */
+    (label: string) => label.includes('sante') && label.includes('securite'),
+    (label: string) => label.includes('health') && label.includes('safety'),
+];
+
+/**
+ * Vrai si la catégorie peut concerner une personne. Sans catégorie choisie, la
+ * question n'est pas posée : on ne demande pas une blessure avant de savoir de
+ * quel type d'événement il s'agit.
+ */
+export const categorieConcernePersonne = (categorieLabel: unknown): boolean => {
+    const label = normaliseTexte(categorieLabel);
+    if (!label) { return false; }
+    return CATEGORIES_CORPORELLES.some((test) => test(label));
+};
+
 export interface IndicesBlessure {
     /** Libellé du type d'incident sélectionné pour cette classification. */
     typeLabel?: string;

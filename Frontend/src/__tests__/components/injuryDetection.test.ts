@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mentionneBlessure, suggereBlessure } from '../../components/LaggingIndicator/IncidentManagement/injuryDetection';
+import { categorieConcernePersonne, mentionneBlessure, suggereBlessure } from '../../components/LaggingIndicator/IncidentManagement/injuryDetection';
 
 /**
  * La saisie des parties du corps ne doit plus dépendre d'un libellé de type
@@ -41,6 +41,20 @@ describe('détection d’une atteinte corporelle', () => {
         // Des parties du corps déjà saisies valent réponse « oui » : à l'ouverture
         // d'un dossier existant, la section ne doit pas se refermer sur les données.
         expect(suggereBlessure({ typeLabel: 'Événement', partiesDejaSaisies: ['3'] })).toBe(true);
+    });
+
+    it('ne pose la question que pour une catégorie qui concerne une personne', () => {
+        expect(categorieConcernePersonne('Santé et sécurité')).toBe(true);
+        expect(categorieConcernePersonne('SANTE ET SECURITE')).toBe(true);
+        expect(categorieConcernePersonne('Health and safety')).toBe(true);
+        // Les huit autres catégories du référentiel : aucune partie du corps à saisir.
+        ['Environnement', 'Dommage matériel', 'Incendie et explosion', 'Communauté',
+            'Dynamitage', 'Sûreté', 'Transport', 'Processus opérationnel'].forEach((cat) => {
+            expect(categorieConcernePersonne(cat), cat).toBe(false);
+        });
+        // Sans catégorie choisie, on ne demande rien.
+        expect(categorieConcernePersonne('')).toBe(false);
+        expect(categorieConcernePersonne(undefined)).toBe(false);
     });
 
     it('ne propose rien sans indice', () => {

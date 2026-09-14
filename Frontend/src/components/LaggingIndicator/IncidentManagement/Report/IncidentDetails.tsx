@@ -20,7 +20,7 @@ import TextEditor from "../../../UtilityComp/TextEditor";
 import BodyPartSelect from "./BodyPartSelect";
 import { getColorForSeverityLevel } from "../../../../utility/OtherUtilities";
 import { incidentStatusColor } from "../incidentLabels";
-import { suggereBlessure } from "../injuryDetection";
+import { categorieConcernePersonne, suggereBlessure } from "../injuryDetection";
 import { useTranslation } from "react-i18next";
 
 const IncidentDetails = ({ form, weatherConditions, locations, categories, incidentTypes, severityLevelMap, bodyParts, workAreas, workProcesses, departments }: any) => {
@@ -73,6 +73,17 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
     // répondu : c'est alors la proposition du système qui s'applique.
     const [reponsesBlessure, setReponsesBlessure] = useState<Record<number, boolean | undefined>>({});
 
+    /** Libellé de la catégorie choisie pour cette classification. */
+    const libelleCategorie = (index: number) =>
+        categories.find((c: any) => c.value == form.values.incidentDetails?.[index]?.incidentCategoryId)?.label;
+
+    /**
+     * La question de la blessure n'est posée que pour une catégorie qui peut
+     * atteindre une personne. Un dommage matériel n'a pas de partie du corps à
+     * renseigner : la question y était du bruit dans le formulaire.
+     */
+    const questionBlessurePosee = (index: number) => categorieConcernePersonne(libelleCategorie(index));
+
     /** Proposition du système pour la classification `index`. */
     const suggestionBlessure = (index: number) => {
         const detail = form.values.incidentDetails?.[index] ?? {};
@@ -87,7 +98,8 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
     };
 
     /** Réponse retenue : celle du déclarant si elle existe, sinon la proposition. */
-    const avecBlessure = (index: number) => reponsesBlessure[index] ?? suggestionBlessure(index);
+    const avecBlessure = (index: number) =>
+        questionBlessurePosee(index) && (reponsesBlessure[index] ?? suggestionBlessure(index));
 
     const repondBlessure = (index: number, valeur: boolean) => {
         setReponsesBlessure((r) => ({ ...r, [index]: valeur }));
@@ -236,7 +248,7 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
                             {/* Blessure : la question est posée explicitement. Le système
                                 propose une réponse à partir du type, de la catégorie et des
                                 textes de la déclaration ; le déclarant garde le dernier mot. */}
-                            <div className="col-span-2">
+                            {questionBlessurePosee(index) && <div className="col-span-2">
                                 <Radio.Group
                                     size="sm"
                                     value={avecBlessure(index) ? "OUI" : "NON"}
@@ -253,7 +265,7 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
                                         <Radio value="NON" label="Non" />
                                     </Group>
                                 </Radio.Group>
-                            </div>
+                            </div>}
                             {avecBlessure(index) &&
                                 <div className="space-y-2 col-span-2 bg-red-50/60 border border-red-200 p-3 rounded-md mt-2">
                                     <h4 className="text-xs text-red-800 uppercase tracking-wider">Détails de la blessure</h4>
