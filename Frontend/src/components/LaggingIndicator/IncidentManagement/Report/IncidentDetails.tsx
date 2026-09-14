@@ -6,6 +6,7 @@ import {
     Fieldset,
     Group,
     MultiSelect,
+    Radio,
     Select,
     SelectProps,
     Text,
@@ -19,6 +20,7 @@ import TextEditor from "../../../UtilityComp/TextEditor";
 import BodyPartSelect from "./BodyPartSelect";
 import { getColorForSeverityLevel } from "../../../../utility/OtherUtilities";
 import { incidentStatusColor } from "../incidentLabels";
+import { suggereBlessure } from "../injuryDetection";
 import { useTranslation } from "react-i18next";
 
 const IncidentDetails = ({ form, weatherConditions, locations, categories, incidentTypes, severityLevelMap, bodyParts, workAreas, workProcesses, departments }: any) => {
@@ -67,6 +69,33 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
 
 
 
+    // Réponse explicite du déclarant, par classification. `undefined` = pas encore
+    // répondu : c'est alors la proposition du système qui s'applique.
+    const [reponsesBlessure, setReponsesBlessure] = useState<Record<number, boolean | undefined>>({});
+
+    /** Proposition du système pour la classification `index`. */
+    const suggestionBlessure = (index: number) => {
+        const detail = form.values.incidentDetails?.[index] ?? {};
+        return suggereBlessure({
+            typeLabel: incidentTypes.find((t: any) => t.value == detail.incidentTypeId)?.label,
+            categorieLabel: categories.find((c: any) => c.value == detail.incidentCategoryId)?.label,
+            // La description factuelle et les conséquences sont les deux endroits où
+            // le mot « blessure » apparaît réellement quand le type ne le porte pas.
+            textes: [form.values.title, form.values.factualDescription, form.values.immediateConsequences],
+            partiesDejaSaisies: detail.affectedBodyParts,
+        });
+    };
+
+    /** Réponse retenue : celle du déclarant si elle existe, sinon la proposition. */
+    const avecBlessure = (index: number) => reponsesBlessure[index] ?? suggestionBlessure(index);
+
+    const repondBlessure = (index: number, valeur: boolean) => {
+        setReponsesBlessure((r) => ({ ...r, [index]: valeur }));
+        // Répondre « non » ne doit pas laisser partir des parties du corps saisies
+        // puis masquées : le formulaire ne promet que ce qu'il montre.
+        if (!valeur) { form.setFieldValue(`incidentDetails.${index}.affectedBodyParts`, []); }
+    };
+
     const handleAddIncident = () => {
         form.insertListItem('incidentDetails', {
             incidentCategoryId: '',
@@ -91,6 +120,10 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
         formReset(index);
     }
     const formReset = (index: number) => {
+        // Changer de type ou de catégorie repose la question : une réponse donnée
+        // pour un autre type n'a plus de sens, et la garder masquerait la saisie
+        // des parties du corps alors que le nouveau type l'appelle.
+        setReponsesBlessure((r) => { const copie = { ...r }; delete copie[index]; return copie; });
         form.setFieldValue(`incidentDetails.${index}.affectedBodyParts`, []);
         form.setFieldValue(`incidentDetails.${index}.environmentalImpact`, '');
         form.setFieldValue(`incidentDetails.${index}.containmentMeasures`, '');
@@ -200,7 +233,28 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
                                 <Select size="sm" withAsterisk renderOption={renderSelectOption} {...form.getInputProps(`incidentDetails.${index}.incidentTypeId`)} onChange={(e) => handleTypeChange(e, index)} data={incidentTypes.filter((x: any) => x.category == form.getInputProps(`incidentDetails.${index}.incidentCategoryId`)?.value)} label="Type d'incident" placeholder="Sélectionner un type" />
                                 {severityLevelMap[x.severityLevelId]?.level > 3 && <Text size="xs" c="red">Cet incident nécessitera une investigation approfondie</Text>}
                             </div>
-                            {(() => { const typeLabel = (incidentTypes.find((t: any) => t.value == form.getInputProps(`incidentDetails.${index}.incidentTypeId`).value)?.label || "").toLowerCase(); return typeLabel.includes("blessure") || typeLabel.includes("premiers soins") || typeLabel.includes("first aid") || typeLabel.includes("injury"); })() &&
+                            {/* Blessure : la question est posée explicitement. Le système
+                                propose une réponse à partir du type, de la catégorie et des
+                                textes de la déclaration ; le déclarant garde le dernier mot. */}
+                            <div className="col-span-2">
+                                <Radio.Group
+                                    size="sm"
+                                    value={avecBlessure(index) ? "OUI" : "NON"}
+                                    onChange={(v) => repondBlessure(index, v === "OUI")}
+                                    label="Cet incident a-t-il occasionné une blessure ?"
+                                    description={
+                                        reponsesBlessure[index] === undefined && suggestionBlessure(index)
+                                            ? "Proposé par le système : le type, la catégorie ou la description mentionnent une atteinte corporelle. Corrigez si ce n'est pas le cas."
+                                            : "Répondre « oui » ouvre la saisie des parties du corps touchées."
+                                    }
+                                >
+                                    <Group gap="md" mt={6}>
+                                        <Radio value="OUI" label="Oui, avec blessure" color="red" />
+                                        <Radio value="NON" label="Non" />
+                                    </Group>
+                                </Radio.Group>
+                            </div>
+                            {avecBlessure(index) &&
                                 <div className="space-y-2 col-span-2 bg-red-50/60 border border-red-200 p-3 rounded-md mt-2">
                                     <h4 className="text-xs text-red-800 uppercase tracking-wider">Détails de la blessure</h4>
                                     <BodyPartSelect bodyParts={bodyParts} form={form} id={`incidentDetails.${index}.affectedBodyParts`} />

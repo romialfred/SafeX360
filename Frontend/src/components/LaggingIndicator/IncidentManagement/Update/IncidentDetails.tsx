@@ -6,6 +6,7 @@ import {
     Fieldset,
     Group,
     MultiSelect,
+    Radio,
     Select,
     SelectProps,
     Text,
@@ -22,6 +23,7 @@ import { removeIncidentDetail } from "../../../../services/IncidentDetailService
 import { errorNotification, successNotification } from "../../../../utility/NotificationUtility";
 import { getColorForSeverityLevel } from "../../../../utility/OtherUtilities";
 import { PPE_LABELS, incidentStatusColor, incidentStatusLabel } from "../incidentLabels";
+import { suggereBlessure } from "../injuryDetection";
 
 const IncidentDetails = ({ form, weatherConditions, locations, categories, incidentTypes, severityLevelMap, bodyParts, departments, workAreas, workProcesses }: any) => {
 
@@ -54,6 +56,31 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
     // ];
 
 
+
+    // Réponse explicite de l'utilisateur, par classification. `undefined` = pas encore
+    // répondu : c'est alors la proposition du système qui s'applique.
+    const [reponsesBlessure, setReponsesBlessure] = useState<Record<number, boolean | undefined>>({});
+
+    /** Proposition du système pour la classification `index`. */
+    const suggestionBlessure = (index: number) => {
+        const detail = form.values.incidentDetails?.[index] ?? {};
+        return suggereBlessure({
+            typeLabel: incidentTypes.find((t: any) => t.value == detail.incidentTypeId)?.label,
+            categorieLabel: categories.find((c: any) => c.value == detail.incidentCategoryId)?.label,
+            textes: [form.values.title, form.values.factualDescription, form.values.immediateConsequences],
+            partiesDejaSaisies: detail.affectedBodyParts,
+        });
+    };
+
+    /** Réponse retenue : celle de l'utilisateur si elle existe, sinon la proposition. */
+    const avecBlessure = (index: number) => reponsesBlessure[index] ?? suggestionBlessure(index);
+
+    const repondBlessure = (index: number, valeur: boolean) => {
+        setReponsesBlessure((r) => ({ ...r, [index]: valeur }));
+        // Répondre « non » ne doit pas laisser partir des parties du corps saisies
+        // puis masquées : le formulaire ne promet que ce qu'il montre.
+        if (!valeur) { form.setFieldValue(`incidentDetails.${index}.affectedBodyParts`, []); }
+    };
 
     const handleAddIncident = () => {
         form.insertListItem('incidentDetails', {
@@ -126,6 +153,10 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
         formReset(index);
     }
     const formReset = (index: number) => {
+        // Changer de type ou de catégorie repose la question : une réponse donnée
+        // pour un autre type n'a plus de sens, et la garder masquerait la saisie
+        // des parties du corps alors que le nouveau type l'appelle.
+        setReponsesBlessure((r) => { const copie = { ...r }; delete copie[index]; return copie; });
         form.setFieldValue(`incidentDetails.${index}.affectedBodyParts`, []);
         form.setFieldValue(`incidentDetails.${index}.environmentalImpact`, '');
         form.setFieldValue(`incidentDetails.${index}.containmentMeasures`, '');
@@ -212,7 +243,27 @@ const IncidentDetails = ({ form, weatherConditions, locations, categories, incid
                         </div>
                         {/* <Select readOnly {...form.getInputProps(`incidentDetails.${index}.severityLevelId`)} data={severityLevels} label="Severity Level" placeholder="Select severity level" /> */}
 
-                        {(() => { const typeLabel = (incidentTypes.find((t: any) => t.value == form.getInputProps(`incidentDetails.${index}.incidentTypeId`).value)?.label || "").toLowerCase(); return typeLabel.includes("blessure") || typeLabel.includes("premiers soins") || typeLabel.includes("first aid") || typeLabel.includes("injury"); })() &&
+                        {/* Blessure : la question est posée explicitement. Le système propose
+                            une réponse à partir du type, de la catégorie et des textes du
+                            dossier ; l'utilisateur garde le dernier mot. */}
+                        <div className="col-span-2">
+                            <Radio.Group
+                                value={avecBlessure(index) ? "OUI" : "NON"}
+                                onChange={(v) => repondBlessure(index, v === "OUI")}
+                                label="Cet incident a-t-il occasionné une blessure ?"
+                                description={
+                                    reponsesBlessure[index] === undefined && suggestionBlessure(index)
+                                        ? "Proposé par le système : le type, la catégorie ou la description mentionnent une atteinte corporelle. Corrigez si ce n'est pas le cas."
+                                        : "Répondre « oui » ouvre la saisie des parties du corps touchées."
+                                }
+                            >
+                                <Group gap="md" mt={6}>
+                                    <Radio value="OUI" label="Oui, avec blessure" color="red" />
+                                    <Radio value="NON" label="Non" />
+                                </Group>
+                            </Radio.Group>
+                        </div>
+                        {avecBlessure(index) &&
                             <div className="space-y-4 col-span-3 bg-red-50 p-4 rounded-lg mt-4">
                                 <h3 className="text-gray-800">Détails de la blessure</h3>
 
