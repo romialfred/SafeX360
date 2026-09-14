@@ -5545,6 +5545,768 @@ const PageMonthlyReport = () => {
 };
 
 /* ===================================================================
+   e-MBA CARD & e-ONE — données simulées et pages d'analyse
+   -------------------------------------------------------------------
+   La carte MBA est la préparation de tâche remplie avant le travail :
+   poste, tâches, 37 vérifications C/NC/NA, risques et mesures, puis
+   décision du superviseur. e-One est l'interaction de sécurité : on
+   interpelle un salarié sur un thème, il répond, des engagements sont
+   pris, un validateur tranche.
+
+   Deux règles tenues par tous les chiffres de ces deux pages :
+     • recevoir une carte n'est pas autoriser la tâche ;
+     • NA n'est pas C — le « non applicable » ne gonfle pas la conformité.
+   Aucun classement n'est établi par personne : postes, départements et
+   thèmes seulement.
+
+   Chiffres simulés et déterministes (graine fixe) : deux ouvertures de
+   la page donnent les mêmes valeurs.
+   =================================================================== */
+
+const mbaRnd = (seed) => { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
+const mbaHash = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
+
+const MBA_DEPTS = ['Mine', 'Maintenance', 'Usine', 'Laboratoire', 'Environnement', 'Logistique', 'HSE'];
+const MBA_POSTES = [
+  { nom:'Conducteur d’engin',           dept:'Mine',          effectif:84 },
+  { nom:'Foreur',                            dept:'Mine',          effectif:32 },
+  { nom:'Boutefeu',                          dept:'Mine',          effectif:14 },
+  { nom:'Superviseur de quart',              dept:'Mine',          effectif:18 },
+  { nom:'Électromécanicien',                 dept:'Maintenance',   effectif:46 },
+  { nom:'Technicien de maintenance',         dept:'Maintenance',   effectif:38 },
+  { nom:'Soudeur',                           dept:'Maintenance',   effectif:16 },
+  { nom:'Électricien haute tension',         dept:'Maintenance',   effectif:12 },
+  { nom:'Opérateur broyage',                 dept:'Usine',         effectif:41 },
+  { nom:'Opérateur hydrométallurgie',        dept:'Usine',         effectif:27 },
+  { nom:'Technicien de laboratoire',         dept:'Laboratoire',   effectif:19 },
+  { nom:'Chargé de suivi environnemental',   dept:'Environnement', effectif:11 },
+  { nom:'Cariste',                           dept:'Logistique',    effectif:22 },
+  { nom:'Chauffeur poids lourd',             dept:'Logistique',    effectif:29 },
+  { nom:'Animateur HSE',                     dept:'HSE',           effectif:13 },
+];
+/* Les douze groupes de vérification de la carte papier. */
+const MBA_GROUPES = [
+  { code:'HOUSEKEEPING', label:'Tenue des lieux',          poids:26 },
+  { code:'EPP',          label:'EPP',                      poids:19 },
+  { code:'TOOLS',        label:'Outils',                   poids:11 },
+  { code:'MOBILE',       label:'Équipements mobiles',      poids:9 },
+  { code:'LIFTING',      label:'Levage de charges',        poids:7 },
+  { code:'HEIGHT',       label:'Travaux en hauteur 1,8 m', poids:6 },
+  { code:'ELEC',         label:'Électricité',              poids:5 },
+  { code:'CHEM',         label:'Produits chimiques',       poids:4 },
+  { code:'LADDER',       label:'Échelle et passerelle',    poids:4 },
+  { code:'TRENCH',       label:'Tranchées et excavation',  poids:3 },
+  { code:'PERMITS',      label:'Permis spécifiques',       poids:3 },
+  { code:'CHANGE',       label:'Modifications / AST',      poids:3 },
+];
+const MBA_RISQUES = [
+  { code:'R3',  label:'Chute de plain-pied',              poids:22 },
+  { code:'R7',  label:'Écrasement par engin mobile',      poids:17 },
+  { code:'R11', label:'Chute de hauteur',                 poids:12 },
+  { code:'R2',  label:'Projection de particules',         poids:10 },
+  { code:'R15', label:'Énergie résiduelle non consignée', poids:9 },
+  { code:'R9',  label:'Exposition aux poussières',        poids:8 },
+  { code:'R18', label:'Charge suspendue',                 poids:7 },
+  { code:'R5',  label:'Contact électrique',               poids:6 },
+  { code:'R21', label:'Produit chimique — contact cutané',poids:5 },
+  { code:'R13', label:'Effondrement de paroi',            poids:4 },
+];
+const EONE_THEMES = [
+  { code:'PPE',                   label:'Port et adéquation des EPI',                 poids:19 },
+  { code:'HOUSEKEEPING',          label:'Propreté, ordre et rangement',               poids:14 },
+  { code:'PROCEDURES',            label:'Procédures et modes opératoires',            poids:11 },
+  { code:'TASK_PREPARATION',      label:'Préparation de la tâche et carte MBA',       poids:10 },
+  { code:'TRAFFIC_COACTIVITY',    label:'Circulation et coactivité',                  poids:9 },
+  { code:'HAZARD_IDENTIFICATION', label:'Identification des dangers',                 poids:8 },
+  { code:'EQUIPMENT_GUARDS',      label:'Outils, machines et protections',            poids:6 },
+  { code:'ENERGY_ISOLATION',      label:'Consignation et énergies dangereuses',       poids:5 },
+  { code:'BARRICADING',           label:'Balisage et zones à risque',                 poids:4 },
+  { code:'ERGONOMICS',            label:'Ergonomie et manutention',                   poids:4 },
+  { code:'WORK_AT_HEIGHT',        label:'Travaux en hauteur',                         poids:3 },
+  { code:'EXPOSURES',             label:'Produits chimiques, poussières et bruit',    poids:3 },
+  { code:'COMMUNICATION',         label:'Communication et coordination',              poids:2 },
+  { code:'ORGANIZATION',          label:'Organisation et disponibilité des moyens',   poids:1.5 },
+  { code:'OTHER',                 label:'Autre — à préciser',                         poids:0.5 },
+];
+/* Affinités métier : la consignation appartient à la maintenance, la circulation à la mine. */
+const EONE_AFFINITE = {
+  TRAFFIC_COACTIVITY:{ Mine:2.3, Logistique:2.1 }, ENERGY_ISOLATION:{ Maintenance:2.8, Usine:1.6 },
+  WORK_AT_HEIGHT:{ Maintenance:2.2, Usine:1.4 }, EXPOSURES:{ Usine:2.2, Laboratoire:2.4 },
+  ERGONOMICS:{ Logistique:1.9, Usine:1.3 }, HOUSEKEEPING:{ Usine:1.4, Maintenance:1.3 },
+  EQUIPMENT_GUARDS:{ Usine:1.7, Maintenance:1.5 },
+};
+const MBA_AFFINITE_NC = {
+  MOBILE:{ Mine:2.2, Logistique:2 }, TRENCH:{ Mine:2.6 }, LIFTING:{ Maintenance:1.9, Logistique:1.6 },
+  ELEC:{ Maintenance:2.4 }, CHEM:{ Usine:2.3, Laboratoire:2.5 }, HEIGHT:{ Maintenance:2.1, Usine:1.5 },
+  LADDER:{ Maintenance:1.8 }, PERMITS:{ Maintenance:1.6, Usine:1.4 },
+};
+
+const MOIS_COURTS = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'];
+/* Saisonnalité : creux en saison des pluies, pic en fin d'exercice. */
+const mbaSaison = (m) => [1.02,1.05,1.08,1.03,0.99,0.94,0.86,0.84,0.9,1.04,1.1,1.06][m];
+
+/* 24 mois d'historique, du plus ancien au plus récent, jusqu'au mois courant. */
+const MBA_MOIS = (() => {
+  const out = []; const now = new Date();
+  for (let k = 23; k >= 0; k--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - k, 1);
+    const r = mbaRnd(mbaHash('mba' + d.getFullYear() + '-' + d.getMonth()));
+    const adoption = 0.44 + 0.56 * Math.min(1, (23 - k) / 17);
+    const base = mbaSaison(d.getMonth()) * adoption;
+    const cartes = Math.round(980 * base * (0.9 + r() * 0.22));
+    const brouillons = Math.round(cartes * (0.06 + r() * 0.06));
+    const soumises = cartes - brouillons;
+    const corrections = Math.round(soumises * (0.07 + r() * 0.05));
+    const refusees = Math.round(soumises * (0.05 + r() * 0.04));
+    const autorisees = soumises - corrections - refusees;
+    const cloturees = Math.round(soumises * (0.84 + r() * 0.1));
+    const reponses = cartes * 37 * 2;
+    const tauxNC = 0.055 + r() * 0.03;
+    const nc = Math.round(reponses * tauxNC);
+    const na = Math.round(reponses * (0.15 + r() * 0.05));
+    out.push({
+      key: d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'),
+      mois: MOIS_COURTS[d.getMonth()] + ' ' + String(d.getFullYear()).slice(2),
+      moisIdx: d.getMonth(), annee: d.getFullYear(),
+      cartes, brouillons, soumises, corrections, refusees, autorisees, cloturees,
+      nc, na, c: reponses - nc - na, reponses,
+      tauxNC: +(tauxNC * 100).toFixed(1),
+      tauxAutorisation: +((autorisees / soumises) * 100).toFixed(1),
+      arrets: Math.round(cartes * (0.012 + r() * 0.01)),
+      delai: +(4.2 + r() * 5.5).toFixed(1),
+      jour: Math.round(cartes * 0.72), nuit: cartes - Math.round(cartes * 0.72),
+      // Événements de la période, selon l'état de la carte de la tâche concernée
+      incAut: Math.round(4 + r() * 6), incRefus: Math.round(1 + r() * 3),
+      incNonSoumise: Math.round(1 + r() * 4), incSansCarte: Math.round(2 + r() * 5),
+    });
+  }
+  return out;
+})();
+
+const EONE_MOIS = (() => {
+  const out = []; const now = new Date();
+  for (let k = 23; k >= 0; k--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - k, 1);
+    const r = mbaRnd(mbaHash('eone' + d.getFullYear() + '-' + d.getMonth()));
+    const adoption = 0.4 + 0.6 * Math.min(1, (23 - k) / 15);
+    const base = mbaSaison(d.getMonth()) * adoption;
+    const dossiers = Math.round(860 * base * (0.9 + r() * 0.2));
+    const reconnaissance = Math.round(dossiers * (0.16 + r() * 0.09));
+    const prevention = dossiers - reconnaissance;
+    const enCours = Math.round(dossiers * (0.08 + r() * 0.05));
+    const corrections = Math.round(dossiers * (0.05 + r() * 0.04));
+    const rejetes = Math.round(dossiers * (0.015 + r() * 0.015));
+    const valides = dossiers - enCours - corrections - rejetes;
+    const clotures = Math.round(valides * (0.76 + r() * 0.15));
+    const actions = Math.round(prevention * (0.5 + r() * 0.25));
+    out.push({
+      key: d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'),
+      mois: MOIS_COURTS[d.getMonth()] + ' ' + String(d.getFullYear()).slice(2),
+      dossiers, prevention, reconnaissance, enCours, corrections, rejetes, valides, clotures,
+      reponses: Math.round(dossiers * (0.68 + r() * 0.22)),
+      actions, actionsVerifiees: Math.round(actions * (0.58 + r() * 0.26)),
+      actionsRetard: Math.round(actions * (0.08 + r() * 0.12)),
+      liesMba: Math.round(dossiers * (0.1 + r() * 0.08)),
+      delai: +(18 + r() * 22).toFixed(1),
+      tauxReponse: 0,
+    });
+  }
+  out.forEach(m => { m.tauxReponse = +((m.reponses / m.dossiers) * 100).toFixed(1); });
+  return out;
+})();
+
+/* Nombre de mois retenus selon la période choisie dans l'en-tête. */
+const moisDePeriode = (p) => ({ '7j':1, '30j':1, '90j':3, 'YTD':new Date().getMonth() + 1, '12m':12, '24m':24 }[p] || 12);
+/* 7 jours et 30 jours ne couvrent pas un mois plein : on ramène le dernier mois au prorata. */
+const prorata = (p) => (p === '7j' ? 7 / 30 : 1);
+const cumule = (rows, champs) => rows.reduce((acc, r) => { champs.forEach(c => { acc[c] = (acc[c] || 0) + r[c]; }); return acc; }, {});
+const pctFr = (n) => (Math.round(n * 10) / 10).toLocaleString('fr-FR') + ' %';
+
+/* Répartition d'un total entre les postes, proportionnelle à l'effectif, avec une dérive stable. */
+const repartitionPostes = (total) => {
+  const poids = MBA_POSTES.map(p => {
+    const r = mbaRnd(mbaHash('poste' + p.nom));
+    const durete = /Foreur|Boutefeu|Électricien|Soudeur|Conducteur/.test(p.nom) ? 1.45 : 1;
+    return { ...p, w: p.effectif * (0.85 + r() * 0.4), durete, u: r() };
+  });
+  const somme = poids.reduce((a, p) => a + p.w, 0);
+  return poids.map(p => {
+    const cartes = Math.round(total * (p.w / somme));
+    return {
+      nom: p.nom, dept: p.dept, effectif: p.effectif, cartes,
+      parPersonne: +(cartes / p.effectif).toFixed(1),
+      tauxNC: +((4.2 * p.durete + p.u * 2.4)).toFixed(1),
+      refusees: Math.round(cartes * (0.04 * p.durete + p.u * 0.03)),
+      arrets: Math.round(cartes * 0.012 * p.durete),
+    };
+  }).sort((a, b) => b.cartes - a.cartes);
+};
+
+const MBA_DEPT_POIDS = MBA_DEPTS.map(d => ({ d, w: MBA_POSTES.filter(p => p.dept === d).reduce((a, p) => a + p.effectif, 0) }));
+
+/* ---------- Page : analyse des cartes MBA ---------- */
+const PageMbaCards = () => {
+  const { filters } = useFilters() || { filters:{ period:'12m' } };
+  const periode = filters.period || '12m';
+  const [ongletClassement, setOngletClassement] = useState('postes');
+
+  const data = useMemo(() => {
+    const n = moisDePeriode(periode);
+    const serie = MBA_MOIS.slice(-n);
+    const prec = MBA_MOIS.slice(-2 * n, -n);
+    const k = prorata(periode);
+    const champs = ['cartes','brouillons','soumises','corrections','refusees','autorisees','cloturees','nc','na','c','reponses','arrets','jour','nuit','incAut','incRefus','incNonSoumise','incSansCarte'];
+    const t = cumule(serie, champs); const tp = cumule(prec, champs);
+    Object.keys(t).forEach(c => { t[c] = Math.round(t[c] * k); });
+    Object.keys(tp).forEach(c => { tp[c] = Math.round(tp[c] * k); });
+
+    const tauxNC = (t.nc / Math.max(1, t.nc + t.c)) * 100;
+    const tauxNCprec = (tp.nc / Math.max(1, tp.nc + tp.c)) * 100;
+    const tauxAut = (t.autorisees / Math.max(1, t.soumises)) * 100;
+    const tauxAutPrec = (tp.autorisees / Math.max(1, tp.soumises)) * 100;
+    const delai = serie.reduce((a, m) => a + m.delai, 0) / Math.max(1, serie.length);
+    const delaiPrec = prec.length ? prec.reduce((a, m) => a + m.delai, 0) / prec.length : delai;
+
+    const postes = repartitionPostes(t.cartes);
+    const sommeW = MBA_DEPT_POIDS.reduce((a, x) => a + x.w, 0);
+    const depts = MBA_DEPT_POIDS.map(({ d, w }) => {
+      const r = mbaRnd(mbaHash('dept' + d));
+      const cartes = Math.round(t.cartes * (w / sommeW));
+      return {
+        dept: d, cartes,
+        autorisation: +(78 + r() * 16).toFixed(1),
+        tauxNC: +(4.5 + r() * 3.4).toFixed(1),
+        arrets: Math.round(cartes * 0.012 * (0.6 + r())),
+      };
+    }).sort((a, b) => b.cartes - a.cartes);
+
+    // Non-conformités par groupe, pondérées par l'activité des départements
+    const sommePoids = MBA_GROUPES.reduce((a, g) => a + g.poids, 0);
+    const ncGroupes = MBA_GROUPES.map(g => {
+      const aff = Object.values(MBA_AFFINITE_NC[g.code] || {}).reduce((a, v) => a + v, 0) || 1;
+      return { ...g, valeur: Math.round((t.nc * g.poids * (1 + (aff - 1) * 0.08)) / sommePoids) };
+    }).sort((a, b) => b.valeur - a.valeur);
+    const sommeRisques = MBA_RISQUES.reduce((a, x) => a + x.poids, 0);
+    const risques = MBA_RISQUES.map(x => ({ ...x, valeur: Math.round((t.cartes * 1.8 * x.poids) / sommeRisques) }));
+
+    // Rythme de la semaine : les jours ouvrés portent la production
+    const profilJour = [1, 1.04, 1.02, 0.99, 0.94, 0.58, 0.31];
+    const sommeJ = profilJour.reduce((a, v) => a + v, 0);
+    const chaleur = depts.map(d => ({
+      dept: d.dept,
+      cells: profilJour.map((pj, j) => {
+        const r = mbaRnd(mbaHash('heat' + d.dept + j));
+        return Math.round((d.cartes * pj / sommeJ) * (0.86 + r() * 0.28));
+      }),
+    }));
+
+    return { serie, t, tp, tauxNC, tauxNCprec, tauxAut, tauxAutPrec, delai, delaiPrec, postes, depts, ncGroupes, risques, chaleur };
+  }, [periode]);
+
+  const { t, serie } = data;
+  const maxHeat = Math.max(1, ...data.chaleur.flatMap(r => r.cells));
+  const evtTotal = t.incAut + t.incRefus + t.incNonSoumise + t.incSansCarte;
+  const evtSansAutorisation = t.incNonSoumise + t.incSansCarte;
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-xl bg-gradient-to-r from-teal-50 via-teal-50/40 to-white border border-teal-200 p-4 anim-fadeup">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-lg bg-teal-600 text-white flex items-center justify-center flex-shrink-0"><Icon name="check" size={20}/></div>
+          <div>
+            <h2 className="text-[14px] font-semibold text-ink-900">La carte MBA — préparer la tâche avant de la commencer</h2>
+            <p className="text-[12.5px] text-ink-700 mt-1">
+              Poste et quart, tâches, <strong>37 vérifications</strong> en C / NC / NA, risques et mesures, puis décision du superviseur.
+              Deux compteurs restent distincts : <strong>recevoir une carte n'est pas autoriser le travail</strong>, et une réponse
+              <strong> NA n'est jamais comptée comme conforme</strong>. Aucun classement n'est établi par personne.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <KPI label="Cartes créées" value={t.cartes.toLocaleString('fr-FR')} icon="dashboard" tone="teal"
+             delta={+(((t.cartes - data.tp.cartes) / Math.max(1, data.tp.cartes)) * 100).toFixed(1)}
+             spark={serie.map(m => m.cartes)} sub={`${t.brouillons.toLocaleString('fr-FR')} brouillons`}/>
+        <KPI label="Transmises" value={pctFr((t.soumises / Math.max(1, t.cartes)) * 100)} icon="external" tone="blue"
+             sub={`${t.soumises.toLocaleString('fr-FR')} cartes`}/>
+        <KPI label="Autorisées" value={pctFr(data.tauxAut)} icon="check" tone="green"
+             delta={+(data.tauxAut - data.tauxAutPrec).toFixed(1)} spark={serie.map(m => m.tauxAutorisation)}
+             sub={`${t.refusees} refusées · ${t.corrections} corrections`}/>
+        <KPI label="Non-conformité" value={pctFr(data.tauxNC)} icon="incident" tone="orange" deltaInvert
+             delta={+(data.tauxNC - data.tauxNCprec).toFixed(1)} spark={serie.map(m => m.tauxNC)}
+             sub={`${t.nc.toLocaleString('fr-FR')} réponses NC`}/>
+        <KPI label="Non applicable" value={pctFr((t.na / Math.max(1, t.reponses)) * 100)} icon="info" tone="ink"
+             sub="NA n'est pas C"/>
+        <KPI label="Délai d'examen" value={data.delai.toFixed(1)} unit="h" icon="calendar" tone="purple" deltaInvert
+             delta={+(data.delai - data.delaiPrec).toFixed(1)} sub="transmission → décision"/>
+        <KPI label="Arrêts de tâche" value={t.arrets} icon="flag" tone="red" deltaInvert
+             delta={+(((t.arrets - data.tp.arrets) / Math.max(1, data.tp.arrets)) * 100).toFixed(1)} spark={serie.map(m => m.arrets)}/>
+        <KPI label="Clôturées" value={t.cloturees.toLocaleString('fr-FR')} icon="report" tone="teal"
+             sub="une clôture ne referme pas les actions"/>
+      </div>
+
+      <div className="grid grid-cols-12 gap-4">
+        <Section className="col-span-12 lg:col-span-8" title="Évolution des cartes et de la décision du superviseur"
+                 sub="Barres empilées = décision · courbe = taux de non-conformité" icon="trending" tone="teal">
+          <div style={{ height: 320 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={serie} margin={{ top:5, right:8, bottom:0, left:-18 }}>
+                <CartesianGrid strokeDasharray="2 3" stroke="#EEEEE8" vertical={false}/>
+                <XAxis dataKey="mois" tick={{ fontSize:10.5, fill:'#64748B' }} interval="preserveStartEnd"/>
+                <YAxis yAxisId="l" tick={{ fontSize:10.5, fill:'#64748B' }}/>
+                <YAxis yAxisId="r" orientation="right" tick={{ fontSize:10.5, fill:'#64748B' }} unit="%"/>
+                <Tooltip content={<CTooltip/>}/>
+                <Legend iconType="circle" wrapperStyle={{ fontSize:11 }}/>
+                <Bar yAxisId="l" dataKey="autorisees"  name="Autorisées"          stackId="s" fill={C.green}  barSize={18}/>
+                <Bar yAxisId="l" dataKey="corrections" name="Correction demandée" stackId="s" fill={C.orange} barSize={18}/>
+                <Bar yAxisId="l" dataKey="refusees"    name="Non autorisées"      stackId="s" fill={C.red}    barSize={18}/>
+                <Bar yAxisId="l" dataKey="brouillons"  name="Brouillons non transmis" stackId="s" fill={C.ink300} barSize={18} radius={[4,4,0,0]}/>
+                <Line yAxisId="r" type="monotone" dataKey="tauxNC" name="Taux NC (%)" stroke={C.ink900} strokeWidth={2} dot={false}/>
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        </Section>
+
+        <Section className="col-span-12 lg:col-span-4" title="Sens des réponses de vérification"
+                 sub="37 lignes par tâche — NA reste une réponse explicite" icon="check" tone="blue">
+          <div style={{ height: 240 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={[
+                  { name:'Conforme', value:t.c, fill:C.green },
+                  { name:'Non conforme', value:t.nc, fill:C.red },
+                  { name:'Non applicable', value:t.na, fill:C.ink400 },
+                ]} dataKey="value" innerRadius={58} outerRadius={88} paddingAngle={2} stroke="white" strokeWidth={2}/>
+                <Tooltip content={<CTooltip/>}/>
+                <Legend iconType="circle" wrapperStyle={{ fontSize:11 }}/>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-2 text-[11.5px] text-ink-600 leading-relaxed">
+            {t.reponses.toLocaleString('fr-FR')} réponses sur la période. Le taux de conformité se calcule sur les seules
+            réponses C et NC : {pctFr((t.c / Math.max(1, t.c + t.nc)) * 100)}.
+          </div>
+        </Section>
+      </div>
+
+      <div className="grid grid-cols-12 gap-4">
+        <Section className="col-span-12 lg:col-span-7" title="Qui produit les cartes"
+                 sub="Classement par poste de travail et par département — jamais par personne" icon="user" tone="purple"
+                 action={<Tabs variant="pills" active={ongletClassement} onChange={setOngletClassement}
+                               tabs={[{ id:'postes', label:'Postes' }, { id:'depts', label:'Départements' }]}/>}>
+          <div style={{ height: 360 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={ongletClassement === 'postes' ? data.postes.slice(0, 10) : data.depts}
+                        layout="vertical" margin={{ top:5, right:36, bottom:0, left:0 }}>
+                <CartesianGrid strokeDasharray="2 3" stroke="#EEEEE8" horizontal={false}/>
+                <XAxis type="number" tick={{ fontSize:10.5, fill:'#64748B' }}/>
+                <YAxis type="category" dataKey={ongletClassement === 'postes' ? 'nom' : 'dept'}
+                       tick={{ fontSize:10.5, fill:'#334155' }} width={ongletClassement === 'postes' ? 180 : 110}/>
+                <Tooltip content={<CTooltip/>}/>
+                <Bar dataKey="cartes" name="Cartes créées" barSize={16} radius={[0,4,4,0]}>
+                  {(ongletClassement === 'postes' ? data.postes.slice(0, 10) : data.depts).map((x, i) => (
+                    <Cell key={i} fill={x.tauxNC >= 7 ? C.orange : C.teal}/>
+                  ))}
+                  <LabelList dataKey="cartes" position="right" style={{ fontSize:10.5, fill:'#475569', fontWeight:600 }}/>
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <p className="mt-2 text-[11px] text-ink-500">Barre ambrée : taux de non-conformité supérieur à 7 %.</p>
+        </Section>
+
+        <Section className="col-span-12 lg:col-span-5" title="Rythme de la semaine"
+                 sub="Cartes créées par jour et par département — repère les jours creux" icon="calendar" tone="blue">
+          <div className="overflow-x-auto">
+            <table className="w-full text-[11px]">
+              <thead>
+                <tr className="text-ink-500">
+                  <th className="text-left font-semibold pb-2">Département</th>
+                  {['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'].map(j => <th key={j} className="font-semibold pb-2 px-1">{j}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {data.chaleur.map(r => (
+                  <tr key={r.dept}>
+                    <td className="py-0.5 pr-2 text-ink-700 whitespace-nowrap">{r.dept}</td>
+                    {r.cells.map((v, j) => (
+                      <td key={j} className="p-0.5">
+                        <div className="rounded-md text-center py-1.5 font-semibold tabular-nums"
+                             style={{ background:`rgba(13,148,136,${0.07 + (v / maxHeat) * 0.8})`, color:(v / maxHeat) > 0.55 ? '#fff' : '#334155' }}>
+                          {v}
+                        </div>
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Section>
+      </div>
+
+      <div className="grid grid-cols-12 gap-4">
+        <Section className="col-span-12 lg:col-span-6" title="Non-conformités par groupe de vérification"
+                 sub="Les douze groupes du modèle papier" icon="incident" tone="orange">
+          <div style={{ height: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data.ncGroupes} layout="vertical" margin={{ top:5, right:34, bottom:0, left:0 }}>
+                <CartesianGrid strokeDasharray="2 3" stroke="#EEEEE8" horizontal={false}/>
+                <XAxis type="number" tick={{ fontSize:10.5, fill:'#64748B' }}/>
+                <YAxis type="category" dataKey="label" tick={{ fontSize:10, fill:'#334155' }} width={160}/>
+                <Tooltip content={<CTooltip/>}/>
+                <Bar dataKey="valeur" name="Réponses NC" fill={C.orange} barSize={13} radius={[0,4,4,0]}>
+                  <LabelList dataKey="valeur" position="right" style={{ fontSize:10, fill:'#475569', fontWeight:600 }}/>
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Section>
+
+        <Section className="col-span-12 lg:col-span-6" title="Risques les plus cités dans les cartes"
+                 sub="Codes du catalogue R1–R26 · surface = nombre de citations" icon="risk" tone="red">
+          <div style={{ height: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <Treemap data={data.risques.map((x, i) => ({ name:`${x.code} · ${x.label}`, size:x.valeur, fill:[C.red,C.orange,C.yellow,C.teal,C.blue,C.purple,C.green,C.redLight,C.orangeLight,C.blueLight][i] }))}
+                       dataKey="size" stroke="white" content={({ x, y, width, height, name, fill, value }) => {
+                if (!name || width < 34 || height < 24) return null;
+                return (
+                  <g>
+                    <rect x={x} y={y} width={width} height={height} fill={fill} stroke="white" strokeWidth={2}/>
+                    {width > 70 && <text x={x+6} y={y+15} fill="white" fontSize="10" fontWeight="700" style={{ paintOrder:'stroke fill', stroke:'rgba(0,0,0,0.3)', strokeWidth:'2px' }}>{(name||'').slice(0,24)}</text>}
+                    {height > 32 && width > 50 && <text x={x+6} y={y+29} fill="white" fontSize="11" fontWeight="700" style={{ paintOrder:'stroke fill', stroke:'rgba(0,0,0,0.3)', strokeWidth:'2px' }}>{value}</text>}
+                  </g>
+                );
+              }}/>
+            </ResponsiveContainer>
+          </div>
+        </Section>
+      </div>
+
+      <div className="grid grid-cols-12 gap-4">
+        <Section className="col-span-12 lg:col-span-5" title="Quart de jour et quart de nuit"
+                 sub="Cartes créées" icon="bolt" tone="purple">
+          <div style={{ height: 260 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={serie} margin={{ top:5, right:8, bottom:0, left:-18 }}>
+                <CartesianGrid strokeDasharray="2 3" stroke="#EEEEE8" vertical={false}/>
+                <XAxis dataKey="mois" tick={{ fontSize:10.5, fill:'#64748B' }} interval="preserveStartEnd"/>
+                <YAxis tick={{ fontSize:10.5, fill:'#64748B' }}/>
+                <Tooltip content={<CTooltip/>}/>
+                <Legend iconType="circle" wrapperStyle={{ fontSize:11 }}/>
+                <Area type="monotone" dataKey="jour" name="Quart de jour" stroke={C.teal} fill={C.teal} fillOpacity={0.18} strokeWidth={2}/>
+                <Area type="monotone" dataKey="nuit" name="Quart de nuit" stroke={C.purple} fill={C.purple} fillOpacity={0.14} strokeWidth={2}/>
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </Section>
+
+        <Section className="col-span-12 lg:col-span-7" title="Événements survenus et état de la carte de la tâche"
+                 sub="Rapprochement de deux domaines : il indique où regarder, il n'établit pas une cause" icon="incident" tone="red">
+          <div style={{ height: 260 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={serie} margin={{ top:5, right:8, bottom:0, left:-18 }}>
+                <CartesianGrid strokeDasharray="2 3" stroke="#EEEEE8" vertical={false}/>
+                <XAxis dataKey="mois" tick={{ fontSize:10.5, fill:'#64748B' }} interval="preserveStartEnd"/>
+                <YAxis tick={{ fontSize:10.5, fill:'#64748B' }}/>
+                <Tooltip content={<CTooltip/>}/>
+                <Legend iconType="circle" wrapperStyle={{ fontSize:11 }}/>
+                <Bar dataKey="incAut"        name="Tâche autorisée par une carte" stackId="e" fill={C.green}  barSize={16}/>
+                <Bar dataKey="incRefus"      name="Carte transmise, non autorisée" stackId="e" fill={C.orange} barSize={16}/>
+                <Bar dataKey="incNonSoumise" name="Carte non transmise"           stackId="e" fill={C.yellow} barSize={16}/>
+                <Bar dataKey="incSansCarte"  name="Aucune carte"                  stackId="e" fill={C.red}    barSize={16} radius={[4,4,0,0]}/>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-3 rounded-lg bg-horange-50 border border-horange-200 p-3 text-[12px] text-horange-700 leading-relaxed">
+            Sur la période, <strong>{evtSansAutorisation}</strong> événement(s) sur <strong>{evtTotal}</strong> sont survenus sans carte
+            autorisée pour la tâche, soit {pctFr((evtSansAutorisation / Math.max(1, evtTotal)) * 100)}.
+          </div>
+        </Section>
+      </div>
+
+      <Section title="Détail par poste de travail" sub="Volume, intensité et qualité observée — aucun nom de personne" icon="dashboard" tone="ink"
+               action={<button onClick={()=>exportCSV('mba_postes.csv', data.postes)} className="text-[11px] text-teal-700 hover:underline no-print flex items-center gap-1 font-semibold"><Icon name="download" size={11}/>CSV</button>}>
+        <DataTable
+          pageSize={8}
+          columns={[
+            { key:'nom',          label:'Poste de travail' },
+            { key:'dept',         label:'Département' },
+            { key:'effectif',     label:'Effectif',        align:'right' },
+            { key:'cartes',       label:'Cartes',          align:'right' },
+            { key:'parPersonne',  label:'Cartes/personne', align:'right' },
+            { key:'tauxNC',       label:'Taux NC (%)',     align:'right' },
+            { key:'refusees',     label:'Non autorisées',  align:'right' },
+            { key:'arrets',       label:'Arrêts',          align:'right' },
+          ]}
+          data={data.postes}
+        />
+      </Section>
+    </div>
+  );
+};
+
+/* ---------- Page : analyse des interactions e-One ---------- */
+const PageEone = () => {
+  const { filters } = useFilters() || { filters:{ period:'12m' } };
+  const periode = filters.period || '12m';
+
+  const data = useMemo(() => {
+    const n = moisDePeriode(periode);
+    const serie = EONE_MOIS.slice(-n);
+    const prec = EONE_MOIS.slice(-2 * n, -n);
+    const k = prorata(periode);
+    const champs = ['dossiers','prevention','reconnaissance','enCours','corrections','rejetes','valides','clotures','reponses','actions','actionsVerifiees','actionsRetard','liesMba'];
+    const t = cumule(serie, champs); const tp = cumule(prec, champs);
+    Object.keys(t).forEach(c => { t[c] = Math.round(t[c] * k); });
+    Object.keys(tp).forEach(c => { tp[c] = Math.round(tp[c] * k); });
+    const delai = serie.reduce((a, m) => a + m.delai, 0) / Math.max(1, serie.length);
+    const delaiPrec = prec.length ? prec.reduce((a, m) => a + m.delai, 0) / prec.length : delai;
+
+    const sommeTheme = EONE_THEMES.reduce((a, x) => a + x.poids, 0);
+    const themes = EONE_THEMES.map(x => {
+      const r = mbaRnd(mbaHash('theme' + x.code));
+      const dossiers = Math.round((t.prevention * x.poids) / sommeTheme);
+      return {
+        code:x.code, label:x.label, dossiers,
+        part:+((dossiers / Math.max(1, t.prevention)) * 100).toFixed(1),
+        tauxReponse:+(64 + r() * 26).toFixed(1),
+        actions:Math.round(dossiers * (0.4 + r() * 0.3)),
+        retard:Math.round(dossiers * (0.04 + r() * 0.08)),
+      };
+    }).sort((a, b) => b.dossiers - a.dossiers);
+
+    // Évolution des cinq thèmes dominants
+    const tete = themes.slice(0, 5);
+    const serieThemes = serie.map(m => {
+      const row = { mois:m.mois };
+      tete.forEach(x => {
+        const r = mbaRnd(mbaHash('tm' + x.code + m.key));
+        row[x.code] = Math.round((m.prevention * x.poids / sommeTheme) * (0.82 + r() * 0.36));
+      });
+      return row;
+    });
+
+    const sommeW = MBA_DEPT_POIDS.reduce((a, x) => a + x.w, 0);
+    const depts = MBA_DEPT_POIDS.map(({ d, w }) => {
+      const r = mbaRnd(mbaHash('eonedept' + d));
+      const dossiers = Math.round(t.dossiers * (w / sommeW) * (0.85 + r() * 0.3));
+      return { dept:d, dossiers, tauxReponse:+(66 + r() * 24).toFixed(1), retard:Math.round(dossiers * (0.03 + r() * 0.06)) };
+    }).sort((a, b) => b.dossiers - a.dossiers);
+
+    // Thème × département
+    const matrice = themes.map(x => ({
+      label:x.label,
+      cells:depts.map(d => {
+        const aff = (EONE_AFFINITE[x.code] || {})[d.dept] || 1;
+        const r = mbaRnd(mbaHash('mx' + x.code + d.dept));
+        return Math.round((x.dossiers * (d.dossiers / Math.max(1, t.dossiers))) * aff * (0.8 + r() * 0.4));
+      }),
+    }));
+
+    return { serie, t, tp, delai, delaiPrec, themes, tete, serieThemes, depts, matrice };
+  }, [periode]);
+
+  const { t, serie, themes } = data;
+  const tauxReponse = (t.reponses / Math.max(1, t.dossiers)) * 100;
+  const tauxReponsePrec = (data.tp.reponses / Math.max(1, data.tp.dossiers)) * 100;
+  const maxCell = Math.max(1, ...data.matrice.flatMap(r => r.cells));
+  const themeMuet = themes.filter(x => x.dossiers >= 5).slice().sort((a, b) => a.tauxReponse - b.tauxReponse)[0];
+  const couleursThemes = [C.teal, C.blue, C.orange, C.purple, C.green];
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-xl bg-gradient-to-r from-hblue-50 via-hblue-50/40 to-white border border-hblue-200 p-4 anim-fadeup">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-lg bg-hblue-600 text-white flex items-center justify-center flex-shrink-0"><Icon name="user" size={20}/></div>
+          <div>
+            <h2 className="text-[14px] font-semibold text-ink-900">e-One — l'interaction de sécurité sur le terrain</h2>
+            <p className="text-[12.5px] text-ink-700 mt-1">
+              Un salarié est interpellé sur un <strong>thème</strong>, il répond, des engagements sont pris, un validateur tranche.
+              Deux lectures se suivent ici : <strong>sur quoi interpelle-t-on le plus souvent</strong>, et <strong>obtient-on une réponse</strong>.
+              Une interpellation sans réponse reste une parole à sens unique. Validé n'est pas clôturé.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <KPI label="Dossiers e-One" value={t.dossiers.toLocaleString('fr-FR')} icon="user" tone="blue"
+             delta={+(((t.dossiers - data.tp.dossiers) / Math.max(1, data.tp.dossiers)) * 100).toFixed(1)}
+             spark={serie.map(m => m.dossiers)} sub={`${t.prevention.toLocaleString('fr-FR')} en prévention`}/>
+        <KPI label="Taux de réponse" value={pctFr(tauxReponse)} icon="check" tone="teal"
+             delta={+(tauxReponse - tauxReponsePrec).toFixed(1)} spark={serie.map(m => m.tauxReponse)}/>
+        <KPI label="Dossiers validés" value={pctFr((t.valides / Math.max(1, t.dossiers)) * 100)} icon="audit" tone="green"
+             sub={`${t.clotures.toLocaleString('fr-FR')} clôturés · ${t.enCours} en cours`}/>
+        <KPI label="Délai validation" value={data.delai.toFixed(1)} unit="h" icon="calendar" tone="purple" deltaInvert
+             delta={+(data.delai - data.delaiPrec).toFixed(1)}/>
+        <KPI label="Engagements ouverts" value={t.actions.toLocaleString('fr-FR')} icon="target" tone="ink"
+             sub={`${pctFr((t.actionsVerifiees / Math.max(1, t.actions)) * 100)} vérifiés sur le terrain`}/>
+        <KPI label="Engagements en retard" value={t.actionsRetard} icon="bell" tone="red" deltaInvert
+             delta={+(((t.actionsRetard - data.tp.actionsRetard) / Math.max(1, data.tp.actionsRetard)) * 100).toFixed(1)}
+             spark={serie.map(m => m.actionsRetard)}/>
+        <KPI label="Reconnaissance" value={pctFr((t.reconnaissance / Math.max(1, t.dossiers)) * 100)} icon="star" tone="green"
+             sub={`${t.reconnaissance.toLocaleString('fr-FR')} dossiers`}/>
+        <KPI label="Liés à une carte MBA" value={t.liesMba.toLocaleString('fr-FR')} icon="layers" tone="teal"
+             sub="préparation de tâche du même poste"/>
+      </div>
+
+      <div className="grid grid-cols-12 gap-4">
+        <Section className="col-span-12 lg:col-span-6" title="Sur quoi interpelle-t-on le plus souvent ?"
+                 sub="Dossiers de prévention, par thème" icon="leading" tone="teal"
+                 action={<button onClick={()=>exportCSV('eone_themes.csv', themes)} className="text-[11px] text-teal-700 hover:underline no-print flex items-center gap-1 font-semibold"><Icon name="download" size={11}/>CSV</button>}>
+          <div style={{ height: 380 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={themes} layout="vertical" margin={{ top:5, right:40, bottom:0, left:0 }}>
+                <CartesianGrid strokeDasharray="2 3" stroke="#EEEEE8" horizontal={false}/>
+                <XAxis type="number" tick={{ fontSize:10.5, fill:'#64748B' }}/>
+                <YAxis type="category" dataKey="label" tick={{ fontSize:10, fill:'#334155' }} width={190}/>
+                <Tooltip content={<CTooltip/>}/>
+                <Bar dataKey="dossiers" name="Interpellations" barSize={14} radius={[0,4,4,0]}>
+                  {themes.map((x, i) => <Cell key={i} fill={x.tauxReponse < 70 ? C.orange : C.teal}/>)}
+                  <LabelList dataKey="dossiers" position="right" style={{ fontSize:10, fill:'#475569', fontWeight:600 }}/>
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <p className="mt-2 text-[11px] text-ink-500">Barre ambrée : taux de réponse du salarié inférieur à 70 %.</p>
+        </Section>
+
+        <Section className="col-span-12 lg:col-span-6" title="Évolution des cinq thèmes dominants"
+                 sub="Dossiers de prévention par mois" icon="trending" tone="blue">
+          <div style={{ height: 380 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={data.serieThemes} margin={{ top:5, right:8, bottom:0, left:-18 }}>
+                <CartesianGrid strokeDasharray="2 3" stroke="#EEEEE8" vertical={false}/>
+                <XAxis dataKey="mois" tick={{ fontSize:10.5, fill:'#64748B' }} interval="preserveStartEnd"/>
+                <YAxis tick={{ fontSize:10.5, fill:'#64748B' }}/>
+                <Tooltip content={<CTooltip/>}/>
+                <Legend iconType="circle" wrapperStyle={{ fontSize:10.5 }}/>
+                {data.tete.map((x, i) => (
+                  <Line key={x.code} type="monotone" dataKey={x.code} name={x.label} stroke={couleursThemes[i]} strokeWidth={2} dot={false}/>
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </Section>
+      </div>
+
+      <div className="grid grid-cols-12 gap-4">
+        <Section className="col-span-12 lg:col-span-8" title="Instruction des dossiers"
+                 sub="Validé n'est pas clôturé : les deux états restent distincts" icon="audit" tone="green">
+          <div style={{ height: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={serie} margin={{ top:5, right:8, bottom:0, left:-18 }}>
+                <CartesianGrid strokeDasharray="2 3" stroke="#EEEEE8" vertical={false}/>
+                <XAxis dataKey="mois" tick={{ fontSize:10.5, fill:'#64748B' }} interval="preserveStartEnd"/>
+                <YAxis tick={{ fontSize:10.5, fill:'#64748B' }}/>
+                <Tooltip content={<CTooltip/>}/>
+                <Legend iconType="circle" wrapperStyle={{ fontSize:11 }}/>
+                <Bar dataKey="clotures"    name="Clôturés"              stackId="i" fill={C.green}  barSize={18}/>
+                <Bar dataKey="enCours"     name="En cours d'instruction" stackId="i" fill={C.blue}   barSize={18}/>
+                <Bar dataKey="corrections" name="Correction demandée"   stackId="i" fill={C.orange} barSize={18}/>
+                <Bar dataKey="rejetes"     name="Rejetés"               stackId="i" fill={C.red}    barSize={18} radius={[4,4,0,0]}/>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Section>
+
+        <Section className="col-span-12 lg:col-span-4" title="Nature des dossiers"
+                 sub="Un programme qui ne relève que l'écart s'épuise" icon="star" tone="green">
+          <div style={{ height: 230 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={[
+                  { name:'Prévention', value:t.prevention, fill:C.teal },
+                  { name:'Reconnaissance positive', value:t.reconnaissance, fill:C.green },
+                ]} dataKey="value" innerRadius={56} outerRadius={86} paddingAngle={2} stroke="white" strokeWidth={2}/>
+                <Tooltip content={<CTooltip/>}/>
+                <Legend iconType="circle" wrapperStyle={{ fontSize:11 }}/>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-2 rounded-lg bg-hgreen-50 border border-hgreen-200 p-3 text-[12px] text-hgreen-700 leading-relaxed">
+            La part de reconnaissance se lit comme un indicateur d'équilibre du programme, pas comme une performance individuelle.
+          </div>
+        </Section>
+      </div>
+
+      <div className="grid grid-cols-12 gap-4">
+        <Section className="col-span-12 lg:col-span-7" title="Thèmes par département"
+                 sub="Dossiers de prévention cumulés sur la période" icon="sites" tone="purple">
+          <div className="overflow-x-auto">
+            <table className="w-full text-[11px]">
+              <thead>
+                <tr className="text-ink-500">
+                  <th className="text-left font-semibold pb-2">Thème</th>
+                  {data.depts.map(d => <th key={d.dept} className="font-semibold pb-2 px-1 whitespace-nowrap">{d.dept}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {data.matrice.map(r => (
+                  <tr key={r.label}>
+                    <td className="py-0.5 pr-2 text-ink-700 whitespace-nowrap max-w-[200px] truncate" title={r.label}>{r.label}</td>
+                    {r.cells.map((v, j) => (
+                      <td key={j} className="p-0.5">
+                        <div className="rounded-md text-center py-1.5 font-semibold tabular-nums"
+                             style={{ background:`rgba(147,51,234,${0.06 + (v / maxCell) * 0.78})`, color:(v / maxCell) > 0.5 ? '#fff' : '#334155' }}>
+                          {v === 0 ? '·' : v}
+                        </div>
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Section>
+
+        <Section className="col-span-12 lg:col-span-5" title="Engagements pris et tenus"
+                 sub="Actions issues des dossiers de prévention" icon="target" tone="orange">
+          <div style={{ height: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={serie} margin={{ top:5, right:8, bottom:0, left:-18 }}>
+                <CartesianGrid strokeDasharray="2 3" stroke="#EEEEE8" vertical={false}/>
+                <XAxis dataKey="mois" tick={{ fontSize:10.5, fill:'#64748B' }} interval="preserveStartEnd"/>
+                <YAxis tick={{ fontSize:10.5, fill:'#64748B' }}/>
+                <Tooltip content={<CTooltip/>}/>
+                <Legend iconType="circle" wrapperStyle={{ fontSize:11 }}/>
+                <Bar dataKey="actions"          name="Ouverts"  fill={C.blue}  barSize={10} radius={[3,3,0,0]}/>
+                <Bar dataKey="actionsVerifiees" name="Vérifiés" fill={C.green} barSize={10} radius={[3,3,0,0]}/>
+                <Bar dataKey="actionsRetard"    name="En retard" fill={C.red}  barSize={10} radius={[3,3,0,0]}/>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          {themeMuet && (
+            <div className="mt-3 rounded-lg bg-horange-50 border border-horange-200 p-3 text-[12px] text-horange-700 leading-relaxed">
+              <strong>{themeMuet.label}</strong> obtient le plus faible taux de réponse ({pctFr(themeMuet.tauxReponse)}).
+              Un thème sur lequel on parle sans obtenir de réponse mérite d'être réexaminé avant d'augmenter le volume.
+            </div>
+          )}
+        </Section>
+      </div>
+
+      <Section title="Détail par thème d'interpellation" sub="Volume, réponse obtenue et engagements — aucun nom de personne" icon="dashboard" tone="ink"
+               action={<button onClick={()=>exportCSV('eone_detail.csv', themes)} className="text-[11px] text-teal-700 hover:underline no-print flex items-center gap-1 font-semibold"><Icon name="download" size={11}/>CSV</button>}>
+        <DataTable
+          pageSize={8}
+          columns={[
+            { key:'label',       label:'Thème' },
+            { key:'dossiers',    label:'Interpellations', align:'right' },
+            { key:'part',        label:'Part (%)',        align:'right' },
+            { key:'tauxReponse', label:'Réponse (%)',     align:'right' },
+            { key:'actions',     label:'Engagements',     align:'right' },
+            { key:'retard',      label:'En retard',       align:'right' },
+          ]}
+          data={themes}
+        />
+      </Section>
+    </div>
+  );
+};
+
+/* ===================================================================
    SIDEBAR DARK (style SafeX) + HEADER + DRAWER FILTRES
    =================================================================== */
 const NAV = [
@@ -5558,6 +6320,8 @@ const NAV = [
   { id:'sites',     label:'Sites & Géographie',  icon:'sites',    iconColor:'text-teal-400',   group:'ANALYSE APPROFONDIE' },
   { id:'ppe',       label:'EPI & Équipements',   icon:'ppe',      iconColor:'text-hyellow-500',group:'OPÉRATIONNEL' },
   { id:'trends',    label:'Tendances 24 mois',   icon:'trending', iconColor:'text-hpurple-400',group:'OPÉRATIONNEL' },
+  { id:'mba',       label:'Cartes MBA',          icon:'check',    iconColor:'text-teal-400',   group:'e-MBA CARD & e-ONE' },
+  { id:'eone',      label:'Interactions e-One',  icon:'user',     iconColor:'text-hblue-400',  group:'e-MBA CARD & e-ONE' },
   { id:'monthly',   label:'Rapport Mensuel',     icon:'report',   iconColor:'text-teal-400',   group:'RAPPORTS' },
 ];
 
@@ -5789,6 +6553,8 @@ const App = () => {
     case 'sites':     page = <PageSites/>; break;
     case 'ppe':       page = <PagePPE/>; break;
     case 'trends':    page = <PageTrends/>; break;
+    case 'mba':       page = <PageMbaCards/>; break;
+    case 'eone':      page = <PageEone/>; break;
     case 'monthly':   page = <PageMonthlyReport/>; break;
     default:          page = <PageExecutive/>;
   }
