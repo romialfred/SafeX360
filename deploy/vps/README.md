@@ -26,6 +26,7 @@ Internet ──443──▶ wcp-caddy (proxy partagé, TLS Let's Encrypt)
 | `/srv/safex/env/*.env` | secrets, un fichier par service + `compose.env` (chmod 600, hors dépôt) |
 | `/srv/safex/bin/ci-deploy` | commande forcée de la clé SSH GitHub Actions |
 | `/srv/safex/backups` | dumps quotidiens (`backup.sh`, cron 02:30 UTC, 14 jours) |
+| `/srv/safex/bin/backup-export` | commande forcée de la clé `safex-backup-pull` (copie hors serveur) |
 | `/srv/safex/logs` | journaux des déploiements CI |
 
 ## Gestes courants
@@ -36,6 +37,10 @@ Internet ──443──▶ wcp-caddy (proxy partagé, TLS Let's Encrypt)
 - **Base en local** : tunnel `ssh -L 3307:127.0.0.1:3307 root@VPS`, puis
   `localhost:3307` (utilisateur applicatif ou root, voir `compose.env`).
 - **Sauvegarde manuelle** : `/srv/safex/src/deploy/vps/backup.sh`.
+- **Copie hors serveur** : la tâche planifiée Windows « SafeX - copie hors
+  serveur » du PC de l'administrateur lance `pull-backup.ps1` chaque jour à
+  10:00 et garde 30 jours de dumps dans `D:\SafeX-Backups` (journal :
+  `journal.txt`). Sans elle, une perte du VPS emporterait aussi les sauvegardes.
 - **Restauration** : `zcat dump.sql.gz | docker exec -i safex-db sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -uroot'`.
 
 ## Règles de cohabitation
