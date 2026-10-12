@@ -17,7 +17,7 @@ const isNativeApp = typeof window !== 'undefined'
 // déconnexion impossible (la sonde /auth/me re-répondait 200), listes en
 // v.map crash (HTML au lieu de tableaux). En natif, on vise donc TOUJOURS
 // le gateway (VITE_API_URL du build --mode mobile, sinon URL de prod).
-const NATIVE_GATEWAY_URL = 'https://safex360-gateway.onrender.com';
+const NATIVE_GATEWAY_URL = 'https://safex360.data-univers.com';
 
 const apiUrl = import.meta.env.DEV
     ? (import.meta.env.VITE_API_URL || '')

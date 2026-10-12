@@ -140,7 +140,7 @@ const resolveWsBaseUrl = (): string => {
     // gateway de prod — sinon le WebSocket tentait le poste de dev (8081).
     const isNativeApp = typeof window !== 'undefined'
         && Boolean((window as any).Capacitor?.isNativePlatform?.());
-    if (isNativeApp) return 'https://safex360-gateway.onrender.com/hns';
+    if (isNativeApp) return 'https://safex360.data-univers.com/hns';
     // Heuristique dev web : si on est en localhost, viser HS direct (8081)
     if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
         return 'http://localhost:8081/hns';
@@ -154,7 +154,7 @@ const resolveWsBaseUrl = (): string => {
     if (typeof window !== 'undefined' && window.location?.origin) {
         return `${window.location.origin}/hns`;
     }
-    return 'https://safex360-gateway.onrender.com/hns';
+    return 'https://safex360.data-univers.com/hns';
 };
 
 export const EmergencyWebSocketProvider = ({ children }: Props) => {

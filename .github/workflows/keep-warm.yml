@@ -2,6 +2,8 @@ name: SafeX availability probe
 
 # Cette sonde détecte une indisponibilité ; elle ne constitue ni un mécanisme
 # de haute disponibilité ni un substitut à un hébergement assorti d'un SLA.
+# Depuis la migration vers le VPS, chaque service est sondé via /healthz/*
+# (servi par safex-web, état UP/DOWN sans détail).
 
 on:
   schedule:
@@ -17,11 +19,12 @@ jobs:
         shell: bash
         run: |
           set -u
+          base="https://safex360.data-univers.com"
           services=(
-            "gateway|https://safex360-gateway.onrender.com/actuator/health|actuator"
-            "health-safety|https://safex360-hns.onrender.com/actuator/health|actuator"
-            "minexpert|https://safex360-minexpert.onrender.com/actuator/health|actuator"
-            "eureka|https://safex360-eureka.onrender.com/|http"
+            "site|$base/login|http"
+            "gateway|$base/healthz/gateway|actuator"
+            "minexpert|$base/healthz/hrms|actuator"
+            "health-safety|$base/healthz/hns|actuator"
           )
           failures=0
           for service in "${services[@]}"; do
@@ -29,7 +32,7 @@ jobs:
             body_file="$(mktemp)"
             result=$(curl --silent --show-error --location \
               --retry 2 --retry-delay 2 --retry-all-errors \
-              --connect-timeout 10 --max-time 90 \
+              --connect-timeout 10 --max-time 30 \
               --output "$body_file" --write-out "%{http_code}|%{time_total}" \
               "$url")
             curl_exit=$?
@@ -40,10 +43,7 @@ jobs:
             elif [ "$mode" = "actuator" ] && ! grep -Eq '"status"[[:space:]]*:[[:space:]]*"UP"' "$body_file"; then
               healthy=false
             elif awk "BEGIN { exit !($elapsed > 10) }"; then
-              # Cold start Render free tier : 50-60 s est NORMAL au reveil. Le but
-              # premier du job est precisement de reveiller les dynos — punir la
-              # lenteur ferait echouer le job a chaque reveil nocturne.
-              echo "::warning::$name lent (${elapsed}s) — probable cold start, non bloquant"
+              echo "::warning::$name lent (${elapsed}s)"
             fi
             rm -f "$body_file"
             if [ "$healthy" = true ]; then
@@ -54,6 +54,6 @@ jobs:
             fi
           done
           if [ "$failures" -gt 0 ]; then
-            echo "::error::$failures service(s) critique(s) indisponible(s) ou trop lent(s)."
+            echo "::error::$failures service(s) critique(s) indisponible(s)."
             exit 1
           fi

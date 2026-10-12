@@ -1,0 +1,100 @@
+# Conteneur safex-web : sert le front et relaie l'API vers le gateway.
+#
+# Le TLS est terminé en amont par le Caddy partagé du VPS (wcp-caddy), qui
+# renvoie safex360.data-univers.com ici en HTTP sur le réseau wcp-proxy. Ce
+# fichier reprend à l'identique le comportement de l'ancien vercel.json :
+# en-têtes de sécurité, CSP, réécritures SPA, /safex-analytics.
+
+{
+	admin off
+	auto_https off
+	servers {
+		# Le seul client direct est wcp-caddy (réseau Docker privé) : on garde
+		# son X-Forwarded-For pour que les journaux d'activité voient l'IP réelle.
+		trusted_proxies static private_ranges
+	}
+}
+
+:80 {
+	encode zstd gzip
+
+	header {
+		X-Frame-Options "DENY"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		Permissions-Policy "camera=(self), microphone=(), geolocation=(self)"
+		-Server
+	}
+
+	# API : même origine que le front (cookie jwt first-party, WebSocket SockJS
+	# des urgences compris). Aucun délai de réponse imposé : les soumissions
+	# lourdes (investigation + preuves base64) peuvent durer plusieurs minutes.
+	@api path /hrms/* /hns/*
+	handle @api {
+		reverse_proxy safex-gateway:9000
+	}
+
+	# Sondes de disponibilité (GitHub Actions) : état UP/DOWN de chaque service,
+	# sans détail (show-details: never). Directes, sans passer par le gateway.
+	handle /healthz/gateway {
+		rewrite * /actuator/health
+		reverse_proxy safex-gateway:9000
+	}
+	handle /healthz/hrms {
+		rewrite * /hrms/actuator/health
+		reverse_proxy safex-minexpert:8080
+	}
+	handle /healthz/hns {
+		rewrite * /hns/actuator/health
+		reverse_proxy safex-hns:8081
+	}
+
+	# Centre d'analyse : page autonome avec sa propre CSP (scripts inline).
+	@analytics path /safex-analytics /safex-analytics/*
+	handle @analytics {
+		header Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; worker-src 'self' blob:"
+		header Cache-Control "no-cache"
+		root * /srv/www
+		try_files {path} {path}/index.html
+		file_server
+	}
+
+	# Fichiers à empreinte : immuables, cache d'un an.
+	@asset {
+		path /assets/*
+		file {
+			root /srv/www
+		}
+	}
+	handle @asset {
+		header Cache-Control "public, max-age=31536000, immutable"
+		root * /srv/www
+		file_server
+	}
+
+	# Asset absent (onglet ouvert sur un ancien déploiement) : 404 franc,
+	# jamais index.html, pour que le chargement du module échoue proprement.
+	@missing_asset path /assets/*
+	handle @missing_asset {
+		respond 404
+	}
+
+	# Reste du site : fichier statique s'il existe (cleanUrls), sinon la SPA.
+	# Revalidé à chaque visite : un index.html ou un sw.js périmé pointerait
+	# vers des fichiers retirés.
+	handle {
+		header Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' wss://safex360.data-univers.com https://fonts.googleapis.com https://fonts.gstatic.com; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests"
+		header Cache-Control "no-cache"
+		@apk path *.apk
+		header @apk Content-Type "application/vnd.android.package-archive"
+		root * /srv/www
+		try_files {path} {path}.html /index.html
+		file_server
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

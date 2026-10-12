@@ -1,0 +1,20 @@
+# Réglages de safex-db, alignés sur l'ancienne base Aiven (MySQL 8.0.45).
+#
+# Le sql_mode est le piège n°1 : sous ANSI_QUOTES une chaîne entre guillemets
+# doubles devient un identifiant, et STRICT_ALL_TABLES est plus sévère que le
+# défaut. Le code a été validé contre ce mode : ne pas le changer sans recetter.
+
+[mysqld]
+sql_mode = REAL_AS_FLOAT,PIPES_AS_CONCAT,ANSI_QUOTES,IGNORE_SPACE,ONLY_FULL_GROUP_BY,ANSI,STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+character-set-server = utf8mb4
+collation-server = utf8mb4_0900_ai_ci
+default-time-zone = '+00:00'
+skip-name-resolve
+
+max_connections = 200
+innodb_buffer_pool_size = 512M
+
+# Les triggers d'audit immuables (urgences, dosimétrie) sont recréés par
+# l'import : avec le binlog actif, il faut autoriser leur création.
+log_bin_trust_function_creators = 1
+binlog_expire_logs_seconds = 604800

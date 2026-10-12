@@ -255,7 +255,7 @@ public class EmergencyEmailService {
              + contentRows
              // CTA
              + "      <tr><td style=\"padding:10px 30px 25px 30px;\" align=\"center\">"
-             + "        <a href=\"https://safex360.vercel.app\" style=\"display:inline-block;padding:12px 28px;"
+             + "        <a href=\"https://safex360.data-univers.com\" style=\"display:inline-block;padding:12px 28px;"
              + "           background:#E67E22;color:#ffffff;text-decoration:none;border-radius:6px;"
              + "           font-weight:bold;font-size:14px;\">Connectez-vous a SafeX 360</a>"
              + "      </td></tr>"

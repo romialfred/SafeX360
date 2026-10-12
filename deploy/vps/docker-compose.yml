@@ -1,0 +1,160 @@
+# SafeX 360 — production sur le VPS Hostinger.
+#
+# Lancé par deploy/vps/deploy.sh depuis /srv/safex/src/deploy/vps, avec :
+#   --env-file /srv/safex/env/compose.env   (mots de passe de safex-db)
+#   SAFEX_ENV_DIR=/srv/safex/env           (un fichier de secrets par service)
+#
+# Cohabitation avec les autres applications du VPS :
+#   - aucun port public : seul safex-web rejoint le réseau wcp-proxy, où le
+#     Caddy partagé lui envoie safex360.data-univers.com ;
+#   - safex-db n'est publiée que sur 127.0.0.1:3307 (3306 = wcp-mysql) pour
+#     l'administration par tunnel SSH ;
+#   - chaque conteneur a un plafond mémoire.
+
+name: safex-production
+
+x-java: &java
+  restart: unless-stopped
+  networks: [safex]
+  logging:
+    driver: json-file
+    options: { max-size: "20m", max-file: "5" }
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: safex-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${SAFEX_DB_ROOT_PASSWORD:?mot de passe root requis}
+      MYSQL_USER: ${SAFEX_DB_USER:-safex_app}
+      MYSQL_PASSWORD: ${SAFEX_DB_PASSWORD:?mot de passe applicatif requis}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./mysql/safex.cnf:/etc/mysql/conf.d/safex.cnf:ro
+      - ./mysql/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "127.0.0.1:3307:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    mem_limit: 1536m
+    networks: [safex]
+    logging:
+      driver: json-file
+      options: { max-size: "20m", max-file: "5" }
+
+  eureka:
+    <<: *java
+    build: ../../Backend/Eureka-Server
+    image: safex/eureka:${SAFEX_REVISION:-local}
+    container_name: safex-eureka
+    env_file: ${SAFEX_ENV_DIR:-/srv/safex/env}/eureka.env
+    environment:
+      SERVER_PORT: "8761"
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:8761/eureka/apps"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    mem_limit: 384m
+
+  minexpert:
+    <<: *java
+    build: ../../Backend/MineXpert
+    image: safex/minexpert:${SAFEX_REVISION:-local}
+    container_name: safex-minexpert
+    env_file: ${SAFEX_ENV_DIR:-/srv/safex/env}/minexpert.env
+    environment:
+      SERVER_PORT: "8080"
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError"
+    volumes:
+      - minexpert_uploads:/app/uploads
+    depends_on:
+      db: { condition: service_healthy }
+      eureka: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:8080/hrms/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 120s
+    mem_limit: 1g
+
+  hns:
+    <<: *java
+    build: ../../Backend/Health-Safety
+    image: safex/hns:${SAFEX_REVISION:-local}
+    container_name: safex-hns
+    env_file: ${SAFEX_ENV_DIR:-/srv/safex/env}/hns.env
+    environment:
+      SERVER_PORT: "8081"
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError"
+    volumes:
+      - hns_photos:/home/safex/.safex360-mobile-photos
+    depends_on:
+      db: { condition: service_healthy }
+      eureka: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:8081/hns/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 180s
+    mem_limit: 1536m
+
+  gateway:
+    <<: *java
+    build: ../../Backend/GatewayMS
+    image: safex/gateway:${SAFEX_REVISION:-local}
+    container_name: safex-gateway
+    env_file: ${SAFEX_ENV_DIR:-/srv/safex/env}/gateway.env
+    environment:
+      SERVER_PORT: "9000"
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError"
+    depends_on:
+      eureka: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:9000/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 90s
+    mem_limit: 512m
+
+  web:
+    build: ../../Frontend
+    image: safex/web:${SAFEX_REVISION:-local}
+    container_name: safex-web
+    restart: unless-stopped
+    volumes:
+      - ./web/Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      gateway: { condition: service_started }
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/login"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    mem_limit: 128m
+    networks: [safex, proxy]
+    logging:
+      driver: json-file
+      options: { max-size: "20m", max-file: "5" }
+
+volumes:
+  db_data:
+  minexpert_uploads:
+  hns_photos:
+
+networks:
+  safex:
+    name: safex-internal
+  proxy:
+    name: wcp-proxy
+    external: true

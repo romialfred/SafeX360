@@ -1,0 +1,61 @@
+name: Deploy to VPS
+
+# Déploiement de production sur le VPS Hostinger à chaque push sur main.
+# Remplace render-deploy.yml : Render, Vercel et Aiven ne servent plus la prod.
+#
+# Le VPS construit lui-même les images (deploy/vps/deploy.sh) à partir du
+# commit poussé, puis attend que chaque conteneur soit « healthy » : un boot
+# raté fait échouer ce job en ROUGE, l'ancienne version restant en place
+# pour les services dont l'image n'a pas pu être construite.
+#
+# Secrets requis (Settings → Secrets and variables → Actions) :
+#   VPS_HOST         IP du VPS
+#   VPS_DEPLOY_KEY   clé privée ed25519 « safex-ci-deploy » ; côté VPS elle est
+#                    limitée par authorized_keys à /srv/safex/bin/ci-deploy
+#   VPS_KNOWN_HOSTS  empreinte SSH du VPS (ssh-keyscan), contre l'usurpation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Backend/**'
+      - 'Frontend/**'
+      - 'deploy/vps/**'
+      - '.github/workflows/vps-deploy.yml'
+  workflow_dispatch: {}
+
+# Un seul déploiement à la fois, jamais interrompu en cours de route.
+concurrency:
+  group: vps-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Déployer le commit sur le VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_DEPLOY_KEY: ${{ secrets.VPS_DEPLOY_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_DEPLOY_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          # La commande forcée côté VPS ne lit que le SHA passé en argument.
+          ssh -o BatchMode=yes -o ServerAliveInterval=30 "root@$VPS_HOST" "$GITHUB_SHA"
+
+      - name: Vérifier la production
+        run: |
+          set -euo pipefail
+          for path in /login /healthz/gateway /healthz/hrms /healthz/hns; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "https://safex360.data-univers.com$path")
+            echo "$path → HTTP $code"
+            [ "$code" = 200 ]
+          done

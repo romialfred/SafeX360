@@ -28,7 +28,7 @@ Le bouton **"Télécharger SafeX 360 Field"** sur la page de connexion
 | Android minimum | 9.0 (API 28) |
 | Cible compilation | Android 14 (API 34) |
 | Architecture | universal (arm64-v8a + armeabi-v7a) |
-| Backend | https://safex360-gateway.onrender.com (BD Aiven prod) |
+| Backend | https://safex360.data-univers.com (VPS Hostinger, Docker) |
 | Taille | ~12-18 MB |
 
 ## Identifiants de test (compte démo)

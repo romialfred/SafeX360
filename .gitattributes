@@ -1,3 +1,6 @@
 # Les scripts shell DOIVENT rester en fin de ligne LF, sinon ils échouent
 # sur les runners Linux (GitHub Actions) avec « bad interpreter: \r ».
 *.sh text eol=lf
+
+# Configuration de production lue telle quelle sur le VPS Linux.
+deploy/vps/** text eol=lf
