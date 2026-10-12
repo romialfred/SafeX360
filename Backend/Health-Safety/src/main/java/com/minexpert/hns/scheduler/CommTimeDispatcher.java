@@ -19,6 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
@@ -76,6 +78,20 @@ public class CommTimeDispatcher {
         Communication communication = commTime.getCommunication();
         if (communication == null) {
             log.error("CommTime {} is missing its communication relationship", commTime.getId());
+            return;
+        }
+
+        // Une communication expirée ne part plus. Sans ce garde-fou, une campagne
+        // récurrente jamais envoyée (SMTP en échec) était retentée toutes les
+        // 5 minutes indéfiniment, puis serait partie en retard — « URGENT »
+        // compris — dès le retour de l'e-mail.
+        LocalDateTime expiresAt = communication.getExpiresAt();
+        if (expiresAt != null && expiresAt.isBefore(LocalDateTime.ofInstant(now, ZoneId.systemDefault()))) {
+            log.info("Communication {} expirée le {} : planification {} clôturée sans envoi",
+                    communication.getId(), expiresAt, commTime.getId());
+            commTime.setStatus(CommStatus.COMPLETED);
+            commTime.setNextRunAt(null);
+            commTimeRepository.save(commTime);
             return;
         }
 
