@@ -27,6 +27,16 @@ main() {
   REVISION="$(git -C "$ROOT/src" rev-parse --short=12 HEAD)"
   echo "  révision $REVISION"
 
+  # Sans ces deux mots de passe, docker compose démarrerait safex-db avec une
+  # valeur vide : on s'arrête avant.
+  local var
+  for var in SAFEX_DB_ROOT_PASSWORD SAFEX_DB_PASSWORD; do
+    grep -q "^${var}=." "$ROOT/env/compose.env" \
+      || { echo "ÉCHEC : $var absent de $ROOT/env/compose.env" >&2; exit 1; }
+  done
+
+  # Images étiquetées « current » : compose ne recrée que les conteneurs dont
+  # l'image a réellement changé. La révision déployée est tracée à part.
   export SAFEX_REVISION="$REVISION" SAFEX_ENV_DIR="$ROOT/env"
   compose() { docker compose --project-directory "$COMPOSE_DIR" --env-file "$ROOT/env/compose.env" "$@"; }
 

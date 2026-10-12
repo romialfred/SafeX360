@@ -26,9 +26,11 @@ services:
     container_name: safex-db
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${SAFEX_DB_ROOT_PASSWORD:?mot de passe root requis}
+      # Valeurs dans /srv/safex/env/compose.env ; deploy.sh refuse de démarrer
+      # si l'une d'elles manque.
+      MYSQL_ROOT_PASSWORD: ${SAFEX_DB_ROOT_PASSWORD}
       MYSQL_USER: ${SAFEX_DB_USER:-safex_app}
-      MYSQL_PASSWORD: ${SAFEX_DB_PASSWORD:?mot de passe applicatif requis}
+      MYSQL_PASSWORD: ${SAFEX_DB_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
       - ./mysql/safex.cnf:/etc/mysql/conf.d/safex.cnf:ro
@@ -50,7 +52,7 @@ services:
   eureka:
     <<: *java
     build: ../../Backend/Eureka-Server
-    image: safex/eureka:${SAFEX_REVISION:-local}
+    image: safex/eureka:current
     container_name: safex-eureka
     env_file: ${SAFEX_ENV_DIR:-/srv/safex/env}/eureka.env
     environment:
@@ -67,7 +69,7 @@ services:
   minexpert:
     <<: *java
     build: ../../Backend/MineXpert
-    image: safex/minexpert:${SAFEX_REVISION:-local}
+    image: safex/minexpert:current
     container_name: safex-minexpert
     env_file: ${SAFEX_ENV_DIR:-/srv/safex/env}/minexpert.env
     environment:
@@ -89,7 +91,7 @@ services:
   hns:
     <<: *java
     build: ../../Backend/Health-Safety
-    image: safex/hns:${SAFEX_REVISION:-local}
+    image: safex/hns:current
     container_name: safex-hns
     env_file: ${SAFEX_ENV_DIR:-/srv/safex/env}/hns.env
     environment:
@@ -111,7 +113,7 @@ services:
   gateway:
     <<: *java
     build: ../../Backend/GatewayMS
-    image: safex/gateway:${SAFEX_REVISION:-local}
+    image: safex/gateway:current
     container_name: safex-gateway
     env_file: ${SAFEX_ENV_DIR:-/srv/safex/env}/gateway.env
     environment:
@@ -129,7 +131,7 @@ services:
 
   web:
     build: ../../Frontend
-    image: safex/web:${SAFEX_REVISION:-local}
+    image: safex/web:current
     container_name: safex-web
     restart: unless-stopped
     volumes:
