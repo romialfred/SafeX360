@@ -40,13 +40,33 @@ describe('politique de sécurité de la plateforme', () => {
         expect(gatewayConfig).not.toContain('allowedHeaders:');
     });
 
-    it('utilise POST pour la déconnexion et aligne le cookie sur le JWT', () => {
+    it('utilise POST pour la déconnexion et émet le JWT dans un cookie de session', () => {
         const authApi = repository('Backend/MineXpert/src/main/java/com/hrms/api/AuthAPI.java');
+        const mfaController = repository('Backend/MineXpert/src/main/java/com/hrms/api/MfaController.java');
         const loginService = frontend('src/services/LoginService.tsx');
 
         expect(authApi).toContain('@PostMapping("/logout")');
-        expect(authApi).toContain('Duration.ofMillis(helper.getExpirationMillis())');
         expect(loginService).toContain("axiosInstance.post(`/hrms/auth/logout`)");
+
+        // Cookie de SESSION (décision du 2026-07-23) : aucun cookie portant un JWT ne
+        // reçoit de maxAge, sinon il redevient persistant et survit à la fermeture du
+        // navigateur ; seule la déconnexion l'expire (maxAge(0)).
+        const cookies = [...`${authApi}\n${mfaController}`.matchAll(
+            /ResponseCookie\.from\("jwt",\s*([^)]*)\)([\s\S]*?)\.build\(\)/g,
+        )].map(([, value, chain]) => ({ value: value.trim(), chain }));
+        const issued = cookies.filter((cookie) => cookie.value !== '""');
+        const expired = cookies.filter((cookie) => cookie.value === '""');
+
+        expect(issued.length).toBeGreaterThanOrEqual(3);
+        expect(expired).toHaveLength(1);
+        for (const cookie of cookies) {
+            expect(cookie.chain).toContain('.httpOnly(true)');
+            expect(cookie.chain).toContain('.secure(true)');
+        }
+        for (const cookie of issued) {
+            expect(cookie.chain).not.toContain('.maxAge(');
+        }
+        expect(expired[0].chain).toContain('.maxAge(0)');
     });
 });
 
