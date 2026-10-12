@@ -29,10 +29,8 @@ import {
     IconWifiOff,
     IconChevronRight,
     IconBellRinging,
-    IconHeartbeat,
     IconCheck,
     IconEye,
-    IconSettings,
 } from '@tabler/icons-react';
 import PageHeader from '../../UtilityComp/PageHeader';
 import ConfirmModal from '../../UtilityComp/ConfirmModal';

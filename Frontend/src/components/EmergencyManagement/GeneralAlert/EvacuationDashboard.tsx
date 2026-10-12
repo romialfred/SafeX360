@@ -8,7 +8,7 @@ import {
     IconMaximize, IconActivity, IconAlertTriangle, IconClock,
 } from '@tabler/icons-react';
 import {
-    computeEvacuationStats, STATUS_COLOR,
+    computeEvacuationStats,
     type EvacEmployee, type EvacCheckIn, type EvacAssemblyPoint, type RosterPerson,
 } from './evacuationStats';
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Select, TextInput, Textarea, Loader, Checkbox } from '@mantine/core';
+import { Button, Select, TextInput, Loader, Checkbox } from '@mantine/core';
 import {
   IconSitemap, IconPlus, IconTrash, IconChevronRight, IconAlertTriangle, IconBinaryTree2,
 } from '@tabler/icons-react';

@@ -68,7 +68,6 @@ describe('parité du catalogue de modules (serveur ⇄ front)', () => {
             'IGNORÉ : ModuleCatalog.java introuvable (build front isolé) — parité non vérifiée',
             () => undefined,
         );
-        // eslint-disable-next-line no-console
         console.warn(
             '[gouvernance] Parité du catalogue de modules NON VÉRIFIÉE : le dépôt Backend/ '
             + 'est absent. Ce contrôle exige le dépôt complet (local ou CI intégration).',

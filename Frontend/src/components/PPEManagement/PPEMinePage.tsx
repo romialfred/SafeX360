@@ -4,7 +4,7 @@ import { Avatar, Button, RingProgress, Select } from '@mantine/core';
 import {
     IconAward, IconCalendar, IconChevronRight, IconClipboardList, IconCoin, IconEyeglass2, IconHandStop,
     IconHeadphones, IconHelmet, IconMask, IconParachute, IconPlus, IconShieldCheck, IconShirt, IconShoe,
-    IconTrendingUp, IconTrophy, IconUser, IconUsers,
+    IconTrendingUp, IconTrophy, IconUsers,
 } from '@tabler/icons-react';
 import { useAppSelector } from '../../slices/hooks';
 import { getEmployeesWithDepartment } from '../../services/EmployeeService';

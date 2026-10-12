@@ -15,7 +15,6 @@ import {
     IconMessageCircle, // Settings
     IconSettings, // ChevronLeft
     IconMapPin, // pour points de rassemblement
-    IconUrgent, // pour suivi SOS
     IconLayoutDashboard, // pour dashboard emergency
     IconChevronLeft, // ChevronRight
     IconChevronRight, // Plus

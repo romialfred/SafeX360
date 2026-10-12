@@ -4,7 +4,7 @@ import { Badge, Button, Modal, NumberInput, TextInput, Textarea, Tooltip } from 
 import { IconClipboardCheck, IconDeviceFloppy, IconHistory, IconSearch } from '@tabler/icons-react';
 import { useDispatch } from 'react-redux';
 import { hideOverlay, showOverlay } from '../../slices/OverlaySlice';
-import { errorNotification, successNotification } from '../../utility/NotificationUtility';
+import { successNotification } from '../../utility/NotificationUtility';
 import { getActivePPE } from '../../services/PPEService';
 import { createStocktake, getAllStocktakes, validateStocktake } from '../../services/PPEStocktakeService';
 import { notifyError } from '../../utility/notifyError';
