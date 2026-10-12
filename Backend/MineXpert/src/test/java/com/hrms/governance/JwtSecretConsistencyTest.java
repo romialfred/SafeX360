@@ -67,7 +67,7 @@ class JwtSecretConsistencyTest {
 
     @Test
     void noHardcodedJwtSecretDefault() throws IOException {
-        // Un défaut non vide (${JWT_SECRET:xxxx}) réintroduirait un secret en dur.
+        // Un défaut non vide (${JWT_SECRET:<valeur>}) réintroduirait un secret en dur.
         Pattern hardcoded = Pattern.compile("\\$\\{JWT_SECRET:[^}]+}");
         List<String> offenders = new ArrayList<>();
         for (Path p : javaSources()) {
