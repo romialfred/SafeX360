@@ -13,6 +13,8 @@ RUN --mount=type=cache,target=/root/.npm \
 COPY . .
 ENV NODE_OPTIONS=--max-old-space-size=4096
 RUN npm run build
+# Variantes .br/.gz servies telles quelles par Caddy (file_server precompressed).
+RUN node scripts/precompress-dist.mjs dist
 
 FROM caddy:2-alpine
 COPY --from=build /app/dist /srv/www

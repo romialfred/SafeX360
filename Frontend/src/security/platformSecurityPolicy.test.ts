@@ -6,15 +6,45 @@ const frontend = (path: string) => readFileSync(resolve(process.cwd(), path), 'u
 const repository = (path: string) => readFileSync(resolve(process.cwd(), '..', path), 'utf8');
 
 describe('politique de sécurité de la plateforme', () => {
-    it('publie une CSP en enforcement sur toutes les routes web', () => {
-        const vercel = JSON.parse(frontend('vercel.json'));
-        const headers = vercel.headers[0].headers as Array<{ key: string; value: string }>;
-        const csp = headers.find((header) => header.key === 'Content-Security-Policy')?.value;
+    it('publie une CSP en enforcement sur toutes les routes web servies par le VPS', () => {
+        // Production = conteneur safex-web (Caddy) du VPS : c'est lui qui pose les en-têtes.
+        const caddyfile = repository('deploy/vps/web/Caddyfile');
+        const policies = [...caddyfile.matchAll(/header Content-Security-Policy "([^"]+)"/g)]
+            .map(([, policy]) => policy);
 
-        expect(csp).toContain("default-src 'self'");
-        expect(csp).toContain("object-src 'none'");
-        expect(csp).toContain("frame-ancestors 'none'");
-        expect(csp).not.toContain('Content-Security-Policy-Report-Only');
+        // Application (SPA) et centre d'analyse autonome.
+        expect(policies).toHaveLength(2);
+        for (const csp of policies) {
+            expect(csp).toContain("default-src 'self'");
+            expect(csp).toContain("object-src 'none'");
+            expect(csp).toContain("frame-ancestors 'none'");
+        }
+        // L'application elle-même n'autorise aucun script inline ni eval (seul le centre
+        // d'analyse, page autonome, en a besoin).
+        const appPolicy = policies.find((csp) => !csp.includes("'unsafe-eval'"));
+        expect(appPolicy).toContain("script-src 'self';");
+        expect(caddyfile).not.toContain('Content-Security-Policy-Report-Only');
+        for (const header of ['X-Frame-Options "DENY"', 'X-Content-Type-Options "nosniff"', 'Strict-Transport-Security']) {
+            expect(caddyfile).toContain(header);
+        }
+    });
+
+    it("réduit l'ancien hébergement Vercel à une redirection vers le VPS", () => {
+        // Plus aucune réécriture vers l'ancien gateway Render : safex360.vercel.app ne doit
+        // plus servir l'application, seulement renvoyer vers le domaine de production.
+        const vercel = JSON.parse(frontend('vercel.json')) as {
+            rewrites?: unknown[];
+            headers?: unknown[];
+            redirects: Array<{ destination: string; permanent: boolean }>;
+        };
+
+        expect(vercel.rewrites).toBeUndefined();
+        expect(vercel.headers).toBeUndefined();
+        expect(vercel.redirects.length).toBeGreaterThan(0);
+        for (const redirect of vercel.redirects) {
+            expect(redirect.destination.startsWith('https://safex360.data-univers.com/')).toBe(true);
+            expect(redirect.permanent).toBe(true);
+        }
     });
 
     it('désactive Swagger par défaut et ne le publie plus sans contrôle', () => {
