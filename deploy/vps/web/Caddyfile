@@ -4,6 +4,10 @@
 # renvoie safex360.data-univers.com ici en HTTP sur le réseau wcp-proxy. Ce
 # fichier reprend à l'identique le comportement de l'ancien vercel.json :
 # en-têtes de sécurité, CSP, réécritures SPA, /safex-analytics.
+#
+# Fichiers statiques : variantes .br/.gz produites au build de l'image
+# (scripts/precompress-dist.mjs) et servies telles quelles (precompressed) ;
+# `encode` ne compresse à la volée que ce qui n'a pas de variante (API).
 
 {
 	admin off
@@ -57,7 +61,9 @@
 		header Cache-Control "no-cache"
 		root * /srv/www
 		try_files {path} {path}/index.html
-		file_server
+		file_server {
+			precompressed br gzip
+		}
 	}
 
 	# Fichiers à empreinte : immuables, cache d'un an.
@@ -70,7 +76,9 @@
 	handle @asset {
 		header Cache-Control "public, max-age=31536000, immutable"
 		root * /srv/www
-		file_server
+		file_server {
+			precompressed br gzip
+		}
 	}
 
 	# Asset absent (onglet ouvert sur un ancien déploiement) : 404 franc,
@@ -90,7 +98,9 @@
 		header @apk Content-Type "application/vnd.android.package-archive"
 		root * /srv/www
 		try_files {path} {path}.html /index.html
-		file_server
+		file_server {
+			precompressed br gzip
+		}
 	}
 
 	log {
