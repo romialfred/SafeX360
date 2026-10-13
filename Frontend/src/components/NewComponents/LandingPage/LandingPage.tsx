@@ -529,6 +529,8 @@ export default function LandingPage() {
             </div>
             </nav>
 
+            {/* Contenu principal : un seul landmark main, du hero au formulaire. */}
+            <main>
             {/* HERO */}
             <header className="hero"><div className="wrap">
                 <div className="reveal">
@@ -733,19 +735,20 @@ export default function LandingPage() {
                 <form className="form reveal" onSubmit={(e) => e.preventDefault()}>
                     <h3>Planifier une démonstration</h3>
                     <div className="fg">
-                        <input placeholder="Nom et prénom *" />
-                        <input placeholder="Organisation *" />
-                        <input placeholder="Fonction / poste" />
-                        <input placeholder="E-mail professionnel *" />
-                        <input placeholder="Téléphone" />
-                        <input placeholder="Pays" />
-                        <select defaultValue=""><option value="" disabled>Nombre de sites</option><option>1 site</option><option>2 à 5 sites</option><option>6 à 20 sites</option><option>Plus de 20 sites</option></select>
-                        <select defaultValue=""><option value="" disabled>Besoin principal</option><option>Incidents &amp; accidents</option><option>Inspections</option><option>Audits &amp; conformité</option><option>Urgences &amp; évacuation</option></select>
+                        <input placeholder="Nom et prénom *" aria-label="Nom et prénom" />
+                        <input placeholder="Organisation *" aria-label="Organisation" />
+                        <input placeholder="Fonction / poste" aria-label="Fonction ou poste" />
+                        <input placeholder="E-mail professionnel *" aria-label="E-mail professionnel" />
+                        <input placeholder="Téléphone" aria-label="Téléphone" />
+                        <input placeholder="Pays" aria-label="Pays" />
+                        <select defaultValue="" aria-label="Nombre de sites"><option value="" disabled>Nombre de sites</option><option>1 site</option><option>2 à 5 sites</option><option>6 à 20 sites</option><option>Plus de 20 sites</option></select>
+                        <select defaultValue="" aria-label="Besoin principal"><option value="" disabled>Besoin principal</option><option>Incidents &amp; accidents</option><option>Inspections</option><option>Audits &amp; conformité</option><option>Urgences &amp; évacuation</option></select>
                     </div>
                     <button className="btn btn-a" type="submit">Planifier une démonstration &nbsp;→</button>
                     <div className="note">* Champs obligatoires. Vos données restent confidentielles.</div>
                 </form>
             </div></section>
+            </main>
 
             {/* FOOTER */}
             <footer><div className="wrap">

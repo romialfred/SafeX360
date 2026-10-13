@@ -58,8 +58,8 @@ import com.minexpert.hns.dosimetry.util.XReasonValidator;
  *       audit INVALID_REASON.</li>
  *   <li>{@code GET /by-worker/{workerId}/full} avec X-Reason valide + permission MEDICAL :
  *       reason transmis a service.getWorkerVisitsFull(..., reasonValidated, ...).</li>
- *   <li>{@code GET /by-worker/{workerId}} : SELF match (employeeId == userId) : autorise et
- *       service appele.</li>
+ *   <li>{@code GET /by-worker/{workerId}} : SELF match (employeeId == id EMPLOYE courant,
+ *       issu de X-User-Emp-Id, et non l'id de compte X-User-Id) : autorise et service appele.</li>
  * </ul>
  */
 @ExtendWith(MockitoExtension.class)
@@ -97,6 +97,19 @@ class MedicalVisitControllerSecurityTest {
         SecurityContextHolder.getContext().setAuthentication(token);
     }
 
+    /**
+     * Positionne l'id EMPLOYÉ courant sans autorite elevee. Le guard derive l'identite
+     * SELF depuis {@code AuthUtils.currentEmpId()}, qui lit {@code auth.getDetails()}
+     * (pose par GatewayAuthorityFilter depuis l'en-tete {@code X-User-Emp-Id}) : on
+     * reproduit donc cette convention ici.
+     */
+    private void mockEmployee(Long empId) {
+        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
+                "test-user", "", List.of());
+        token.setDetails(String.valueOf(empId));
+        SecurityContextHolder.getContext().setAuthentication(token);
+    }
+
     private ExposedWorker worker(Long id, Long employeeId) {
         return ExposedWorker.builder()
                 .id(id)
@@ -119,14 +132,18 @@ class MedicalVisitControllerSecurityTest {
     @Test
     @DisplayName("by-worker : cross worker sans permission elevee -> AccessDeniedException 403")
     void byWorker_crossWorker_throwsAccessDenied() {
+        // Employe courant = 999 ; le worker cible appartient a l'employe 100. L'id de COMPTE
+        // (X-User-Id = 100) coincide volontairement avec l'employe cible : seul l'id EMPLOYE
+        // doit compter [AUTHZ-06].
+        mockEmployee(999L);
         when(workerRepository.findById(10L)).thenReturn(Optional.of(worker(10L, 100L)));
 
-        assertThatThrownBy(() -> controller.byWorker(10L, 999L, request()))
+        assertThatThrownBy(() -> controller.byWorker(10L, 100L, request()))
                 .isInstanceOf(AccessDeniedException.class);
 
         // Service NON appele.
         verify(service, never()).getWorkerVisitsSummary(anyLong(), any(), any());
-        // Audit ACCESS_DENIED ecrit.
+        // Audit ACCESS_DENIED ecrit avec l'id EMPLOYE du demandeur.
         verify(auditService).log(eq("ACCESS_DENIED_SELF_MISMATCH"),
                 eq("ExposedWorker"), eq(10L), eq(999L), isNull(),
                 contains("EMPLOYEE_ID_MISMATCH"));
@@ -135,14 +152,29 @@ class MedicalVisitControllerSecurityTest {
     @Test
     @DisplayName("by-worker : SELF match -> OK, service appele")
     void byWorker_selfMatch_ok() {
+        // Employe courant = 999 == worker.employeeId ; l'id de COMPTE (X-User-Id = 5) differe.
+        mockEmployee(999L);
         when(workerRepository.findById(10L)).thenReturn(Optional.of(worker(10L, 999L)));
-        when(service.getWorkerVisitsSummary(eq(10L), eq(999L), anyString()))
+        when(service.getWorkerVisitsSummary(eq(10L), eq(5L), anyString()))
                 .thenReturn(Collections.<MedicalVisitSummaryDTO>emptyList());
 
-        ResponseEntity<List<MedicalVisitSummaryDTO>> resp = controller.byWorker(10L, 999L, request());
+        ResponseEntity<List<MedicalVisitSummaryDTO>> resp = controller.byWorker(10L, 5L, request());
 
         assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
-        verify(service, times(1)).getWorkerVisitsSummary(eq(10L), eq(999L), anyString());
+        verify(service, times(1)).getWorkerVisitsSummary(eq(10L), eq(5L), anyString());
+    }
+
+    @Test
+    @DisplayName("by-worker : identite employe absente (X-User-Emp-Id) -> AccessDeniedException, sans lecture BDD")
+    void byWorker_missingEmployeeIdentity_throwsAccessDenied() {
+        assertThatThrownBy(() -> controller.byWorker(10L, 999L, request()))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(workerRepository, never()).findById(anyLong());
+        verify(service, never()).getWorkerVisitsSummary(anyLong(), any(), any());
+        verify(auditService).log(eq("ACCESS_DENIED_SELF_MISMATCH"),
+                eq("ExposedWorker"), eq(10L), eq(999L), isNull(),
+                contains("MISSING_EMP_ID"));
     }
 
     @Test

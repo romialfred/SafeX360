@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader, Tabs } from '@mantine/core';
 import {
-    IconArrowRight, IconBook, IconCertificate, IconClipboardCheck, IconGauge, IconRefresh,
+    IconArrowRight, IconBook, IconCertificate, IconGauge, IconRefresh,
     IconScale, IconShieldCheck, IconTools, IconUsers,
 } from '@tabler/icons-react';
 import {

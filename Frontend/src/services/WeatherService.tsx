@@ -35,7 +35,7 @@ const deactivateWeatherConditions = async (id: string | number) => {
 const getWeathersByIds = async (ids: string[]) => {
     return axiosInstance.get(`${url}/getByIds`, {
         params: { ids }, paramsSerializer: (params) =>
-            params.ids.map((id: number) => `ids=${id}`).join('&'),
+            params.ids.map((id: string) => `ids=${id}`).join('&'),
     })
         .then(response => response.data);
 }

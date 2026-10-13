@@ -60,6 +60,15 @@ beforeAll(() => {
     }
 
     vi.stubGlobal('IntersectionObserver', NoopIntersectionObserver);
+
+    // jsdom ne calcule aucune géométrie SVG : la carte d'Afrique de la vitrine
+    // (@react-map/africa) mesure son tracé via getBBox() au montage.
+    if (!('getBBox' in SVGElement.prototype)) {
+        Object.defineProperty(SVGElement.prototype, 'getBBox', {
+            configurable: true,
+            value: () => ({ x: 0, y: 0, width: 0, height: 0 }),
+        });
+    }
 });
 
 afterEach(() => cleanup());

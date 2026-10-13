@@ -9,7 +9,6 @@ import {
     IconUsersGroup,
     IconRefresh,
     IconMapPin,
-    IconChartBar,
     IconBolt,
     IconActivity,
     IconTrendingUp,

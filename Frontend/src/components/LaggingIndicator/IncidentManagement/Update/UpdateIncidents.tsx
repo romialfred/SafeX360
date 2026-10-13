@@ -248,7 +248,7 @@ const UpdateIncidents = () => {
             potentialSeverity: values.potentialSeverity ? Number(values.potentialSeverity) : null,
             involvedPersons: values.involvedPersons?.map((x: any) => x.id),
             witnesses: values.witnesses?.map((x: any) => x.id),
-        }).then((_res: any) => {
+        }).then(() => {
             successNotification("Incident mis à jour avec succès");
             navigate("/incidents");
         }

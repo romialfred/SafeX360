@@ -52,7 +52,6 @@ const WorkedHoursManager = () => {
       .catch(() => { setDepartments([]); setGrid({}); })
       .finally(() => setLoading(false));
   };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(load, [companyId, year]);
 
   const rows: Row[] = useMemo(() => [

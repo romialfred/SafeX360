@@ -3,8 +3,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ActionIcon, Avatar, Button, Checkbox, Drawer, Menu, Pagination, ScrollArea, Select, Textarea, TextInput, Tooltip } from '@mantine/core';
 import {
-    IconAdjustmentsHorizontal, IconBox, IconCalendar, IconCheck, IconChevronDown, IconCircleCheck, IconCircleX,
-    IconClipboardList, IconClock, IconDots, IconDownload, IconEye, IconMapPin, IconPackage, IconPlus, IconRefresh,
+    IconAdjustmentsHorizontal, IconBox, IconCheck, IconChevronDown, IconCircleCheck, IconCircleX,
+    IconClipboardList, IconClock, IconDots, IconDownload, IconEye, IconPackage, IconPlus, IconRefresh,
     IconSearch, IconTruck, IconX,
 } from '@tabler/icons-react';
 import { getAllPPE } from '../../services/PPEService';
@@ -95,7 +95,7 @@ const PPERequestsTable = () => {
                 const pm: Record<string, any> = {}; (ppes || []).forEach((p: any) => { pm[p.id] = p; }); setPpeMap(pm);
                 setRefreshedAt(new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
             })
-            .catch((e) => errorNotification('Chargement des demandes impossible'))
+            .catch(() => errorNotification('Chargement des demandes impossible'))
             .finally(() => setLoading(false));
     };
     useEffect(fetchAll, []);

@@ -2,10 +2,10 @@
   "schemaVersion": 1,
   "policy": "La dette existante est gelee; aucun compteur ne peut augmenter.",
   "totals": {
-    "hexColors": 1494,
-    "inlineStyles": 1451,
-    "pixelValues": 5602,
-    "maxWidthUtilities": 288,
-    "transitionAll": 153
+    "hexColors": 1829,
+    "inlineStyles": 1412,
+    "pixelValues": 6338,
+    "maxWidthUtilities": 294,
+    "transitionAll": 139
   }
 }
