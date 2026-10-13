@@ -58,13 +58,13 @@ public class EmergencyWebSocketConfig implements WebSocketMessageBrokerConfigure
         registry
             .addEndpoint("/ws/emergency")
             .addInterceptors(handshakeInterceptor)
-            // Origines : localhost dev + prod Vercel + prod custom domain
+            // Origines : localhost dev + production (VPS). Jamais de joker sur un
+            // domaine d'hébergement partagé (*.vercel.app) : n'importe qui peut y
+            // publier une page.
             .setAllowedOriginPatterns(
                 "http://localhost:5173",
                 "http://localhost:5174",
                 "http://localhost:3000",
-                "https://safex360.vercel.app",
-                "https://*.vercel.app",
                 "https://safex360.data-univers.com",
                 "https://dev.safex360.data-univers.com"
             )
