@@ -12,7 +12,15 @@ default-time-zone = '+00:00'
 skip-name-resolve
 
 max_connections = 200
+# 2026-10-13 : ~110 Mo de données, buffer pool à moitié libre, 99,98 % de
+# lectures servies en mémoire : 512 Mo suffisent largement.
 innodb_buffer_pool_size = 512M
+
+# Requêtes de plus d'une seconde, pour repérer ce qu'il faut optimiser
+# (lecture : docker exec safex-db tail /var/lib/mysql/slow.log).
+slow_query_log = 1
+slow_query_log_file = /var/lib/mysql/slow.log
+long_query_time = 1
 
 # Les triggers d'audit immuables (urgences, dosimétrie) sont recréés par
 # l'import : avec le binlog actif, il faut autoriser leur création.
