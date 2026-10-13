@@ -43,6 +43,37 @@ Internet ──443──▶ wcp-caddy (proxy partagé, TLS Let's Encrypt)
   `journal.txt`). Sans elle, une perte du VPS emporterait aussi les sauvegardes.
 - **Restauration** : `zcat dump.sql.gz | docker exec -i safex-db sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -uroot'`.
 
+## Origines autorisées (CORS, CSRF, WebSocket)
+
+Le gateway est le seul point d'entrée : sa variable `SAFEX_ALLOWED_ORIGINS`
+(`/srv/safex/env/gateway.env`) décide des origines acceptées en production.
+Elle ne doit contenir que des origines réellement servies :
+
+| Origine | Usage |
+|---|---|
+| `https://safex360.data-univers.com` | application web (même origine) |
+| `https://localhost`, `capacitor://localhost` | APK SafeX 360 Field (WebView Capacitor) |
+| `https://mine-xpert.data-univers.com` | front MineXpert, autre application qui appelle `/hrms` |
+
+Jamais d'origine `http://` de développement ni de domaine d'hébergement partagé
+(`*.vercel.app`, `*.onrender.com`) : n'importe qui peut y publier une page, et le
+cookie `jwt` est envoyé en `SameSite=None`. Après modification, relancer
+`deploy.sh` : compose recrée le conteneur dont l'environnement a changé.
+
+## Anciens hébergements
+
+- **Vercel** (`safex360.vercel.app`) : `Frontend/vercel.json` ne contient plus
+  qu'une redirection permanente (308) vers `https://safex360.data-univers.com`,
+  pour les favoris et liens anciens. L'application n'y est plus servie.
+- **Render** `safex360-gateway` : relais des APK ≤ v2.4, qui appellent encore
+  `safex360-gateway.onrender.com` ; il transmet au VPS. À supprimer quand plus
+  aucun terminal n'utilise ces versions. `safex360-minexpert`, `safex360-hns`
+  et `safex360-eureka` sont suspendus : ne jamais les réactiver (ils écriraient
+  dans Aiven).
+- **Aiven** : base figée au 2026-10-12, gardée en secours. Son mot de passe a
+  fuité dans l'historique public du dépôt : la supprimer dès que la production
+  VPS est validée.
+
 ## Règles de cohabitation
 
 - Aucun port public : seul `safex-web` rejoint le réseau `wcp-proxy`.

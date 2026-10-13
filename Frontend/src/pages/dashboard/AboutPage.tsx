@@ -47,8 +47,8 @@ const COUNTRIES = ['Burkina Faso', 'Mali', 'Guinée', 'Sénégal', "Côte d'Ivoi
 const STACK = [
     { label: 'Frontend', value: 'React 19 · Vite · TypeScript · Mantine 7 · Tailwind 4' },
     { label: 'Backend',  value: 'Spring Boot 3.4 · Eureka · Gateway · Microservices' },
-    { label: 'Base de données', value: 'MySQL 8 · Aiven Cloud' },
-    { label: 'Infrastructure', value: 'Render (backend) · Vercel (frontend)' },
+    { label: 'Base de données', value: 'MySQL 8 · sauvegardes quotidiennes' },
+    { label: 'Infrastructure', value: 'Serveur dédié · Docker · Caddy (HTTPS)' },
 ];
 
 export default function AboutPage() {

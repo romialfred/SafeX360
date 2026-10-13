@@ -15,10 +15,11 @@ import { describe, expect, it } from 'vitest';
  * un `fetch()` de cette URL. Si l'hébergeur la redirige, la réponse porte
  * `redirected = true` — interdit pour une navigation.
  *
- * `cleanUrls: true` (vercel.json) redirige justement toute URL en `.html` :
- * `/index.html` répond 308 vers `/`. L'URL de repli ne doit donc JAMAIS se
- * terminer par `.html` tant que `cleanUrls` est actif. C'est cet accord entre
- * deux fichiers que ce test verrouille — il ne peut pas se relire dans un seul.
+ * Sur l'ancien hébergement Vercel, `cleanUrls: true` redirigeait toute URL en
+ * `.html` (`/index.html` → 308 vers `/`). En production sur le VPS, le Caddy de
+ * safex-web sert l'application par `try_files` sans redirection, mais il reste
+ * l'invariant : le repli est `/` et Caddy ne déclare aucune redirection. C'est
+ * cet accord entre deux fichiers que ce test verrouille.
  *
  * Seule la Salle de Crise déclenchait le défaut : c'est le seul écran ouvert par
  * `window.open`, donc la seule VRAIE navigation. Partout ailleurs le routage est
@@ -30,7 +31,8 @@ import { describe, expect, it } from 'vitest';
 const read = (rel: string) => readFileSync(resolve(process.cwd(), rel), 'utf8');
 
 const viteConfig = read('vite.config.ts');
-const vercelConfig = JSON.parse(read('vercel.json')) as { cleanUrls?: boolean };
+// Serveur réel de production : conteneur safex-web (Caddy) du VPS.
+const caddyfile = read('../deploy/vps/web/Caddyfile');
 
 /** Extrait la valeur littérale de `navigateFallback` de la config Vite. */
 const navigateFallback = (): string => {
@@ -42,16 +44,11 @@ const navigateFallback = (): string => {
 describe('repli de navigation du Service Worker', () => {
     it("ne pointe pas sur une URL que l'hébergeur redirigerait", () => {
         const fallback = navigateFallback();
-        if (vercelConfig.cleanUrls) {
-            // Avec cleanUrls, toute URL en .html est redirigée (308) : la servir
-            // en repli de navigation casse l'ouverture en nouvel onglet.
-            expect(
-                fallback.endsWith('.html'),
-                `navigateFallback vaut « ${fallback} » : avec cleanUrls, cette URL est redirigée `
-                + 'et provoque ERR_FAILED sur les navigations servies par le Service Worker.',
-            ).toBe(false);
-        }
         expect(fallback).toBe('/');
+        // Une redirection côté serveur (redir) rendrait `redirected = true` sur le
+        // fetch de repli et provoquerait ERR_FAILED sur les navigations du SW.
+        expect(caddyfile).not.toMatch(/^\s*redir\b/m);
+        expect(caddyfile).toContain('try_files {path} {path}.html /index.html');
     });
 
     it('précache bien l’URL utilisée comme repli, sinon le cache ne sert jamais', () => {
